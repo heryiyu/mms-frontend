@@ -1,0 +1,42 @@
+/*
+ * RWD 斷點與 Ant Design 一致（Grid.useBreakpoint 用同一套）：
+ * xs <576 / sm ≥576 / md ≥768 / lg ≥992 / xl ≥1200 / xxl ≥1600
+ * 採 mobile-first：預設寫手機樣式，再用 min-width 往上覆寫。
+ */
+:root {
+  --app-header-height: 56px;
+  --app-tabbar-height: 56px;
+  --app-content-max-width: 1200px;
+  --app-gutter: 16px;
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+@media (min-width: 768px) {
+  :root {
+    --app-gutter: 24px;
+  }
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  margin: 0;
+  min-height: 100%;
+}
+
+body {
+  -webkit-font-smoothing: antialiased;
+  -webkit-tap-highlight-color: transparent;
+}
+
+img {
+  max-width: 100%;
+  display: block;
+}
