@@ -1,5 +1,5 @@
 import { Button } from '../../components/Button'
-import Icon from '../../components/Icon'
+import IconCircle from '../../components/IconCircle'
 import typography from '../../styles/typography.module.css'
 import { cx } from '../../utils/cx'
 import styles from './ReviewEmpty.module.css'
@@ -13,9 +13,7 @@ import styles from './ReviewEmpty.module.css'
 export default function ReviewEmpty({ onBack }: { onBack: () => void }) {
   return (
     <section className={styles.empty} aria-labelledby="member-review-empty-title">
-      <span className={styles.iconWrap}>
-        <Icon name="person-check" className={styles.icon} />
-      </span>
+      <IconCircle name="person-check" className={styles.icon} />
       <h2 id="member-review-empty-title" className={cx(typography.headline5, styles.title)}>
         目前沒有待審核的申請
       </h2>

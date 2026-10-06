@@ -4,7 +4,7 @@ import { Link } from 'react-router'
 import { getMe } from '../api/member'
 import { getPendingCount } from '../api/review'
 import { useAuth } from '../auth/useAuth'
-import Icon from '../components/Icon'
+import IconCircle from '../components/IconCircle'
 import { getMemberQuickActions, type MemberQuickAction } from '../layouts/memberNav'
 import { PATHS } from '../routes/paths'
 import typography from '../styles/typography.module.css'
@@ -55,9 +55,7 @@ function QuickActionCard({ action, badgeCount = 0 }: { action: MemberQuickAction
     <Link to={action.path} className={styles.cardLink} aria-label={ariaLabel}>
       <Badge count={badgeCount} className={styles.badge}>
         <Card variant="borderless" hoverable className={styles.card} classNames={{ body: styles.cardBody }}>
-          <span className={styles.iconCircle}>
-            <Icon name={action.icon} />
-          </span>
+          <IconCircle name={action.icon} />
           <span className={styles.cardLabel}>{action.label}</span>
         </Card>
       </Badge>
