@@ -5,6 +5,7 @@ import GuestPlaceholder from '../pages/GuestPlaceholder'
 import Home from '../pages/Home'
 import NotFound from '../pages/NotFound'
 import Profile from '../pages/Profile'
+import RegisterPrivacy from '../pages/register/RegisterPrivacy'
 
 export const router = createBrowserRouter([
   {
@@ -12,6 +13,7 @@ export const router = createBrowserRouter([
     children: [
       { path: '/login', element: <GuestPlaceholder title="登入" brand /> },
       { path: '/register', element: <GuestPlaceholder title="創建帳號" /> },
+      { path: '/register/privacy', element: <RegisterPrivacy /> },
       { path: '/forgot-password', element: <GuestPlaceholder title="忘記密碼" /> },
     ],
   },
