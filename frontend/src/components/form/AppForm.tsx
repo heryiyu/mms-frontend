@@ -2,7 +2,7 @@ import { Form, Grid } from 'antd'
 import type { FormItemProps, FormProps } from 'antd'
 import type { PropsWithChildren, ReactNode } from 'react'
 import { formControlSize } from '../../theme/components/formControls'
-import { cx } from './cx'
+import { cx } from '../../utils/cx'
 import styles from './formControls.module.css'
 
 // 必填星號放在標籤「後」、顏色 colorError（AntD 預設在前）

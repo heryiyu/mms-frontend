@@ -3,7 +3,7 @@ import type { InputRef } from 'antd'
 import type { PasswordProps } from 'antd/es/input'
 import type { Ref } from 'react'
 import Icon from '../Icon'
-import { cx } from './cx'
+import { cx } from '../../utils/cx'
 import styles from './formControls.module.css'
 
 export interface PasswordInputProps extends PasswordProps {

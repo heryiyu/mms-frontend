@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react'
 import { Grid } from 'antd'
+import { cx } from '../../utils/cx'
 import { Button } from '../Button'
 import styles from './ActionBar.module.css'
 
@@ -53,7 +54,7 @@ export default function ActionBar({
   const isDesktop = !!screens.lg
 
   return (
-    <div className={[styles.bar, fixed && styles.fixed, className].filter(Boolean).join(' ')} role="group" aria-label="操作">
+    <div className={cx(styles.bar, fixed && styles.fixed, className)} role="group" aria-label="操作">
       <div className={styles.inner}>
         {!hideCancel && (
           <Button

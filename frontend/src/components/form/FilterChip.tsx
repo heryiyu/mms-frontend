@@ -1,7 +1,7 @@
 import { Tag } from 'antd'
 import type { CSSProperties, ComponentProps } from 'react'
 import { formControlSize } from '../../theme/components/formControls'
-import { cx } from './cx'
+import { cx } from '../../utils/cx'
 import styles from './formControls.module.css'
 
 export type FilterChipProps = ComponentProps<typeof Tag.CheckableTag>

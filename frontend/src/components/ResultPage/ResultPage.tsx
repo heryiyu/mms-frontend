@@ -3,6 +3,7 @@ import { ConfigProvider, Result } from 'antd'
 import { Button } from '../Button'
 import Icon from '../Icon'
 import { colors, typography } from '../../theme/tokens'
+import { cx } from '../../utils/cx'
 import styles from './ResultPage.module.css'
 
 // 完成結果頁（docs/design/receipt/README.md「完成」、member-review 審核完成／退回完成共用）
@@ -56,7 +57,7 @@ export default function ResultPage({
   )
 
   return (
-    <div className={[styles.wrapper, className].filter(Boolean).join(' ')}>
+    <div className={cx(styles.wrapper, className)}>
       <ConfigProvider theme={resultTheme}>
         <Result
           className={styles.result}

@@ -5,6 +5,7 @@ import { logout } from '../api/auth'
 import { useAuth } from '../auth/useAuth'
 import Icon from '../components/Icon'
 import { PATHS } from '../routes/paths'
+import { cx } from '../utils/cx'
 import styles from './MemberLayout.module.css'
 import { getMemberBreadcrumb, getMemberMenuItems, getSelectedMenuKey } from './memberNav'
 
@@ -12,7 +13,7 @@ import { getMemberBreadcrumb, getMemberMenuItems, getSelectedMenuKey } from './m
 // TODO：拿到正式 Logo 圖檔後改用圖片
 function BrandLogo({ className }: { className?: string }) {
   return (
-    <Link to={PATHS.home} className={[styles.logo, className].filter(Boolean).join(' ')} aria-label="回到首頁">
+    <Link to={PATHS.home} className={cx(styles.logo, className)} aria-label="回到首頁">
       <span className={styles.logoText}>NewLife</span>
     </Link>
   )
