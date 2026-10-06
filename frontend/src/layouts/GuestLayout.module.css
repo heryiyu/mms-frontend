@@ -20,7 +20,8 @@
 }
 
 /* 卡片內容由上而下排；頁面可對最後一塊設 margin-top: auto 讓它貼底（例：「還沒有帳號？註冊帳號」） */
-.cardBody {
+/* 用 .card .cardBody 提高權重，蓋過 AntD 的 `.ant-card .ant-card-body { padding: 24px }` */
+.card .cardBody {
   flex: 1;
   display: flex;
   flex-direction: column;

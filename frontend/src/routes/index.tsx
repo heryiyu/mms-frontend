@@ -9,6 +9,7 @@ import MemberPlaceholder from '../pages/MemberPlaceholder'
 import NotFound from '../pages/NotFound'
 import PendingApproval from '../pages/PendingApproval'
 import Profile from '../pages/Profile'
+import RegisterPrivacy from '../pages/register/RegisterPrivacy'
 import { PATHS } from './paths'
 
 // 路由表（#10）。路徑一律用 routes/paths.ts 的 PATHS；*Placeholder 為尚未實作的頁面，完成後直接替換 element。
@@ -23,6 +24,7 @@ export const router = createBrowserRouter([
         children: [
           { path: PATHS.login, element: <GuestPlaceholder title="登入" brand /> },
           { path: PATHS.register, element: <GuestPlaceholder title="創建帳號" /> },
+          { path: PATHS.registerPrivacy, element: <RegisterPrivacy /> },
           { path: PATHS.forgotPassword, element: <GuestPlaceholder title="忘記密碼" /> },
         ],
       },

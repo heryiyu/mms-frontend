@@ -3,6 +3,10 @@ export const PATHS = {
   /* 未登入 */
   login: '/login',
   register: '/register',
+  /** 註冊：個資保護聲明 */
+  registerPrivacy: '/register/privacy',
+  /** 註冊：基本資料（尚未實作，TODO(#12)） */
+  registerProfile: '/register/profile',
   forgotPassword: '/forgot-password',
   /** 等待審核（帳號尚未核准）；登入回 ACCOUNT_PENDING 時導到這裡 */
   pending: '/pending',
@@ -25,7 +29,14 @@ export interface LoginRedirectState {
   from?: { pathname: string; search?: string; hash?: string }
 }
 
-const GUEST_PATHS: string[] = [PATHS.login, PATHS.register, PATHS.forgotPassword, PATHS.pending]
+const GUEST_PATHS: string[] = [
+  PATHS.login,
+  PATHS.register,
+  PATHS.registerPrivacy,
+  PATHS.registerProfile,
+  PATHS.forgotPassword,
+  PATHS.pending,
+]
 
 /** 登入後要去的頁面：location.state.from（被守衛擋下的原頁），沒有則回首頁 */
 export function getPostLoginPath(state: unknown): string {
