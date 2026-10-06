@@ -31,6 +31,8 @@ export default defineConfig(({ mode }) => {
         },
         workbox: {
           globPatterns: ['**/*.{js,css,html,svg,png,ico,woff,woff2}'],
+          // MSW 的 worker 只給開發用假資料，不要被 PWA precache
+          globIgnores: ['**/mockServiceWorker.js'],
           navigateFallbackDenylist: [/^\/api/],
         },
         devOptions: { enabled: false },
