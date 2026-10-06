@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react'
-import { Button, ConfigProvider, Result } from 'antd'
+import { ConfigProvider, Result } from 'antd'
+import { Button } from '../Button'
 import Icon from '../Icon'
 import { colors, typography } from '../../theme/tokens'
 import styles from './ResultPage.module.css'
@@ -46,7 +47,7 @@ export default function ResultPage({
   const actions = (
     <>
       {onBack && (
-        <Button type="link" className={styles.back} onClick={onBack}>
+        <Button variant="text" onClick={onBack}>
           {backText}
         </Button>
       )}

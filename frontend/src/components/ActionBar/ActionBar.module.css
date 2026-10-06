@@ -26,7 +26,6 @@
 .button {
   flex: 1 1 0;
   min-width: 0;
-  height: var(--layout-control-height);
 }
 
 /* 桌機（≥ lg）：列高約 64px，按鈕約 164px 寬、間距 32px、置中（目測） */

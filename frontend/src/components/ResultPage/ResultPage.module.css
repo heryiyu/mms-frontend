@@ -1,7 +1,7 @@
 /*
  * 完成結果頁，mobile-first。
  * 尺寸量自 docs/design/receipt/{web,mob}/奉獻收據下載/inf.png（@2x 換算 1x，目測）：
- * 圖示手機約 60px、桌機約 80px；標題 Headline5、說明 Body1、返回為主色文字連結。
+ * 圖示手機約 60px、桌機約 80px；標題 Headline5、說明 Body1、返回為主色文字按鈕（components/Button variant="text"）。
  */
 .wrapper {
   /* 圖示尺寸（目測） */
@@ -44,10 +44,6 @@
   line-height: var(--line-height-body-1);
   letter-spacing: var(--letter-spacing-body-1);
   color: var(--color-gray-1);
-}
-
-.back {
-  font-size: var(--font-size-body-1);
 }
 
 @media (min-width: 992px) {

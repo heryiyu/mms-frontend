@@ -1,6 +1,7 @@
-import { Button, Modal } from 'antd'
+import { Modal } from 'antd'
 import type { ReactNode } from 'react'
 import { layout } from '../../theme/tokens'
+import { Button } from '../Button'
 import Icon from '../Icon'
 import styles from './NoticeModal.module.css'
 
@@ -42,14 +43,12 @@ export default function NoticeModal({
   const footer = (
     <div className={styles.footer}>
       {cancelText != null && (
-        <Button shape="round" color="default" variant="outlined" className={styles.button} onClick={onCancel}>
+        <Button variant="secondary" className={styles.button} onClick={onCancel}>
           {cancelText}
         </Button>
       )}
       <Button
-        shape="round"
-        color="default"
-        variant="solid"
+        variant="primary"
         className={styles.button}
         loading={confirmLoading}
         onClick={onOk}

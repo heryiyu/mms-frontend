@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react'
-import { Button, Grid } from 'antd'
+import { Grid } from 'antd'
+import { Button } from '../Button'
 import styles from './ActionBar.module.css'
 
 // 底部操作列（docs/design/receipt/README.md「表單初始」）
@@ -8,7 +9,6 @@ import styles from './ActionBar.module.css'
 //
 // TODO(#12)：web「取消／確認」與 mob「返回／送出（稿中為確認）」文字是否統一未定，
 // 先依稿預設，並開放 cancelText / confirmText（桌機）與 mobileCancelText / mobileConfirmText（手機）覆寫。
-// TODO(#12)：按鈕樣式（黑底膠囊）由 #2 Button 元件／theme 處理，這裡只用 AntD Button 的 variant。
 
 export interface ActionBarProps {
   onCancel?: () => void
@@ -52,9 +52,7 @@ export default function ActionBar({
         {!hideCancel && (
           <Button
             className={styles.button}
-            shape="round"
-            color="default"
-            variant="outlined"
+            variant="secondary"
             onClick={onCancel}
           >
             {isDesktop ? cancelText : mobileCancelText}
@@ -62,9 +60,7 @@ export default function ActionBar({
         )}
         <Button
           className={styles.button}
-          shape="round"
-          color="default"
-          variant="solid"
+          variant="primary"
           htmlType={confirmHtmlType}
           disabled={confirmDisabled}
           loading={confirmLoading}
