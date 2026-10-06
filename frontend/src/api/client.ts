@@ -1,7 +1,8 @@
 // 後端 API 呼叫的共用入口：自動帶 token、統一錯誤格式、401 交給外部註冊的 handler 處理。
 // 頁面不要直接用 fetch，請呼叫 src/api/*.ts 的 domain 函式。
-// 注意：這個檔案不可 import router 或 React（避免循環相依），導回登入頁由 setUnauthorizedHandler 注入。
-import { clearToken, getToken } from './token'
+// 注意：這個檔案不可 import router 或 React（避免循環相依）。401 時清除 auth store，路由守衛會自動導回登入頁；
+// 需要額外處理（例如提示「登入已失效」）再用 setUnauthorizedHandler 注入。
+import { authStore } from '../auth/store'
 import type { ApiErrorBody, ErrorCode } from './types'
 
 export const API_BASE_URL: string = import.meta.env.VITE_API_BASE_URL ?? '/api'
@@ -31,8 +32,8 @@ type UnauthorizedHandler = (error: ApiError) => void
 let unauthorizedHandler: UnauthorizedHandler | null = null
 
 /**
- * 註冊 401 處理函式（通常在 router 建好後呼叫一次，導向登入頁）。
- * client 會先清掉本機 token 再呼叫它；handler 要自行避免在登入頁重複導向。
+ * 註冊額外的 401 處理函式（導回登入頁已由路由守衛處理，這裡只需做額外提示等）。
+ * client 會先清掉 auth store 再呼叫它。
  */
 export function setUnauthorizedHandler(handler: UnauthorizedHandler | null) {
   unauthorizedHandler = handler
@@ -55,7 +56,7 @@ export async function request<T>(path: string, init: RequestInit = {}): Promise<
   const headers = new Headers(init.headers)
   if (init.body != null && !headers.has('Content-Type')) headers.set('Content-Type', 'application/json')
   if (!headers.has('Accept')) headers.set('Accept', 'application/json')
-  const token = getToken()
+  const token = authStore.getToken()
   if (token && !headers.has('Authorization')) headers.set('Authorization', `Bearer ${token}`)
 
   let res: Response
@@ -72,7 +73,7 @@ export async function request<T>(path: string, init: RequestInit = {}): Promise<
   if (!res.ok) {
     const error = toApiError(res.status, data)
     if (res.status === 401) {
-      clearToken()
+      authStore.clear()
       unauthorizedHandler?.(error)
     }
     throw error

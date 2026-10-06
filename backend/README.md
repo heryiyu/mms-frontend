@@ -29,7 +29,7 @@
   ```
 
   `code` 為下表字串（前端依 `code` 決定顯示哪個 popup）；`message` 為可直接顯示的繁體中文；`fields` 只在 `VALIDATION_ERROR` 時帶，為「欄位名稱 → 錯誤訊息」。
-- 角色：`member`（一般會員）、`leader`（區長以上）。
+- 角色：`member`（一般會員）、`leader`（區長以上）。前端路由與選單依角色顯示（`frontend/src/auth/`），但權限仍須由後端驗證。
 
 ### 錯誤碼
 
@@ -80,7 +80,8 @@
 登入。
 
 - Request：`{ "email": string, "password": string }`
-- Response 200：`{ "token": string, "role": "member" | "leader" }`
+- Response 200：`{ "token": string, "role": "member" | "leader", "status": "ACTIVE" | "PENDING" }`
+  - `status` 為帳號狀態。目前待審核帳號登入直接回 `ACCOUNT_PENDING`，所以成功時一律 `ACTIVE`；若後端改成允許待審核帳號登入，回 `PENDING` 時前端會擋在等待審核頁、不進會員中心。
 - 錯誤：`ACCOUNT_NOT_FOUND`、`WRONG_PASSWORD`、`TOO_MANY_ATTEMPTS`、`ACCOUNT_LOCKED`、`ACCOUNT_PENDING`、`ACCOUNT_REJECTED`、`VALIDATION_ERROR`
 
 「記住帳號」只影響前端把 token 存 localStorage 或 sessionStorage，不影響這支 API。
@@ -101,7 +102,7 @@ Line 授權完成後，前端以 `code` 換登入結果（目前為 stub）。
 
 - Request：`{ "code": string, "state": string }`
 - Response 200（二擇一）：
-  - `{ "status": "LOGGED_IN", "token": string, "role": Role }`
+  - `{ "status": "LOGGED_IN", "token": string, "role": Role, "accountStatus": "ACTIVE" | "PENDING" }`（`accountStatus` 同登入的 `status`）
   - `{ "status": "REGISTER_REQUIRED", "lineToken": string }`：Line 帳號尚未建立，接回一般創建流程（接回哪一步設計待確認）
 - 錯誤：`ACCOUNT_PENDING`、`TOKEN_INVALID`
 

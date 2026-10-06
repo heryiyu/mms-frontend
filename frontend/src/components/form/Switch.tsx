@@ -4,7 +4,7 @@ import type { CSSProperties } from 'react'
 import { useState } from 'react'
 import { formControlSize } from '../../theme/components/formControls'
 import Icon from '../Icon'
-import { cx } from './cx'
+import { cx } from '../../utils/cx'
 import styles from './formControls.module.css'
 
 // 把手位置給 CSS 用（尺寸來源：src/theme/components/formControls.ts）

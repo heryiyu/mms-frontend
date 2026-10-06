@@ -2,24 +2,18 @@ import { Breadcrumb, Button, Drawer, Grid, Layout, Menu, type MenuProps } from '
 import { useState } from 'react'
 import { Link, Outlet, useLocation, useNavigate } from 'react-router'
 import { logout } from '../api/auth'
-import type { Role } from '../api/types'
+import { useAuth } from '../auth/useAuth'
 import Icon from '../components/Icon'
+import { PATHS } from '../routes/paths'
+import { cx } from '../utils/cx'
 import styles from './MemberLayout.module.css'
-import { getMemberBreadcrumb, getMemberMenuItems, getSelectedMenuKey, HOME_PATH } from './memberNav'
-
-// TODO：登入頁路由由 #7 建立，確定路徑後再對齊
-const LOGIN_PATH = '/login'
-
-interface MemberLayoutProps {
-  /** 目前登入者角色，用來過濾選單；角色權限（#10）接上前不傳 = 顯示全部 */
-  role?: Role
-}
+import { getMemberBreadcrumb, getMemberMenuItems, getSelectedMenuKey } from './memberNav'
 
 // 教會 Logo：設計稿為主色方形圓角底＋白色「NewLife」手寫字
 // TODO：拿到正式 Logo 圖檔後改用圖片
 function BrandLogo({ className }: { className?: string }) {
   return (
-    <Link to={HOME_PATH} className={[styles.logo, className].filter(Boolean).join(' ')} aria-label="回到首頁">
+    <Link to={PATHS.home} className={cx(styles.logo, className)} aria-label="回到首頁">
       <span className={styles.logoText}>NewLife</span>
     </Link>
   )
@@ -30,7 +24,8 @@ function BrandLogo({ className }: { className?: string }) {
  * - ≥ lg：左側固定 220px 側邊選單（Logo、選單、底部登出）＋頂部麵包屑列
  * - < lg：頂部 48px top bar（左 Logo、右漢堡），選單收進右側抽屜；無麵包屑
  */
-export default function MemberLayout({ role }: MemberLayoutProps) {
+export default function MemberLayout() {
+  const { role } = useAuth()
   const screens = Grid.useBreakpoint()
   const isDesktop = !!screens.lg
   const { pathname } = useLocation()
@@ -51,7 +46,7 @@ export default function MemberLayout({ role }: MemberLayoutProps) {
     try {
       await logout()
     } finally {
-      navigate(LOGIN_PATH, { replace: true })
+      navigate(PATHS.login, { replace: true })
     }
   }
 

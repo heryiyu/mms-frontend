@@ -1,0 +1,25 @@
+/*
+ * 註冊：個資保護聲明。量自 docs/design/register/{web,mob}/創建帳號/個資保護聲明.png（目測）：
+ * 標題、捲動區、同意列、確認鈕之間距約 20px（與 ScrollAgreement 內部間距一致）。
+ */
+.page {
+  --privacy-gap: 20px;
+
+  gap: var(--privacy-gap);
+}
+
+.title {
+  margin: 0;
+  text-align: center;
+}
+
+.underline {
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+/* 載入失敗訊息（捲動區內文為 pre-wrap，這裡還原成一般換行） */
+.error {
+  padding-block: var(--privacy-gap);
+  white-space: normal;
+}

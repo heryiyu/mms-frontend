@@ -1,7 +1,7 @@
 import { Input } from 'antd'
 import type { InputProps, InputRef } from 'antd'
 import type { Ref } from 'react'
-import { cx } from './cx'
+import { cx } from '../../utils/cx'
 import styles from './formControls.module.css'
 
 export interface TextInputProps extends InputProps {

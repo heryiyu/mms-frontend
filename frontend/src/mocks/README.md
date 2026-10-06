@@ -9,6 +9,11 @@
 - 啟動邏輯在 `src/main.tsx` 的 `enableMocking()`；Service Worker 檔案是 `public/mockServiceWorker.js`（由 `npx msw init public/` 產生，請勿手改）。
 - 資料全部存在記憶體（`db.ts`）：審核、退回、個人資料修改、修改密碼會即時反映，**重新整理頁面後還原**。
 - 每支 API 會延遲 400–800ms，讓 loading 狀態看得到（`utils.ts` 的 `mockDelay`）。
+- Claude 桌面版內建瀏覽器只對 `preview_start`（`.claude/launch.json`）啟動的 dev server 允許註冊 Service Worker；自行用指令另開的 vite（例如在 worktree 跑 `npx vite`）會出現 `Failed to register a ServiceWorker ... An unknown error occurred when fetching the script`，MSW 無法啟用、API 改打 proxy（502）。這是瀏覽器環境限制，不是專案設定問題；一般瀏覽器不受影響。
+
+## 開發用切換登入身分
+
+啟用 MSW 時，畫面左下角會出現切換按鈕（`DevRoleSwitcher.tsx`），可直接切成「未登入／一般會員／區長以上／等待審核」，不用經過登入頁；切換後 API 也會以該測試帳號身分回應。正式 build 不會包含。
 
 ## 測試帳號
 
@@ -99,7 +104,7 @@
 
 ### 登入失效（401）
 
-沒有 token 或 token 無效時，需登入的 API 回 401 `UNAUTHORIZED`。測試方式：登入後到 DevTools 把 `sessionStorage`（或 `localStorage`）裡 `nlc_mms_token` 改成任意字串，再操作任一頁面。token 格式為 `mock-token-<使用者 id>`，重新整理頁面不會失效。
+沒有 token 或 token 無效時，需登入的 API 回 401 `UNAUTHORIZED`。測試方式：登入後到 DevTools 把 `sessionStorage`（或 `localStorage`）裡 `nlc_mms_auth` 的 `token` 改成任意字串，再操作任一頁面。token 格式為 `mock-token-<使用者 id>`，重新整理頁面不會失效。
 
 ### Line 登入（stub）
 
@@ -113,7 +118,7 @@
 
 ## 暫定的密碼規則
 
-設計未定義，mock 暫定：至少 8 碼，且同時包含英文與數字（註冊、重設、修改密碼共用）。後端定案後請同步調整 `utils.ts` 的 `assertPassword`。
+設計未定義，mock 暫定：至少 8 碼，且同時包含英文與數字（註冊、重設、修改密碼共用）。規則集中在 `src/constants/password.ts`（前端表單驗證與 mock 的 `assertPassword` 共用），後端定案後只改那個檔案。
 
 ## 檔案結構
 
@@ -122,9 +127,10 @@ src/mocks/
   browser.ts          setupWorker
   db.ts               假資料與記憶體資料庫（教會組織、使用者）
   utils.ts            延遲、錯誤回應、token／OTP／欄位驗證
+  DevRoleSwitcher.tsx 開發用切換登入身分
   handlers/
     index.ts          彙整所有 handler
-    auth.ts           登入、登出、Line
+    auth.ts           登入、登出、Line（登入成功回 { token, role, status: 'ACTIVE' }）
     register.ts       註冊、個資聲明、進度查詢
     password.ts       忘記密碼、修改密碼
     member.ts         /me、個人資訊修改
