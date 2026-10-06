@@ -118,6 +118,13 @@
 - 一般會員呼叫審核 API → 403 `FORBIDDEN`。
 - 對已通過／已退回的 id 再退回 → 409 `ALREADY_PROCESSED`；不存在的 id → 404 `MEMBER_NOT_FOUND`。
 - 批次通過時不存在或已處理的 id 會列在回應的 `failedIds`。
+- 清單情境切換：在頁面網址加 `?mockReview=<情境>`（例如 `/member-review?mockReview=empty`），設定存在 `sessionStorage`（`nlc_mms_mock_review`），站內換頁後仍有效，關閉分頁即還原。待審核數量（首頁徽章）也跟著變。
+
+  | 情境 | 結果 |
+  | --- | --- |
+  | `default`（預設） | 種子資料的 3 位待審核 |
+  | `empty` | 清單與數量皆為空（測空狀態）；此時送出審核通過會全部列在 `failedIds` |
+  | `many` | 另外加入 12 位待審核（`extra01@test.com`～`extra12@test.com`，密碼 `Extra01@123`…），共 15 位，測長清單與全部選取 |
 
 ### 登入失效（401）
 

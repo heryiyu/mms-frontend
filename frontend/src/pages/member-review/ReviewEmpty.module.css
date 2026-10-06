@@ -1,0 +1,52 @@
+/*
+ * 空狀態（設計稿未畫）：與申請者卡片相同的白底 radius-lg 卡片，內容置中。
+ * 圖示圓沿用首頁功能卡片的主色淺底圓；間距取 8 的倍數。
+ */
+.empty {
+  --review-empty-icon-box: 64px;
+  --review-empty-padding-block: 48px;
+
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--app-gutter);
+  padding: var(--review-empty-padding-block) var(--layout-page-padding-mobile);
+  border-radius: var(--radius-lg);
+  background: var(--color-white);
+  text-align: center;
+}
+
+.iconWrap {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--review-empty-icon-box);
+  height: var(--review-empty-icon-box);
+  border-radius: 50%;
+  background: var(--color-primary-bg);
+}
+
+.icon {
+  font-size: var(--font-size-headline-3);
+  color: var(--color-primary);
+}
+
+.title {
+  margin: 0;
+}
+
+.description {
+  max-width: 24em;
+  margin: 0;
+  font-size: var(--font-size-body-2);
+  line-height: var(--line-height-body-2);
+  letter-spacing: var(--letter-spacing-body-2);
+  color: var(--color-gray-2);
+}
+
+@media (min-width: 992px) {
+  .empty {
+    --review-empty-icon-box: 80px;
+    --review-empty-padding-block: 80px;
+  }
+}
