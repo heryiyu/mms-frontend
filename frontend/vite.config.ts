@@ -17,7 +17,7 @@ export default defineConfig(({ mode }) => {
           short_name: '會員中心',
           description: 'NLC 會員中心',
           lang: 'zh-Hant-TW',
-          theme_color: '#1677ff',
+          theme_color: '#5A4FDE',
           background_color: '#ffffff',
           display: 'standalone',
           start_url: '/',

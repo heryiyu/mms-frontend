@@ -2,6 +2,12 @@
  * RWD 斷點與 Ant Design 一致（Grid.useBreakpoint 用同一套）：
  * xs <576 / sm ≥576 / md ≥768 / lg ≥992 / xl ≥1200 / xxl ≥1600
  * 採 mobile-first：預設寫手機樣式，再用 min-width 往上覆寫。
+ *
+ * 設計 token 的 CSS 變數由 src/theme/cssVars.ts 依 src/theme/tokens.ts 產生，不要在這裡重複定義色碼：
+ *   色彩 --color-primary、--color-primary-bg、--color-gray-1…6、--color-bg-layout、--color-error…
+ *   字級 --font-size-headline-1…5、--font-size-body-l、--font-size-body-1/2、--font-size-caption
+ *        （另有對應的 --line-height-*、--letter-spacing-*）
+ *   其他 --shadow-1/2、--radius-sm/md/lg、--layout-sider-width、--layout-auth-card-width…
  */
 :root {
   --app-header-height: 56px;
@@ -15,6 +21,24 @@
 @media (min-width: 768px) {
   :root {
     --app-gutter: 24px;
+  }
+}
+
+/* 依斷點切換的版面間距：未登入頁四周留白（md 起 40px）、登入後內容區左右內距（lg 起 60px） */
+:root {
+  --page-padding: var(--layout-page-padding-mobile);
+  --content-padding: var(--layout-page-padding-mobile);
+}
+
+@media (min-width: 768px) {
+  :root {
+    --page-padding: var(--layout-page-padding-desktop);
+  }
+}
+
+@media (min-width: 992px) {
+  :root {
+    --content-padding: var(--layout-content-padding-desktop);
   }
 }
 
@@ -32,8 +56,22 @@ body,
 }
 
 body {
+  font-family: var(--font-family);
+  font-size: var(--font-size-body-1);
+  line-height: var(--line-height-body-1);
+  letter-spacing: var(--letter-spacing-body-1);
+  color: var(--color-gray-1);
+  background: var(--color-bg-layout);
   -webkit-font-smoothing: antialiased;
   -webkit-tap-highlight-color: transparent;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5 {
+  letter-spacing: var(--letter-spacing-headline-1);
 }
 
 img {
