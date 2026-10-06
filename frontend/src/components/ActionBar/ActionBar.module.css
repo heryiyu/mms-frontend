@@ -1,7 +1,8 @@
 /*
  * 底部操作列，mobile-first。
  * 尺寸量自 docs/design/receipt/{web,mob}/奉獻收據下載/default.png（@2x 換算 1x，目測）。
- * 以 sticky 固定在捲動容器底部；外層版型若需貼齊內容區左右邊緣，可透過 className 加負 margin。
+ * 預設以 sticky 固定在捲動容器底部；外層版型若需貼齊內容區左右邊緣，可透過 className 加負 margin。
+ * fixed 變體：固定在視窗底部滿版（未登入全寬表單，GuestLayout 已預留 --layout-guest-action-bar-height 底部空間）。
  * TODO(#12)：版型說明未出現底部操作列，貼齊方式（sticky / fixed、是否滿版）待版型任務確認。
  */
 .bar {
@@ -16,6 +17,12 @@
   border-top: 1px solid var(--color-gray-4);
   padding: var(--action-bar-padding-block) var(--layout-page-padding-mobile)
     calc(var(--action-bar-padding-block) + var(--safe-bottom));
+}
+
+.fixed {
+  position: fixed;
+  inset: auto 0 0;
+  z-index: 10;
 }
 
 .inner {
@@ -38,7 +45,13 @@
     padding-inline: var(--content-padding);
   }
 
-  .inner {
+  .fixed {
+  position: fixed;
+  inset: auto 0 0;
+  z-index: 10;
+}
+
+.inner {
     justify-content: center;
   }
 

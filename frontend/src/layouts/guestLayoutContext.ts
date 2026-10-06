@@ -2,7 +2,7 @@ import { createContext, useContext, useEffect } from 'react'
 
 // 未登入版型的變體：
 // - card：右側 420px 卡片（登入、註冊前段、忘記密碼）；手機為全寬卡片
-// - full：全寬表單（註冊「會員資料輸入」），不使用卡片，底部可放 GuestActionBar
+// - full：全寬表單（註冊「會員資料輸入」），不使用卡片，底部可放 <ActionBar fixed />（components/ActionBar）
 export type GuestLayoutVariant = 'card' | 'full'
 
 export interface GuestLayoutOptions {

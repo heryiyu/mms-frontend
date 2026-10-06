@@ -27,6 +27,11 @@ export interface ActionBarProps {
   hideCancel?: boolean
   /** 確認鈕設為 submit，搭配外層 <Form> 使用 */
   confirmHtmlType?: 'button' | 'submit'
+  /**
+   * true：固定在視窗底部、滿版（未登入全寬表單，GuestLayout full 變體）；
+   * false（預設）：sticky 在捲動容器底部（登入後內容區）
+   */
+  fixed?: boolean
   className?: string
 }
 
@@ -41,13 +46,14 @@ export default function ActionBar({
   confirmLoading,
   hideCancel,
   confirmHtmlType = 'button',
+  fixed,
   className,
 }: ActionBarProps) {
   const screens = Grid.useBreakpoint()
   const isDesktop = !!screens.lg
 
   return (
-    <div className={[styles.bar, className].filter(Boolean).join(' ')} role="group" aria-label="操作">
+    <div className={[styles.bar, fixed && styles.fixed, className].filter(Boolean).join(' ')} role="group" aria-label="操作">
       <div className={styles.inner}>
         {!hideCancel && (
           <Button

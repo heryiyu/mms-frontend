@@ -60,8 +60,7 @@ export const layout = {
   siderWidth: 220,
   authCardWidth: 420,
   guestFormPaddingDesktop: 120, // 未登入全寬表單（註冊會員資料）左右邊距（目測）
-  guestActionBarHeight: 64, // 未登入全寬表單底部操作列高度（目測）
-  guestActionButtonWidth: 160, // 底部操作列按鈕寬（桌機，目測）
+  guestActionBarHeight: 64, // 未登入全寬表單底部為 <ActionBar fixed> 預留的高度（目測）
   mobileTopBarHeight: 48,
   breadcrumbBarHeight: 45,
   pagePaddingDesktop: 40, // 未登入頁四周留白
