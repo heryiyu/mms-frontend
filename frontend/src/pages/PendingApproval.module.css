@@ -1,0 +1,7 @@
+/* 等待審核：無卡片，整頁 bgLayout，內容置中（docs/design/login/README.md「等待審核」） */
+.page {
+  display: flex;
+  min-height: 100dvh;
+  padding: var(--safe-top) 0 var(--safe-bottom);
+  background: var(--color-bg-layout);
+}
