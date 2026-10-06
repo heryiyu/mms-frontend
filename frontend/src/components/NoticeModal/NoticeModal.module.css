@@ -1,0 +1,46 @@
+/* 通知彈窗：數值皆取自 design token 的 CSS 變數（src/theme/cssVars.ts） */
+
+.root :global(.ant-modal-container) {
+  border-radius: var(--radius-lg);
+}
+
+/* 標題置中、粗體 Headline5 gray1 */
+.root :global(.ant-modal-header) {
+  text-align: center;
+}
+
+.root :global(.ant-modal-title) {
+  color: var(--color-gray-1);
+  font-size: var(--font-size-headline-5);
+  line-height: var(--line-height-headline-5);
+  letter-spacing: var(--letter-spacing-headline-5);
+  font-weight: 700;
+}
+
+/* 右上 ✕ 為 gray3 */
+.root :global(.ant-modal-close) {
+  color: var(--color-gray-3);
+}
+
+/* 內文置中、Body1 gray2 */
+.content {
+  color: var(--color-gray-2);
+  font-size: var(--font-size-body-1);
+  line-height: var(--line-height-body-1);
+  letter-spacing: var(--letter-spacing-body-1);
+  text-align: center;
+  white-space: pre-line;
+  overflow-wrap: anywhere;
+}
+
+.footer {
+  display: flex;
+  justify-content: center;
+  gap: var(--app-gutter);
+}
+
+/* 設計稿按鈕約 160 × 40；手機寬度不足時平均分配 */
+.button {
+  flex: 0 1 160px;
+  min-width: 0;
+}
