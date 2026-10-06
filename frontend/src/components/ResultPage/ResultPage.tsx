@@ -17,7 +17,7 @@ import styles from './ResultPage.module.css'
 export interface ResultPageProps {
   title: ReactNode
   description?: ReactNode
-  /** 預設為主色 check-circle */
+  /** 預設為主色 check-circle；傳 null 不顯示圖示（例：等待審核頁） */
   icon?: ReactNode
   /** 返回按鈕文字，預設「返回」 */
   backText?: ReactNode
@@ -62,7 +62,13 @@ export default function ResultPage({
       <ConfigProvider theme={resultTheme}>
         <Result
           className={styles.result}
-          icon={icon ?? <Icon name="check-circle" className={styles.icon} color={colors.primary} label="完成" />}
+          icon={
+            icon === undefined ? (
+              <Icon name="check-circle" className={styles.icon} color={colors.primary} label="完成" />
+            ) : (
+              icon
+            )
+          }
           title={<h1 className={cx(typography.headline5, styles.title)}>{title}</h1>}
           subTitle={description && <p className={styles.description}>{description}</p>}
           extra={onBack || extra ? actions : undefined}

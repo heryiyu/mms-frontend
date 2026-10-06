@@ -1,16 +1,14 @@
 import { useNavigate } from 'react-router'
 import { authStore } from '../auth/store'
 import ResultPage from '../components/ResultPage'
+import { CHURCH_CONTACT_EMAIL, CHURCH_CONTACT_MAILTO } from '../constants/contact'
 import { PATHS } from '../routes/paths'
 import styles from './PendingApproval.module.css'
 
-// TODO(#12)：「請聯繫XXXX」要換成教會 Email（mailto），信箱待提供
-const CHURCH_CONTACT_EMAIL = 'XXXX'
-
 /**
- * 等待審核頁（docs/design/login/README.md「等待審核」）。
+ * 等待審核頁（docs/design/login/README.md「等待審核」，web/mob 等待審核.png）。
+ * 無卡片、無圖示，整頁 bgLayout，內容置中：標題「等待審核中」＋「有任何問題請聯繫XXXX」＋主色「返回」。
  * 登入回 ACCOUNT_PENDING、或登入狀態為 PENDING 時由路由守衛導來；未登入也可直接開啟。
- * TODO(#12)：圖示沿用 ResultPage 預設（forgot-password README 記載與結果頁共用），待確認
  */
 export default function PendingApproval() {
   const navigate = useNavigate()
@@ -24,13 +22,18 @@ export default function PendingApproval() {
   return (
     <main className={styles.page}>
       <ResultPage
+        icon={null}
         title="等待審核中"
         description={
           <>
-            有任何問題請聯繫 <a href={`mailto:${CHURCH_CONTACT_EMAIL}`}>{CHURCH_CONTACT_EMAIL}</a>
+            有任何問題請聯繫
+            <a href={CHURCH_CONTACT_MAILTO} className={styles.contact}>
+              {CHURCH_CONTACT_EMAIL}
+            </a>
           </>
         }
         onBack={handleBack}
+        className={styles.result}
       />
     </main>
   )

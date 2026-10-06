@@ -1,0 +1,16 @@
+/*
+ * 主色淺底圓形圖示。預設尺寸取自首頁功能卡片（docs/design/member-home，36px 目測）；
+ * 尺寸以 fallback 方式讀變數，呼叫端在自己的 className（或外層）設定即可覆寫，不受 CSS 載入順序影響。
+ */
+.circle {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: var(--icon-circle-size, 36px);
+  height: var(--icon-circle-size, 36px);
+  border-radius: 50%;
+  background: var(--color-primary-bg);
+  color: var(--color-primary);
+  font-size: var(--icon-circle-icon-size, var(--font-size-body-l));
+}

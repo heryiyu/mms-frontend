@@ -1,0 +1,80 @@
+/*
+ * 會員審核清單（docs/design/member-review/{web,mob}/會員審核/inf.png、審核.png），mobile-first，≥ lg 切桌機。
+ * 尺寸由 @2x 截圖換算 1x（目測）：
+ * - 標題列：左標題、右「全部選取」＋ checkbox（文字與框距 16px、框距卡片右緣約 12px）
+ * - 標題列與第一張卡片距 20px；卡片間距 32px
+ * - 手機標題距 top bar 約 32px（版型預設 40px）
+ */
+.page {
+  --member-review-top-offset: -8px;
+  --member-review-header-gap: 20px;
+  --member-review-card-gap: 32px;
+  --member-review-check-gap: 16px;
+  --member-review-check-inset: 12px;
+
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  margin-top: var(--member-review-top-offset);
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--app-gutter);
+  margin-bottom: var(--member-review-header-gap);
+}
+
+.title {
+  margin: 0;
+}
+
+/* 「全部選取」：文字在左、checkbox 在右 */
+.selectAll.selectAll {
+  flex-direction: row-reverse;
+  align-items: center;
+  gap: var(--member-review-check-gap);
+  margin-inline-end: var(--member-review-check-inset);
+  font-size: var(--font-size-body-1);
+  color: var(--color-gray-1);
+  white-space: nowrap;
+}
+
+.selectAll.selectAll::after {
+  display: none;
+}
+
+.selectAll.selectAll > :global(.ant-checkbox + span) {
+  padding-inline: 0;
+}
+
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--member-review-card-gap);
+  /* 與底部操作列保留間距 */
+  margin: 0 0 var(--member-review-card-gap);
+  padding: 0;
+  list-style: none;
+}
+
+.skeletonCard,
+.errorCard {
+  border-radius: var(--radius-lg);
+}
+
+.errorCard {
+  margin-bottom: var(--member-review-card-gap);
+}
+
+.errorIcon {
+  font-size: var(--font-size-headline-2);
+  color: var(--color-gray-3);
+}
+
+@media (min-width: 992px) {
+  .page {
+    --member-review-top-offset: 0px;
+  }
+}

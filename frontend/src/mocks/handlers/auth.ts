@@ -1,7 +1,7 @@
 // 登入、登出、Line OAuth（stub）
 import { http, HttpResponse } from 'msw'
 import type { LineAuthPurpose, LineCallbackRequest, LoginRequest } from '../../api/types'
-import { db, findUserByEmail } from '../db'
+import { db, findUserByEmail, normalizeEmail } from '../db'
 import {
   api,
   assertNotRateLimited,
@@ -13,12 +13,25 @@ import {
   readBody,
 } from '../utils'
 
+/**
+ * 登入錯誤情境的觸發信箱（密碼任意），對照表見 mocks/README.md「登入」：
+ * - rejected@test.com：申請被退回（不必先用 leader 帳號退回 apply2@test.com）
+ * - error@test.com：500 且沒有錯誤碼，測通用錯誤文案
+ */
+const LOGIN_TRIGGERS: Record<string, () => Response> = {
+  'rejected@test.com': () => errorResponse('ACCOUNT_REJECTED'),
+  'error@test.com': () => HttpResponse.json({ message: 'Internal Server Error' }, { status: 500 }),
+}
+
 export const authHandlers = [
   http.post(api('/auth/login'), async ({ request }) => {
     await mockDelay()
     const { email, password } = await readBody<LoginRequest>(request, ['email', 'password'])
 
     assertNotRateLimited(email)
+    // 登入頁錯誤情境專用信箱（不在 db 內，避免影響審核清單）
+    const loginTrigger = LOGIN_TRIGGERS[normalizeEmail(email)]
+    if (loginTrigger) return loginTrigger()
     const user = findUserByEmail(email)
     if (!user) return errorResponse('ACCOUNT_NOT_FOUND')
 

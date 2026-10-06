@@ -59,25 +59,27 @@
   margin-bottom: var(--layout-page-padding-mobile);
 }
 
+/* 尺寸由 --brand-logo-size 控制（預設 80px），字級為邊長的 1/4（80px 時即 Headline5 20px） */
 .logo {
+  --brand-logo-size: calc(var(--layout-control-height) * 2);
+
   display: flex;
+  flex-shrink: 0;
   align-items: center;
   justify-content: center;
-  width: calc(var(--layout-control-height) * 2);
-  height: calc(var(--layout-control-height) * 2);
+  width: var(--brand-logo-size);
+  height: var(--brand-logo-size);
   border-radius: var(--radius-lg);
   background: var(--color-primary);
   color: var(--color-white);
   font-family: 'Brush Script MT', 'Segoe Script', cursive;
-  font-size: var(--font-size-headline-5);
+  font-size: calc(var(--brand-logo-size) / 4);
   font-style: italic;
+  line-height: 1;
 }
 
 .brandTitle {
   margin: 0;
-  font-size: var(--font-size-headline-5);
-  line-height: var(--line-height-headline-5);
-  font-weight: 700;
 }
 
 .brandSubtitle {

@@ -1,0 +1,113 @@
+/*
+ * 會員中心首頁（docs/design/member-home/{web,mob}/會員系統/default.png），mobile-first，≥ lg 切桌機。
+ * 尺寸由 @2x 截圖換算 1x（目測）；色彩／字級／圓角一律用 CSS 變數。
+ * web 與 mob 字級相同（橫幅 Headline5＋Body1、區塊標題 Headline5、卡片 Body1），差在間距與卡片高度。
+ */
+.page {
+  --home-banner-min-height: 109px; /* 橫幅高度（web、mob 相同，目測） */
+  --home-banner-padding-block: 26px; /* 橫幅文字距上（目測） */
+  --home-banner-padding-inline: 16px;
+  --home-section-gap: 38px; /* 橫幅與「常見功能」間距（mob 目測；桌機見下方） */
+  --home-title-gap: 10px; /* 「常見功能」與卡片間距（目測） */
+  --home-card-padding-block: 14px; /* 卡片上下內距（mob 卡片高 96px，目測） */
+  --home-card-icon-gap: 8px; /* 圖示與文字間距 */
+
+  display: flex;
+  flex-direction: column;
+}
+
+/* ---------- 歡迎橫幅 ---------- */
+.banner {
+  display: flex;
+  flex-direction: column;
+  min-height: var(--home-banner-min-height);
+  padding: var(--home-banner-padding-block) var(--home-banner-padding-inline);
+  border-radius: var(--radius-lg);
+  background: var(--color-primary);
+  color: var(--color-white);
+}
+
+.banner .greeting {
+  margin: 0;
+  color: inherit; /* 覆寫 typography.headline5 的 gray1 */
+  overflow-wrap: anywhere;
+}
+
+.welcome {
+  margin: 0;
+  font-size: var(--font-size-body-1);
+  line-height: var(--line-height-body-1);
+  letter-spacing: var(--letter-spacing-body-1);
+}
+
+/* ---------- 常見功能 ---------- */
+.section {
+  margin-top: var(--home-section-gap);
+}
+
+.sectionTitle {
+  margin: 0 0 var(--home-title-gap);
+}
+
+/* 讓同一列卡片等高：Col 撐滿列高，連結／徽章／卡片再逐層撐滿 */
+.col {
+  display: flex;
+}
+
+.cardLink {
+  display: flex;
+  flex: 1;
+  min-width: 0;
+  border-radius: var(--radius-lg);
+  color: inherit;
+}
+
+.cardLink:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
+/* antd Badge 預設 inline-block，改成撐滿卡片，數字徽章才會貼在卡片右上角 */
+.badge {
+  display: flex;
+  flex: 1;
+  min-width: 0;
+}
+
+/* 設計稿卡片無陰影（antd borderless 卡片預設帶 boxShadowTertiary），只在 hover 時浮起 */
+.card.card {
+  flex: 1;
+  min-width: 0;
+  border-radius: var(--radius-lg);
+  box-shadow: none;
+}
+
+.cardLink:hover .card,
+.cardLink:focus-visible .card {
+  box-shadow: var(--shadow-1);
+}
+
+.cardBody {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--home-card-icon-gap);
+  height: 100%;
+  padding: var(--home-card-padding-block) var(--home-banner-padding-inline) !important;
+  text-align: center;
+}
+
+.cardLabel {
+  font-size: var(--font-size-body-1);
+  line-height: var(--line-height-body-1);
+  letter-spacing: var(--letter-spacing-body-1);
+  color: var(--color-gray-1);
+}
+
+@media (min-width: 992px) {
+  .page {
+    --home-section-gap: 60px; /* web 目測 */
+    --home-card-padding-block: 26px; /* web 卡片高約 119px（目測） */
+  }
+}

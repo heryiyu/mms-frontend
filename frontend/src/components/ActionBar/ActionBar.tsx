@@ -33,6 +33,11 @@ export interface ActionBarProps {
    * false（預設）：sticky 在捲動容器底部（登入後內容區）
    */
   fixed?: boolean
+  /**
+   * true：登入後內容頁底部用。推到內容區底部（父層需為 flex column），
+   * 並以負 margin 抵銷內容區左右／下內距，貼齊內容區邊緣（修改密碼、會員審核）
+   */
+  bleed?: boolean
   className?: string
 }
 
@@ -48,13 +53,14 @@ export default function ActionBar({
   hideCancel,
   confirmHtmlType = 'button',
   fixed,
+  bleed,
   className,
 }: ActionBarProps) {
   const screens = Grid.useBreakpoint()
   const isDesktop = !!screens.lg
 
   return (
-    <div className={cx(styles.bar, fixed && styles.fixed, className)} role="group" aria-label="操作">
+    <div className={cx(styles.bar, fixed && styles.fixed, bleed && styles.bleed, className)} role="group" aria-label="操作">
       <div className={styles.inner}>
         {!hideCancel && (
           <Button

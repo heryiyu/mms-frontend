@@ -40,9 +40,26 @@
 | `frequent@test.com` | 429 `TOO_MANY_ATTEMPTS`（登入過度頻繁） |
 | `locked@test.com` | 423 `ACCOUNT_LOCKED` |
 | `pending@test.com` | 403 `ACCOUNT_PENDING` |
-| 被退回的 `apply2@test.com` | 403 `ACCOUNT_REJECTED` |
+| `rejected@test.com`（或被退回的 `apply2@test.com`） | 403 `ACCOUNT_REJECTED` |
+| `error@test.com` | 500 且無錯誤碼（測通用錯誤文案） |
 
-鎖定／待審核／被退回的帳號不檢查密碼。信箱不分大小寫。
+鎖定／待審核／被退回的帳號與上表的觸發信箱都不檢查密碼。信箱不分大小寫、前後空白會忽略。
+
+登入頁（`pages/login/Login.tsx`）對應的畫面：
+
+| 情境 | 畫面 |
+| --- | --- |
+| `notfound@test.com` | 通知彈窗「查無此帳號」 |
+| `member@test.com` + 錯誤密碼 | 通知彈窗「密碼輸入錯誤」 |
+| `frequent@test.com` | 通知彈窗「登入過度頻繁／請稍後登入」；之後 30 秒內前端直接擋下送出（任何信箱都會跳同一彈窗，重新整理頁面可解除） |
+| `locked@test.com` | 通知彈窗「登入過度頻繁／帳號已鎖定／請聯繫（教會 Email）」 |
+| `pending@test.com` | 導向等待審核頁（`/pending`），「返回」回登入頁 |
+| `rejected@test.com` | 通知彈窗「申請未通過審核／請聯繫（教會 Email）」（設計未畫，暫定） |
+| `error@test.com` | 通知彈窗「登入失敗，請稍後再試」 |
+| 信箱格式錯誤（例如 `abc`） | 欄位下方 inline 錯誤「電子信箱格式錯誤」，不會呼叫 API |
+| `member@test.com` + `Member@123` | 登入成功回首頁；勾「記住帳號」存 localStorage，否則存 sessionStorage |
+
+每次登入 API 延遲 400–800ms，期間會看到 Logo loading 遮罩；連點「登入」或連按 Enter 只會送出一次。
 
 ### OTP（所有「發送 OTP」回 `{ expiresIn: 300, length: 4 }`）
 
@@ -101,6 +118,13 @@
 - 一般會員呼叫審核 API → 403 `FORBIDDEN`。
 - 對已通過／已退回的 id 再退回 → 409 `ALREADY_PROCESSED`；不存在的 id → 404 `MEMBER_NOT_FOUND`。
 - 批次通過時不存在或已處理的 id 會列在回應的 `failedIds`。
+- 清單情境切換：在頁面網址加 `?mockReview=<情境>`（例如 `/member-review?mockReview=empty`），設定存在 `sessionStorage`（`nlc_mms_mock_review`），站內換頁後仍有效，關閉分頁即還原。待審核數量（首頁徽章）也跟著變。
+
+  | 情境 | 結果 |
+  | --- | --- |
+  | `default`（預設） | 種子資料的 3 位待審核 |
+  | `empty` | 清單與數量皆為空（測空狀態）；此時送出審核通過會全部列在 `failedIds` |
+  | `many` | 另外加入 12 位待審核（`extra01@test.com`～`extra12@test.com`，密碼 `Extra01@123`…），共 15 位，測長清單與全部選取 |
 
 ### 登入失效（401）
 
@@ -115,6 +139,9 @@
 | `mock-line-code` | 登入 `member@test.com` |
 | `mock-line-new` | `REGISTER_REQUIRED`（帶 `lineToken`，接註冊流程） |
 | `mock-line-pending` | 403 `ACCOUNT_PENDING` |
+| 其他 | 400 `TOKEN_INVALID` |
+
+登入頁按「使用Line快速登入」會導到 `/auth/line/callback?code=mock-line-code&state=mock-state`（`pages/login/LineCallback.tsx`），直接登入 `member@test.com`。其他情境可直接開網址並改 `code`：`mock-line-new` → 註冊頁（state 帶 `lineToken`）、`mock-line-pending` → 等待審核頁、任意其他值 → 回登入頁並跳通知彈窗。
 
 ## 暫定的密碼規則
 

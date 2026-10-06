@@ -2,6 +2,7 @@ import { Breadcrumb, Button, Drawer, Grid, Layout, Menu, type MenuProps } from '
 import { useState } from 'react'
 import { Link, Outlet, useLocation, useNavigate } from 'react-router'
 import { logout } from '../api/auth'
+import IdleLogoutNotice from '../auth/IdleLogoutNotice'
 import { useAuth } from '../auth/useAuth'
 import Icon from '../components/Icon'
 import { PATHS } from '../routes/paths'
@@ -134,6 +135,9 @@ export default function MemberLayout() {
           />
         </Drawer>
       )}
+
+      {/* 閒置 7 分鐘自動登出（#11） */}
+      <IdleLogoutNotice />
     </>
   )
 }

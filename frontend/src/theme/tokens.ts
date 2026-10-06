@@ -20,6 +20,11 @@ export const colors = {
   mask: 'rgba(0, 0, 0, 0.25)', // 彈窗遮罩（目測）
 } as const
 
+// 第三方品牌色：不屬於設計系統色票（docs/design/tokens.md），也不產生 CSS 變數、不進 AntD 主題
+export const brandColors = {
+  line: '#06C755', // LINE 品牌綠（「使用Line快速登入」圖示，LINE 官方色）
+} as const
+
 export const fontFamily =
   "Roboto, 'Noto Sans TC', 'PingFang TC', 'Microsoft JhengHei', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif"
 
