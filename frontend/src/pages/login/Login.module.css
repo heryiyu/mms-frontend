@@ -1,0 +1,110 @@
+/*
+ * 登入頁（docs/design/login/README.md）。mobile-first，web（≥ lg）與 mob 內容一致，只有 GuestLayout 卡片寬度不同。
+ * 間距量自 web/mob default.png（@2x 換算 1x，目測），兩版相同；能對應既有變數的直接引用。
+ */
+.page {
+  /* 輸入框之間 */
+  --login-field-gap: 12px;
+  /* 「記住帳號」列（高同輸入框 40px、勾選框垂直置中）→ 登入按鈕 */
+  --login-submit-gap: var(--layout-page-padding-mobile);
+  /* 勾選框相對輸入框左緣內縮（與輸入框文字對齊）、勾選框與文字間距 */
+  --login-remember-indent: 12px;
+  --login-remember-label-gap: 16px;
+  /* 登入按鈕 → 連結、連結 → or、or → Line 按鈕 */
+  --login-links-gap: 4px;
+  --login-divider-gap: 12px;
+  --login-line-gap: 16px;
+  /* 「還沒有帳號？」距卡片底緣 */
+  --login-footer-bottom: 16px;
+
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  /* Logo 距卡片頂端兩版皆 40px；GuestLayout 卡片內距手機只有 20px，補足差額 */
+  padding-top: calc(var(--layout-page-padding-desktop) - var(--page-padding));
+}
+
+/* ---- 表單 ---- */
+.form {
+  display: flex;
+  flex-direction: column;
+}
+
+.form .field {
+  margin-bottom: var(--login-field-gap);
+}
+
+.form .remember {
+  margin-bottom: var(--login-submit-gap);
+  padding-inline-start: var(--login-remember-indent);
+}
+
+.remember :global(.ant-checkbox-label) {
+  padding-inline-start: var(--login-remember-label-gap);
+}
+
+/* ---- 連結 ---- */
+.links {
+  display: flex;
+  justify-content: space-between;
+  margin-top: var(--login-links-gap);
+  font-size: var(--font-size-body-2);
+  line-height: var(--line-height-body-2);
+  letter-spacing: var(--letter-spacing-body-2);
+}
+
+.link,
+.link:visited {
+  color: var(--color-primary);
+  text-decoration: none;
+}
+
+.link:hover {
+  color: var(--color-primary-light);
+}
+
+/* 「or」分隔線：線為 gray5、文字 Body1 gray1 */
+.divider.divider {
+  margin: var(--login-divider-gap) 0 var(--login-line-gap);
+  color: var(--color-gray-1);
+  font-size: var(--font-size-body-1);
+}
+
+/* ---- 卡片底部「還沒有帳號？註冊帳號」：貼卡片底部 ---- */
+.footer {
+  margin: auto 0 calc(var(--login-footer-bottom) - var(--page-padding));
+  padding-top: var(--app-gutter);
+  text-align: center;
+}
+
+/* ---- loading 遮罩（LoginLoading）：Logo 手機 40px、桌機 80px ---- */
+.loading :global(.ant-spin-section) {
+  gap: var(--login-links-gap);
+}
+
+/* 提高權重蓋過 AntD 對指示器（.ant-spin-dot）設定的 1em 尺寸與字級 */
+.loading .loadingLogo.loadingLogo {
+  --brand-logo-size: var(--layout-control-height);
+
+  display: flex;
+  width: var(--brand-logo-size);
+  height: var(--brand-logo-size);
+  font-size: calc(var(--brand-logo-size) / 4);
+  border-radius: var(--radius-md);
+}
+
+.loadingText.loadingText {
+  color: var(--color-white);
+  text-shadow: none;
+  font-size: var(--font-size-body-1);
+  line-height: var(--line-height-body-1);
+  letter-spacing: var(--letter-spacing-body-1);
+}
+
+@media (min-width: 992px) {
+  .loading .loadingLogo.loadingLogo {
+    --brand-logo-size: calc(var(--layout-control-height) * 2);
+
+    border-radius: var(--radius-lg);
+  }
+}
