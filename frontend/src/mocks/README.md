@@ -9,6 +9,7 @@
 - 啟動邏輯在 `src/main.tsx` 的 `enableMocking()`；Service Worker 檔案是 `public/mockServiceWorker.js`（由 `npx msw init public/` 產生，請勿手改）。
 - 資料全部存在記憶體（`db.ts`）：審核、退回、個人資料修改、修改密碼會即時反映，**重新整理頁面後還原**。
 - 每支 API 會延遲 400–800ms，讓 loading 狀態看得到（`utils.ts` 的 `mockDelay`）。
+- Claude 桌面版內建瀏覽器只對 `preview_start`（`.claude/launch.json`）啟動的 dev server 允許註冊 Service Worker；自行用指令另開的 vite（例如在 worktree 跑 `npx vite`）會出現 `Failed to register a ServiceWorker ... An unknown error occurred when fetching the script`，MSW 無法啟用、API 改打 proxy（502）。這是瀏覽器環境限制，不是專案設定問題；一般瀏覽器不受影響。
 
 ## 開發用切換登入身分
 
