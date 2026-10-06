@@ -10,7 +10,7 @@ import Icon from '../../components/Icon'
 import { useNotifyModal } from '../../components/NoticeModal'
 import GuestBrandHeader from '../../layouts/GuestBrandHeader'
 import { PATHS } from '../../routes/paths'
-import { colors } from '../../theme/tokens'
+import { brandColors } from '../../theme/tokens'
 import LoginLoading from './LoginLoading'
 import { getLoginErrorNotice, TOO_MANY_ATTEMPTS_NOTICE } from './loginErrors'
 import styles from './Login.module.css'
@@ -159,7 +159,7 @@ export default function Login() {
       <Button
         variant="secondary"
         block
-        icon={<Icon name="line" color={colors.line} />}
+        icon={<Icon name="line" color={brandColors.line} />}
         loading={lineLoading}
         onClick={handleLineLogin}
       >
