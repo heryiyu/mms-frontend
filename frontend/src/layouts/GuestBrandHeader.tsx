@@ -1,4 +1,5 @@
 import { Flex, Typography } from 'antd'
+import typography from '../styles/typography.module.css'
 import { cx } from '../utils/cx'
 import styles from './GuestLayout.module.css'
 
@@ -25,7 +26,7 @@ export default function GuestBrandHeader() {
     <Flex vertical align="center" gap="middle" className={styles.brand}>
       <BrandLogo />
       <div>
-        <h1 className={styles.brandTitle}>新生命會員中心</h1>
+        <h1 className={cx(typography.headline5, styles.brandTitle)}>新生命會員中心</h1>
         {/* 設計稿拼為「Menber」，判定為誤植，改為 Member */}
         <Typography.Text className={styles.brandSubtitle}>Newlife Member Hub</Typography.Text>
       </div>

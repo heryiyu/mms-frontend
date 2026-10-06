@@ -129,7 +129,7 @@ export default function ChangePassword() {
         wrapperCol={{ flex: '1 1 0' }}
         onFinish={handleFinish}
       >
-        <h1 className={cx(typography.headline5, styles.title)}>修改密碼</h1>
+        <h1 className={cx(typography.pageTitle, styles.title)}>修改密碼</h1>
         <div className={styles.card}>
           <Form.Item
             className={styles.row}

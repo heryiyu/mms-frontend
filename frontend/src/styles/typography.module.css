@@ -4,11 +4,23 @@
  * 只放字級／字重／色彩；margin、對齊等版面屬性由各頁自行設定。
  */
 
-/* 頁面標題、結果頁標題：Headline5 粗體 gray1 */
-.headline5 {
+/*
+ * .headline5：結果頁標題、區塊標題等，Headline5 粗體 gray1。
+ * .pageTitle：登入後內容頁的頁面標題，手機同 Headline5，桌機（≥ lg）放大為 Headline4（修改密碼、會員審核）。
+ */
+.headline5,
+.pageTitle {
   font-size: var(--font-size-headline-5);
   line-height: var(--line-height-headline-5);
   letter-spacing: var(--letter-spacing-headline-5);
   font-weight: 700;
   color: var(--color-gray-1);
+}
+
+@media (min-width: 992px) {
+  .pageTitle {
+    font-size: var(--font-size-headline-4);
+    line-height: var(--line-height-headline-4);
+    letter-spacing: var(--letter-spacing-headline-4);
+  }
 }

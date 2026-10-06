@@ -141,7 +141,7 @@ export default function MemberReview() {
     <div className={styles.page}>
       {contextHolder}
       <div className={styles.header}>
-        <h1 className={cx(typography.headline5, styles.title)}>會員審核</h1>
+        <h1 className={cx(typography.pageTitle, styles.title)}>會員審核</h1>
         {showList && (
           <Checkbox
             className={styles.selectAll}

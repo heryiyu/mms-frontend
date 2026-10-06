@@ -80,9 +80,6 @@
 
 .brandTitle {
   margin: 0;
-  font-size: var(--font-size-headline-5);
-  line-height: var(--line-height-headline-5);
-  font-weight: 700;
 }
 
 .brandSubtitle {
