@@ -1,4 +1,4 @@
-import type { ThemeConfig } from 'antd'
+import type { ConfigProviderProps, ThemeConfig } from 'antd'
 import { applyDesignCssVars } from './cssVars'
 import { formControlComponents } from './components/formControls'
 import { menuTheme } from './components/menu'
@@ -67,3 +67,9 @@ export const theme: ThemeConfig = {
     Menu: menuTheme,
   },
 }
+
+// ConfigProvider 上 theme 以外的全域元件設定，在 main.tsx 與 theme 一起傳入
+export const componentConfig = {
+  // AntD 預設會在兩個中文字的按鈕中間插空格（「確 認」），設計稿沒有
+  button: { autoInsertSpace: false },
+} satisfies Omit<ConfigProviderProps, 'theme' | 'locale' | 'children'>

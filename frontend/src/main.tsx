@@ -7,7 +7,7 @@ import 'bootstrap-icons/font/bootstrap-icons.min.css'
 import PwaUpdatePrompt from './components/PwaUpdatePrompt'
 import { router } from './routes'
 import './styles/global.css'
-import { theme } from './theme'
+import { componentConfig, theme } from './theme'
 
 // 開發模式預設啟用 MSW 假資料；在 .env.local 設 VITE_USE_MOCK=false 可關閉（見 .env.example）
 async function enableMocking(): Promise<boolean> {
@@ -30,8 +30,7 @@ const DevRoleSwitcher = import.meta.env.DEV ? lazy(() => import('./mocks/DevRole
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
-    {/* autoInsertSpace：AntD 預設在兩個中文字的按鈕中間插空格（「確 認」），設計稿沒有 */}
-    <ConfigProvider locale={zhTW} theme={theme} button={{ autoInsertSpace: false }}>
+    <ConfigProvider locale={zhTW} theme={theme} {...componentConfig}>
       <AntdApp>
         <RouterProvider router={router} />
         <PwaUpdatePrompt />
