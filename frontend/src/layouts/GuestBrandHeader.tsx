@@ -14,8 +14,7 @@ export default function GuestBrandHeader() {
       </div>
       <div>
         <h1 className={styles.brandTitle}>新生命會員中心</h1>
-        {/* TODO(#12)：副標照稿「Menber」，疑為 Member 誤植，待設計確認 */}
-        <Typography.Text className={styles.brandSubtitle}>Newlife Menber Hub</Typography.Text>
+        <Typography.Text className={styles.brandSubtitle}>Newlife Member Hub</Typography.Text>
       </div>
     </Flex>
   )
