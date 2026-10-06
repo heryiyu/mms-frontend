@@ -1,10 +1,9 @@
-import { Breadcrumb, Button, ConfigProvider, Drawer, Grid, Layout, Menu, type MenuProps } from 'antd'
+import { Breadcrumb, Button, Drawer, Grid, Layout, Menu, type MenuProps } from 'antd'
 import { useState } from 'react'
 import { Link, Outlet, useLocation, useNavigate } from 'react-router'
 import { logout } from '../api/auth'
 import type { Role } from '../api/types'
 import Icon from '../components/Icon'
-import { menuTheme } from '../theme/components/menu'
 import styles from './MemberLayout.module.css'
 import { getMemberBreadcrumb, getMemberMenuItems, getSelectedMenuKey, HOME_PATH } from './memberNav'
 
@@ -63,7 +62,7 @@ export default function MemberLayout({ role }: MemberLayoutProps) {
   )
 
   return (
-    <ConfigProvider theme={{ components: { Menu: menuTheme } }}>
+    <>
       <Layout className={styles.layout} hasSider={isDesktop}>
         {isDesktop ? (
           <Layout.Sider width="var(--layout-sider-width)" theme="light" className={styles.sider}>
@@ -140,6 +139,6 @@ export default function MemberLayout({ role }: MemberLayoutProps) {
           />
         </Drawer>
       )}
-    </ConfigProvider>
+    </>
   )
 }

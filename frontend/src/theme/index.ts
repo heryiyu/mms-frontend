@@ -1,6 +1,7 @@
 import type { ThemeConfig } from 'antd'
 import { applyDesignCssVars } from './cssVars'
 import { formControlComponents } from './components/formControls'
+import { menuTheme } from './components/menu'
 import { colors, fontFamily, layout, radius, shadows, typography } from './tokens'
 
 // 讓 CSS Modules 也能用同一份 token（var(--color-*) 等），見 ./cssVars.ts
@@ -63,5 +64,6 @@ export const theme: ThemeConfig = {
   },
   components: {
     ...formControlComponents,
+    Menu: menuTheme,
   },
 }
