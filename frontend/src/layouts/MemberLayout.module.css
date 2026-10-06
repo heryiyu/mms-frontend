@@ -1,0 +1,188 @@
+/*
+ * 登入後版型（docs/design/layout/README.md 2.2、3.3、4）
+ * mobile-first：預設手機（< lg），992px（Ant Design lg）起切桌機。
+ * 色彩／字級／圓角一律用 src/theme/cssVars.ts 產生的 CSS 變數；
+ * 設計稿上只此版型用到的尺寸（目測值）集中定義在 .layout 的區域變數。
+ */
+.layout {
+  --member-logo-size: 32px; /* 手機 top bar Logo（目測） */
+  --member-logo-size-desktop: 36px; /* 側欄 Logo（目測） */
+  --member-sider-inset: 12px; /* 側欄左右內縮，選單項目 196 = 220 − 2×12 */
+  --member-sider-logo-top: 16px; /* Logo 距上（目測） */
+  --member-logout-inset: 16px; /* 登出距左（目測） */
+  --member-logout-bottom: 40px; /* 登出距底（目測） */
+  --member-content-top: 40px; /* 內容第一個區塊距 top bar（手機，目測） */
+  --member-content-top-desktop: 80px; /* 內容第一個區塊距麵包屑列（桌機，目測） */
+
+  min-height: 100dvh;
+  background: var(--color-bg-layout);
+}
+
+/* ---------- 手機 top bar（< lg） ---------- */
+.topBar {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: calc(var(--layout-mobile-top-bar-height) + var(--safe-top));
+  padding: var(--safe-top) var(--layout-page-padding-mobile) 0;
+  background: var(--color-white);
+}
+
+.menuButton {
+  margin-inline-end: calc(var(--radius-md) * -1); /* 讓圖示本身距右 20px（按鈕有內距） */
+  color: var(--color-gray-1);
+}
+
+/* ---------- Logo ---------- */
+.logo {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--member-logo-size-desktop);
+  height: var(--member-logo-size-desktop);
+  border-radius: var(--radius-sm);
+  background: var(--color-primary);
+  color: var(--color-white);
+  text-decoration: none;
+  overflow: hidden;
+}
+
+.logoMobile {
+  width: var(--member-logo-size);
+  height: var(--member-logo-size);
+}
+
+.logoText {
+  font-family: 'Brush Script MT', 'Segoe Script', cursive;
+  font-size: var(--font-size-caption);
+  font-style: italic;
+  line-height: 1;
+  transform: scale(0.75);
+  white-space: nowrap;
+}
+
+/* ---------- 桌機側邊選單（≥ lg） ---------- */
+.sider {
+  position: sticky !important; /* 覆寫 Sider 的 position: relative，讓側欄固定滿版高 */
+  top: 0;
+  height: 100dvh;
+  border-inline-end: 1px solid var(--color-gray-4);
+  background: var(--color-white) !important;
+}
+
+.siderInner {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.siderHeader {
+  margin: 0 var(--member-sider-inset);
+  padding: var(--member-sider-logo-top) 0 var(--member-sider-inset);
+  border-bottom: 1px solid var(--color-gray-5);
+}
+
+.siderNav {
+  flex: 1;
+  min-height: 0;
+  padding-top: var(--member-sider-inset);
+  overflow-y: auto;
+}
+
+.menu {
+  border-inline-end: 0 !important;
+  background: transparent;
+}
+
+/* selected：底色由 Menu token 處理，另加 1px colorPrimary 框（不佔版面，用 inset shadow） */
+.menu :global(.ant-menu-item-selected),
+.drawerMenu :global(.ant-menu-item-selected) {
+  box-shadow: inset 0 0 0 1px var(--color-primary);
+}
+
+.siderFooter {
+  padding: 0 var(--member-logout-inset) calc(var(--member-logout-bottom) + var(--safe-bottom));
+}
+
+.logout {
+  height: auto;
+  padding: 0;
+  font-size: var(--font-size-body-1);
+  color: var(--color-gray-1);
+}
+
+/* ---------- 主區域 ---------- */
+.main {
+  min-width: 0;
+  background: var(--color-bg-layout);
+}
+
+.breadcrumbBar {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  height: var(--layout-breadcrumb-bar-height);
+  padding: 0 var(--layout-page-padding-mobile);
+  background: var(--color-white);
+  border-bottom: 1px solid var(--color-gray-4);
+}
+
+.breadcrumb {
+  font-size: var(--font-size-body-2);
+  color: var(--color-gray-2);
+}
+
+.content {
+  width: 100%;
+  padding: var(--member-content-top) var(--content-padding) calc(var(--content-padding) + var(--safe-bottom));
+}
+
+/* ---------- 手機抽屜選單 ---------- */
+.drawer :global(.ant-drawer-header) {
+  border-bottom: 0;
+  padding-inline: var(--layout-page-padding-mobile);
+}
+
+.drawer :global(.ant-drawer-title) {
+  font-size: var(--font-size-headline-5);
+  font-weight: 700;
+}
+
+.drawer :global(.ant-drawer-body) {
+  padding: 0 var(--layout-page-padding-mobile);
+}
+
+.drawer :global(.ant-drawer-footer) {
+  border-top: 0;
+  padding: var(--layout-page-padding-mobile);
+  padding-bottom: calc(var(--layout-page-padding-mobile) + var(--safe-bottom));
+}
+
+.drawerMenu {
+  border-inline-end: 0 !important;
+  background: transparent;
+}
+
+.drawerMenu :global(.ant-menu-item) {
+  height: var(--layout-mobile-top-bar-height);
+  margin-inline: 0;
+  width: 100%;
+  line-height: var(--layout-mobile-top-bar-height);
+  font-size: var(--font-size-body-l);
+}
+
+.drawerMenu :global(.ant-menu-item-divider) {
+  margin: 0;
+  border-color: var(--color-gray-5);
+}
+
+@media (min-width: 992px) {
+  .content {
+    padding-top: var(--member-content-top-desktop);
+  }
+}
