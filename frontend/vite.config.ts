@@ -39,6 +39,8 @@ export default defineConfig(({ mode }) => {
       }),
     ],
     server: {
+      // 預覽工具以 PORT 指定埠（launch.json autoPort），沒給就用 Vite 預設
+      port: process.env.PORT ? Number(process.env.PORT) : undefined,
       // 開發時把 /api 轉給後端，後端位址寫在 .env.local 的 VITE_API_PROXY_TARGET
       proxy: {
         '/api': { target: env.VITE_API_PROXY_TARGET || 'http://localhost:3000', changeOrigin: true },
