@@ -6,13 +6,13 @@ import { useAuth } from '../auth/useAuth'
 import Icon from '../components/Icon'
 import { PATHS } from '../routes/paths'
 import styles from './MemberLayout.module.css'
-import { getMemberBreadcrumb, getMemberMenuItems, getSelectedMenuKey, HOME_PATH } from './memberNav'
+import { getMemberBreadcrumb, getMemberMenuItems, getSelectedMenuKey } from './memberNav'
 
 // 教會 Logo：設計稿為主色方形圓角底＋白色「NewLife」手寫字
 // TODO：拿到正式 Logo 圖檔後改用圖片
 function BrandLogo({ className }: { className?: string }) {
   return (
-    <Link to={HOME_PATH} className={[styles.logo, className].filter(Boolean).join(' ')} aria-label="回到首頁">
+    <Link to={PATHS.home} className={[styles.logo, className].filter(Boolean).join(' ')} aria-label="回到首頁">
       <span className={styles.logoText}>NewLife</span>
     </Link>
   )

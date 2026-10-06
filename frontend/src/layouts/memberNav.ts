@@ -41,11 +41,9 @@ export function getMemberQuickActions(role: Role | null): MemberQuickAction[] {
   return memberQuickActions.filter((item) => hasMinRole(role, item.minRole))
 }
 
-export const HOME_PATH: string = PATHS.home
-
 /** 路徑 → 麵包屑名稱（不在選單裡的頁面，例如首頁卡片進入的功能頁，也列在這裡） */
 export const memberRouteTitles: Record<string, string> = {
-  [HOME_PATH]: '首頁',
+  [PATHS.home]: '首頁',
   [PATHS.profile]: '個人資訊',
   [PATHS.changePassword]: '修改密碼',
   [PATHS.memberReview]: '會員審核',
@@ -56,7 +54,7 @@ export const memberRouteTitles: Record<string, string> = {
 
 /** 依目前路徑組出麵包屑：首頁 / 第一層 / 第二層…（只列有對應名稱的層級） */
 export function getMemberBreadcrumb(pathname: string): { path: string; title: string }[] {
-  const crumbs = [{ path: HOME_PATH, title: memberRouteTitles[HOME_PATH] }]
+  const crumbs: { path: string; title: string }[] = [{ path: PATHS.home, title: memberRouteTitles[PATHS.home] }]
   const segments = pathname.split('/').filter(Boolean)
   segments.forEach((_, i) => {
     const path = `/${segments.slice(0, i + 1).join('/')}`

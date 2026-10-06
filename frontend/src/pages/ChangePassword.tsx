@@ -9,7 +9,7 @@ import { AppForm, PasswordInput } from '../components/form'
 import { useNotifyModal } from '../components/NoticeModal'
 import ResultPage from '../components/ResultPage'
 import { getPasswordRuleError } from '../constants/password'
-import { HOME_PATH } from '../layouts/memberNav'
+import { PATHS } from '../routes/paths'
 import { formControlSize } from '../theme/components/formControls'
 import styles from './ChangePassword.module.css'
 
@@ -77,7 +77,7 @@ export default function ChangePassword() {
 
   const allFilled = FIELD_NAMES.every((name) => !!values?.[name])
 
-  const goHome = () => navigate(HOME_PATH, { replace: true })
+  const goHome = () => navigate(PATHS.home, { replace: true })
 
   // 有站內上一頁就回上一頁，直接開啟此頁時回首頁
   const handleCancel = () => {
