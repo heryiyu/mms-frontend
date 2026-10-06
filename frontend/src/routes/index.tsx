@@ -7,6 +7,7 @@ import Forbidden from '../pages/Forbidden'
 import GuestPlaceholder from '../pages/GuestPlaceholder'
 import Home from '../pages/Home'
 import MemberPlaceholder from '../pages/MemberPlaceholder'
+import MemberReview from '../pages/member-review/MemberReview'
 import NotFound from '../pages/NotFound'
 import PendingApproval from '../pages/PendingApproval'
 import Profile from '../pages/Profile'
@@ -48,7 +49,7 @@ export const router = createBrowserRouter([
           {
             element: <RequireRole minRole="leader" />,
             children: [
-              { path: PATHS.memberReview, element: <MemberPlaceholder title="會員審核" /> },
+              { path: PATHS.memberReview, element: <MemberReview /> },
               // TODO(#12)：系統設定的功能與可見角色待確認
               { path: PATHS.settings, element: <MemberPlaceholder title="系統設定" /> },
             ],

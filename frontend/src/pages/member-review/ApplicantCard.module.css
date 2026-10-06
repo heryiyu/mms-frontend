@@ -1,0 +1,69 @@
+/*
+ * 申請者卡片（docs/design/member-review/{web,mob}/會員審核/inf.png），桌機與手機結構相同、只差寬度。
+ * 尺寸由 @2x 截圖換算 1x（目測）：卡片上下內距 12px、左右 20px；頂列 56px、資料列與「退回」列 48px；
+ * 值欄距左約 100px（同 title Input 標籤欄寬）；checkbox 距卡片內容右緣約 12px。
+ */
+.card {
+  --applicant-card-padding-block: 12px;
+  --applicant-header-height: 56px;
+  --applicant-row-height: 48px;
+  --applicant-label-width: 100px;
+  --applicant-check-inset: 12px;
+
+  padding: var(--applicant-card-padding-block) var(--layout-page-padding-mobile);
+  border-radius: var(--radius-lg);
+}
+
+/* 頂列「選取」：文字靠左、checkbox 靠右，整列可點 */
+.select.select {
+  display: flex;
+  flex-direction: row-reverse;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+  min-height: var(--applicant-header-height);
+  padding-inline-end: var(--applicant-check-inset);
+  border-bottom: 1px solid var(--color-gray-5);
+  font-size: var(--font-size-body-1);
+  color: var(--color-gray-1);
+}
+
+/* AntD wrapper 的 ::after 佔位字元會成為第三個 flex 子項，讓 space-between 把文字擠到中間 */
+.select.select::after {
+  display: none;
+}
+
+.select.select > :global(.ant-checkbox + span) {
+  padding-inline: 0;
+}
+
+/* 描述清單：每列 48px、底部分隔線（最後一列下方也有，與「退回」列分隔） */
+.fields :global(.ant-descriptions-item) {
+  padding: 0;
+}
+
+.fields :global(.ant-descriptions-item-container) {
+  align-items: center;
+  min-height: var(--applicant-row-height);
+  border-bottom: 1px solid var(--color-gray-5);
+}
+
+.fields :global(.ant-descriptions-item-label) {
+  flex: 0 0 var(--applicant-label-width);
+  font-size: var(--font-size-body-1);
+  line-height: var(--line-height-body-1);
+}
+
+.fields :global(.ant-descriptions-item-content) {
+  min-width: 0;
+  font-size: var(--font-size-body-1);
+  line-height: var(--line-height-body-1);
+  word-break: break-all;
+}
+
+.footer {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: var(--applicant-row-height);
+}
