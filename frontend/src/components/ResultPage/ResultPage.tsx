@@ -2,7 +2,8 @@ import type { ReactNode } from 'react'
 import { ConfigProvider, Result } from 'antd'
 import { Button } from '../Button'
 import Icon from '../Icon'
-import { colors, typography } from '../../theme/tokens'
+import typography from '../../styles/typography.module.css'
+import { colors, typography as typeScale } from '../../theme/tokens'
 import { cx } from '../../utils/cx'
 import styles from './ResultPage.module.css'
 
@@ -30,8 +31,8 @@ export interface ResultPageProps {
 const resultTheme = {
   components: {
     Result: {
-      titleFontSize: typography.headline5.fontSize,
-      subtitleFontSize: typography.body1.fontSize,
+      titleFontSize: typeScale.headline5.fontSize,
+      subtitleFontSize: typeScale.body1.fontSize,
     },
   },
 }
@@ -62,7 +63,7 @@ export default function ResultPage({
         <Result
           className={styles.result}
           icon={icon ?? <Icon name="check-circle" className={styles.icon} color={colors.primary} label="完成" />}
-          title={<h1 className={styles.title}>{title}</h1>}
+          title={<h1 className={cx(typography.headline5, styles.title)}>{title}</h1>}
           subTitle={description && <p className={styles.description}>{description}</p>}
           extra={onBack || extra ? actions : undefined}
         />

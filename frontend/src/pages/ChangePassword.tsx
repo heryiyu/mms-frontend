@@ -10,7 +10,9 @@ import { useNotifyModal } from '../components/NoticeModal'
 import ResultPage from '../components/ResultPage'
 import { getPasswordRuleError } from '../constants/password'
 import { PATHS } from '../routes/paths'
+import typography from '../styles/typography.module.css'
 import { formControlSize } from '../theme/components/formControls'
+import { cx } from '../utils/cx'
 import styles from './ChangePassword.module.css'
 
 // 修改密碼（issue #22，docs/design/change-password/README.md）
@@ -127,7 +129,7 @@ export default function ChangePassword() {
         wrapperCol={{ flex: '1 1 0' }}
         onFinish={handleFinish}
       >
-        <h1 className={styles.title}>修改密碼</h1>
+        <h1 className={cx(typography.headline5, styles.title)}>修改密碼</h1>
         <div className={styles.card}>
           <Form.Item
             className={styles.row}

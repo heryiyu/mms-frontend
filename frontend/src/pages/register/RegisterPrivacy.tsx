@@ -7,6 +7,8 @@ import { Button } from '../../components/Button'
 import { ScrollAgreement } from '../../components/ScrollAgreement'
 import { useGuestLayout } from '../../layouts/guestLayoutContext'
 import { PATHS } from '../../routes/paths'
+import typography from '../../styles/typography.module.css'
+import { cx } from '../../utils/cx'
 import styles from './RegisterPrivacy.module.css'
 
 // TODO(#12)：「會員資料輸入」頁尚未實作，路徑暫定（PATHS.registerProfile）
@@ -51,7 +53,7 @@ export default function RegisterPrivacy() {
 
   return (
     <Flex vertical className={styles.page}>
-      <h1 className={styles.title}>個資保護聲明</h1>
+      <h1 className={cx(typography.headline5, styles.title)}>個資保護聲明</h1>
 
       <ScrollAgreement
         regionLabel="個資保護聲明內容"

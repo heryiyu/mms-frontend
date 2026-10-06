@@ -17,7 +17,7 @@ export default function Home() {
           <Col key={action.path} xs={12} lg={8}>
             <Link to={action.path}>
               <Card hoverable>
-                <Icon name={action.icon} size={24} /> {action.label}
+                <Icon name={action.icon} size="var(--font-size-headline-4)" /> {action.label}
               </Card>
             </Link>
           </Col>
