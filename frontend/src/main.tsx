@@ -30,7 +30,8 @@ const DevRoleSwitcher = import.meta.env.DEV ? lazy(() => import('./mocks/DevRole
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
-    <ConfigProvider locale={zhTW} theme={theme}>
+    {/* autoInsertSpace：AntD 預設在兩個中文字的按鈕中間插空格（「確 認」），設計稿沒有 */}
+    <ConfigProvider locale={zhTW} theme={theme} button={{ autoInsertSpace: false }}>
       <AntdApp>
         <RouterProvider router={router} />
         <PwaUpdatePrompt />

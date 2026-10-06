@@ -2,6 +2,7 @@ import { createBrowserRouter } from 'react-router'
 import { GuestOnly, RequireAuth, RequireRole } from '../auth/guards'
 import GuestLayout from '../layouts/GuestLayout'
 import MemberLayout from '../layouts/MemberLayout'
+import ChangePassword from '../pages/ChangePassword'
 import Forbidden from '../pages/Forbidden'
 import GuestPlaceholder from '../pages/GuestPlaceholder'
 import Home from '../pages/Home'
@@ -41,7 +42,7 @@ export const router = createBrowserRouter([
         children: [
           { path: PATHS.home, element: <Home /> },
           { path: PATHS.profile, element: <Profile /> },
-          { path: PATHS.changePassword, element: <MemberPlaceholder title="修改密碼" /> },
+          { path: PATHS.changePassword, element: <ChangePassword /> },
           { path: PATHS.receipt, element: <MemberPlaceholder title="奉獻收據下載" /> },
           // 區長以上；權限不足 → 403
           {
