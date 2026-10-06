@@ -118,7 +118,7 @@ export interface MockUser {
 type SeedUser = Omit<MockUser, 'churchId' | 'districtId' | 'groupId'>
 
 /** 由 ekkId（如 c1-d1-g1-e1）反推上層 id，省得每個種子都寫四個欄位 */
-function seed(user: SeedUser): MockUser {
+export function seed(user: SeedUser): MockUser {
   const [c, d, g] = user.ekkId.split('-')
   return { ...user, churchId: c, districtId: `${c}-${d}`, groupId: `${c}-${d}-${g}` }
 }
