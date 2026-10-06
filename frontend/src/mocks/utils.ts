@@ -2,6 +2,7 @@
 // 驗證失敗一律 throw Response（MSW 會直接當成回應），handler 內可以用直線流程撰寫。
 import { delay, HttpResponse } from 'msw'
 import { API_BASE_URL } from '../api/client'
+import { getPasswordRuleError } from '../constants/password'
 import type { ErrorCode, Role } from '../api/types'
 import { db, normalizeEmail, type MockUser } from './db'
 
@@ -92,11 +93,10 @@ export function assertOtp(otp: string) {
 
 export const otpResponse = () => HttpResponse.json({ expiresIn: OTP_EXPIRES_IN, length: OTP_LENGTH })
 
-/** 暫定密碼規則（設計未定）：至少 8 碼，且同時包含英文與數字 */
+/** 密碼規則與前端表單共用 src/constants/password.ts（設計未定，暫定至少 8 碼且含英文與數字） */
 export function assertPassword(password: string, field = 'password') {
-  if (password.length < 8 || !/[A-Za-z]/.test(password) || !/\d/.test(password)) {
-    throw errorResponse('VALIDATION_ERROR', '密碼至少 8 碼，且需包含英文與數字', { [field]: '密碼至少 8 碼，且需包含英文與數字' })
-  }
+  const message = getPasswordRuleError(password)
+  if (message) throw errorResponse('VALIDATION_ERROR', message, { [field]: message })
 }
 
 export const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
