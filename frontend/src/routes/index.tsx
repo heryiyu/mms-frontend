@@ -6,6 +6,8 @@ import ChangePassword from '../pages/ChangePassword'
 import Forbidden from '../pages/Forbidden'
 import GuestPlaceholder from '../pages/GuestPlaceholder'
 import Home from '../pages/Home'
+import LineCallback from '../pages/login/LineCallback'
+import Login from '../pages/login/Login'
 import MemberPlaceholder from '../pages/MemberPlaceholder'
 import NotFound from '../pages/NotFound'
 import PendingApproval from '../pages/PendingApproval'
@@ -23,12 +25,16 @@ export const router = createBrowserRouter([
       {
         element: <GuestLayout />,
         children: [
-          { path: PATHS.login, element: <GuestPlaceholder title="登入" brand /> },
+          { path: PATHS.login, element: <Login /> },
           { path: PATHS.register, element: <GuestPlaceholder title="創建帳號" /> },
           { path: PATHS.registerPrivacy, element: <RegisterPrivacy /> },
           { path: PATHS.forgotPassword, element: <GuestPlaceholder title="忘記密碼" /> },
+          // TODO(#12)：進度查詢設計未畫（查詢條件推測為信箱＋手機，見 api/register.ts queryProgress）
+          { path: PATHS.progress, element: <GuestPlaceholder title="進度查詢" /> },
         ],
       },
+      // Line 登入導回：只顯示 loading 遮罩，不套卡片版型
+      { path: PATHS.lineCallback, element: <LineCallback /> },
     ],
   },
   // 等待審核：登入與否皆可開啟

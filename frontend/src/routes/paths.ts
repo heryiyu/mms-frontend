@@ -8,6 +8,10 @@ export const PATHS = {
   /** 註冊：基本資料（尚未實作，TODO(#12)） */
   registerProfile: '/register/profile',
   forgotPassword: '/forgot-password',
+  /** 審核進度查詢（登入頁「進度查詢」；設計未畫，目前為佔位頁，TODO(#12)） */
+  progress: '/progress',
+  /** Line OAuth 授權完成後的導回頁（需與後端設定的 redirect URI 一致，TODO(#12)） */
+  lineCallback: '/auth/line/callback',
   /** 等待審核（帳號尚未核准）；登入回 ACCOUNT_PENDING 時導到這裡 */
   pending: '/pending',
 
@@ -35,6 +39,8 @@ const GUEST_PATHS: string[] = [
   PATHS.registerPrivacy,
   PATHS.registerProfile,
   PATHS.forgotPassword,
+  PATHS.progress,
+  PATHS.lineCallback,
   PATHS.pending,
 ]
 

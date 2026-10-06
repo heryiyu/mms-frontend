@@ -18,6 +18,7 @@ export const colors = {
   bgLayout: '#F7F8FA',
   white: '#FFFFFF',
   mask: 'rgba(0, 0, 0, 0.25)', // 彈窗遮罩（目測）
+  line: '#06C755', // LINE 品牌綠（「使用Line快速登入」圖示，LINE 官方色）
 } as const
 
 export const fontFamily =
