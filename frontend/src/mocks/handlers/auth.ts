@@ -28,7 +28,7 @@ export const authHandlers = [
     if (user.status === 'REJECTED') return errorResponse('ACCOUNT_REJECTED')
     if (user.password !== password) return errorResponse('WRONG_PASSWORD')
 
-    return HttpResponse.json({ token: makeToken(user), role: user.role })
+    return HttpResponse.json({ token: makeToken(user), role: user.role, status: 'ACTIVE' })
   }),
 
   // 登出：token 已失效也回 204，前端一律清掉本機 token
@@ -59,6 +59,6 @@ export const authHandlers = [
     if (code !== 'mock-line-code') return errorResponse('TOKEN_INVALID')
 
     const user = db.users.find((u) => u.id === 'u1')!
-    return HttpResponse.json({ status: 'LOGGED_IN', token: makeToken(user), role: user.role })
+    return HttpResponse.json({ status: 'LOGGED_IN', token: makeToken(user), role: user.role, accountStatus: 'ACTIVE' })
   }),
 ]

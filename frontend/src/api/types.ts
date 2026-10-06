@@ -6,6 +6,12 @@
 
 /** leader = 區長以上（可使用會員審核）；member = 一般會員 */
 export type Role = 'member' | 'leader'
+/**
+ * 帳號狀態：ACTIVE = 已核准可使用會員中心；PENDING = 等待審核（不可進入會員中心）。
+ * 目前待審核帳號登入會直接回 ACCOUNT_PENDING，所以登入成功時一律為 ACTIVE；
+ * 保留這個欄位，讓後端將來若改成「待審核也可登入」時前端路由守衛仍能擋住。
+ */
+export type AccountStatus = 'ACTIVE' | 'PENDING'
 export type Gender = 'male' | 'female'
 /** 靈程 */
 export type Journey = 'NF' | 'VIP' | 'XN'
@@ -82,6 +88,7 @@ export interface LoginRequest {
 export interface LoginResponse {
   token: string
   role: Role
+  status: AccountStatus
 }
 
 export type LineAuthPurpose = 'login' | 'register'
@@ -97,7 +104,7 @@ export interface LineCallbackRequest {
 }
 
 export type LineCallbackResponse =
-  | { status: 'LOGGED_IN'; token: string; role: Role }
+  | { status: 'LOGGED_IN'; token: string; role: Role; accountStatus: AccountStatus }
   /** Line 帳號尚未綁定／建立：帶 lineToken 接回一般創建流程（接回哪一步設計待確認） */
   | { status: 'REGISTER_REQUIRED'; lineToken: string }
 

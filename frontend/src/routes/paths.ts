@@ -1,0 +1,35 @@
+// 所有路由路徑集中在這裡，頁面導頁請用 PATHS.xxx，不要手寫字串。
+export const PATHS = {
+  /* 未登入 */
+  login: '/login',
+  register: '/register',
+  forgotPassword: '/forgot-password',
+  /** 等待審核（帳號尚未核准）；登入回 ACCOUNT_PENDING 時導到這裡 */
+  pending: '/pending',
+
+  /* 已登入 */
+  home: '/',
+  profile: '/profile',
+  changePassword: '/change-password',
+  receipt: '/receipt',
+  /** 區長以上 */
+  memberReview: '/member-review',
+  /** 區長以上（暫定，TODO(#12) 見 layouts/memberNav.ts） */
+  settings: '/settings',
+  /** 權限不足 */
+  forbidden: '/403',
+} as const
+
+/** 路由守衛導向登入頁時放在 location.state，登入後導回原頁 */
+export interface LoginRedirectState {
+  from?: { pathname: string; search?: string; hash?: string }
+}
+
+const GUEST_PATHS: string[] = [PATHS.login, PATHS.register, PATHS.forgotPassword, PATHS.pending]
+
+/** 登入後要去的頁面：location.state.from（被守衛擋下的原頁），沒有則回首頁 */
+export function getPostLoginPath(state: unknown): string {
+  const from = (state as LoginRedirectState | null)?.from
+  if (!from || typeof from.pathname !== 'string' || GUEST_PATHS.includes(from.pathname)) return PATHS.home
+  return `${from.pathname}${from.search ?? ''}${from.hash ?? ''}`
+}
