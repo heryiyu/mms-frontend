@@ -57,7 +57,8 @@ export default function DevRoleSwitcher() {
     >
       <FloatButton
         icon={<Icon name="person-gear" />}
-        tooltip="開發用：切換登入身分"
+        // tooltip 放右側：預設會蓋住往上展開的選單最下面一項（等待審核），導致點不到
+        tooltip={{ title: '開發用：切換登入身分', placement: 'right' }}
         style={{ insetInlineStart: 'var(--app-gutter)', insetInlineEnd: 'auto' }}
       />
     </Dropdown>
