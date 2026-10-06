@@ -1,6 +1,6 @@
 import { createBrowserRouter } from 'react-router'
 import GuestLayout from '../layouts/GuestLayout'
-import MainLayout from '../layouts/MainLayout'
+import MemberLayout from '../layouts/MemberLayout'
 import GuestPlaceholder from '../pages/GuestPlaceholder'
 import Home from '../pages/Home'
 import NotFound from '../pages/NotFound'
@@ -16,7 +16,7 @@ export const router = createBrowserRouter([
     ],
   },
   {
-    element: <MainLayout />,
+    element: <MemberLayout />,
     children: [
       { path: '/', element: <Home /> },
       { path: '/profile', element: <Profile /> },
