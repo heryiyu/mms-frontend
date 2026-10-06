@@ -1,0 +1,71 @@
+import type { ReactNode } from 'react'
+import { ConfigProvider, Result } from 'antd'
+import { Button } from '../Button'
+import Icon from '../Icon'
+import { colors, typography } from '../../theme/tokens'
+import styles from './ResultPage.module.css'
+
+// 完成結果頁（docs/design/receipt/README.md「完成」、member-review 審核完成／退回完成共用）
+// 內容區垂直水平置中：主色圓圈勾勾 + 標題 + 說明 + 主色文字「返回」
+// 例：「審核完成！」「變更完成！」「奉獻收據已送出，請至信箱查收！」
+//
+// TODO(#12)：只出過成功樣式；失敗／警告結果頁未出圖，先開放 icon 讓呼叫端替換。
+// TODO(#12)：「返回」導向哪裡（推測回會員首頁）由呼叫端 onBack 決定。
+
+export interface ResultPageProps {
+  title: ReactNode
+  description?: ReactNode
+  /** 預設為主色 check-circle */
+  icon?: ReactNode
+  /** 返回按鈕文字，預設「返回」 */
+  backText?: ReactNode
+  onBack?: () => void
+  /** 額外動作，會放在返回按鈕旁 */
+  extra?: ReactNode
+  className?: string
+}
+
+// Result 元件 token 對應設計稿字級：標題 Headline5、說明 Body1（gray1）
+const resultTheme = {
+  components: {
+    Result: {
+      titleFontSize: typography.headline5.fontSize,
+      subtitleFontSize: typography.body1.fontSize,
+    },
+  },
+}
+
+export default function ResultPage({
+  title,
+  description,
+  icon,
+  backText = '返回',
+  onBack,
+  extra,
+  className,
+}: ResultPageProps) {
+  const actions = (
+    <>
+      {onBack && (
+        <Button variant="text" onClick={onBack}>
+          {backText}
+        </Button>
+      )}
+      {extra}
+    </>
+  )
+
+  return (
+    <div className={[styles.wrapper, className].filter(Boolean).join(' ')}>
+      <ConfigProvider theme={resultTheme}>
+        <Result
+          className={styles.result}
+          icon={icon ?? <Icon name="check-circle" className={styles.icon} color={colors.primary} label="完成" />}
+          title={<h1 className={styles.title}>{title}</h1>}
+          subTitle={description && <p className={styles.description}>{description}</p>}
+          extra={onBack || extra ? actions : undefined}
+        />
+      </ConfigProvider>
+    </div>
+  )
+}

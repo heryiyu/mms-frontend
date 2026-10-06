@@ -1,0 +1,84 @@
+/* 未登入版型。mobile-first，斷點與 Ant Design 一致（md 768、lg 992）。 */
+
+/* ---- card 變體 ---- */
+.page {
+  display: flex;
+  flex-direction: column;
+  min-height: 100dvh;
+  padding: calc(var(--page-padding) + var(--safe-top)) var(--page-padding)
+    calc(var(--page-padding) + var(--safe-bottom));
+  background: var(--color-bg-layout);
+}
+
+.card {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-1);
+}
+
+/* 卡片內容由上而下排；頁面可對最後一塊設 margin-top: auto 讓它貼底（例：「還沒有帳號？註冊帳號」） */
+.cardBody {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  padding: var(--page-padding) var(--layout-page-padding-mobile);
+}
+
+@media (min-width: 768px) {
+  .page {
+    align-items: flex-end;
+  }
+
+  .card {
+    width: var(--layout-auth-card-width);
+  }
+}
+
+/* ---- full 變體（全寬表單）：底部預留 <ActionBar fixed> 的高度 ---- */
+.full {
+  min-height: 100dvh;
+  padding: calc(var(--page-padding) + var(--safe-top)) var(--layout-page-padding-mobile)
+    calc(var(--layout-guest-action-bar-height) + var(--page-padding) + var(--safe-bottom));
+  background: var(--color-bg-layout);
+}
+
+@media (min-width: 992px) {
+  .full {
+    padding-left: var(--layout-guest-form-padding-desktop);
+    padding-right: var(--layout-guest-form-padding-desktop);
+  }
+}
+
+/* ---- 品牌標題區（GuestBrandHeader） ---- */
+.brand {
+  text-align: center;
+  margin-bottom: var(--layout-page-padding-mobile);
+}
+
+.logo {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: calc(var(--layout-control-height) * 2);
+  height: calc(var(--layout-control-height) * 2);
+  border-radius: var(--radius-lg);
+  background: var(--color-primary);
+  color: var(--color-white);
+  font-family: 'Brush Script MT', 'Segoe Script', cursive;
+  font-size: var(--font-size-headline-5);
+  font-style: italic;
+}
+
+.brandTitle {
+  margin: 0;
+  font-size: var(--font-size-headline-5);
+  line-height: var(--line-height-headline-5);
+  font-weight: 700;
+}
+
+.brandSubtitle {
+  font-size: var(--font-size-body-1);
+}
