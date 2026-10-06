@@ -1,0 +1,130 @@
+/*
+ * 表單元件客製（token 做不到的部分），規格見 docs/design/components/README.md
+ * 色彩／字級一律用 src/theme/cssVars.ts 產生的 CSS 變數。
+ * 選擇器重複 class（.x.x）是為了蓋過 AntD css-in-js 的同等權重規則。
+ */
+
+/* ===== Input error：框線維持灰色，只有輸入文字與提示文字變紅（與 AntD 預設不同） ===== */
+/* 用法 1：TextInput / PasswordInput 自帶 .input */
+.input.input:global(.ant-input-status-error):not(:global(.ant-input-disabled)),
+.input.input:global(.ant-input-affix-wrapper-status-error):not(:global(.ant-input-affix-wrapper-disabled)),
+/* 用法 2：AppForm 內的任何 Input（含直接使用 AntD Input） */
+.form.form :global(.ant-input-status-error):not(:global(.ant-input-disabled)),
+.form.form :global(.ant-input-affix-wrapper-status-error):not(:global(.ant-input-affix-wrapper-disabled)) {
+  /* TODO(#12): error 狀態框線是否真的維持灰色待設計確認 */
+  border-color: var(--color-gray-3);
+  color: var(--color-error);
+}
+
+.input.input:global(.ant-input-status-error):not(:global(.ant-input-disabled)):hover,
+.input.input:global(.ant-input-status-error):not(:global(.ant-input-disabled)):focus,
+.input.input:global(.ant-input-affix-wrapper-status-error):not(:global(.ant-input-affix-wrapper-disabled)):hover,
+.input.input:global(.ant-input-affix-wrapper-status-error):not(:global(.ant-input-affix-wrapper-disabled)):focus-within,
+.form.form :global(.ant-input-status-error):not(:global(.ant-input-disabled)):hover,
+.form.form :global(.ant-input-status-error):not(:global(.ant-input-disabled)):focus,
+.form.form :global(.ant-input-affix-wrapper-status-error):not(:global(.ant-input-affix-wrapper-disabled)):hover,
+.form.form :global(.ant-input-affix-wrapper-status-error):not(:global(.ant-input-affix-wrapper-disabled)):focus-within {
+  border-color: var(--color-primary);
+}
+
+.input.input:global(.ant-input-affix-wrapper-status-error) input,
+.form.form :global(.ant-input-affix-wrapper-status-error) input {
+  color: var(--color-error);
+}
+
+/* 驗證訊息：Body1、colorError（AntD 預設字級較小） */
+.form :global(.ant-form-item-explain-error) {
+  font-size: var(--font-size-body-1);
+  line-height: var(--line-height-body-1);
+  letter-spacing: var(--letter-spacing-body-1);
+}
+
+/* 必填星號放在標籤後（AppForm 的 requiredMark） */
+.requiredMark {
+  color: var(--color-error);
+  margin-inline-start: 2px;
+}
+
+/* ===== 密碼框眼睛圖示 ===== */
+.eye {
+  color: var(--color-gray-2);
+  cursor: pointer;
+}
+
+/* ===== Radio：checked hover 時維持「外圈＋圓點、透明底」（AntD 預設會填滿主色） ===== */
+.radio.radio:hover :global(.ant-radio-checked:not(.ant-radio-disabled)) {
+  background-color: var(--color-white);
+  border-color: var(--color-primary);
+}
+
+/* ===== Switch BTN ===== */
+.switch {
+  position: relative;
+  display: inline-flex;
+  vertical-align: middle;
+}
+
+/* off：白底＋1px gray3 框、gray3 把手 */
+.switch :global(.ant-switch):not(:global(.ant-switch-checked)),
+.switch :global(.ant-switch):not(:global(.ant-switch-checked)):hover:not(:global(.ant-switch-disabled)) {
+  background: var(--color-white);
+  box-shadow: inset 0 0 0 1px var(--color-gray-3);
+}
+
+.switch :global(.ant-switch):not(:global(.ant-switch-checked)) :global(.ant-switch-handle)::before {
+  background: var(--color-gray-3);
+}
+
+/* 把手內圖示：on 為主色勾、off 為白色減號。疊在 AntD 把手上，不攔截點擊 */
+.switchIcon {
+  position: absolute;
+  top: var(--switch-padding);
+  left: var(--switch-padding);
+  width: var(--switch-handle);
+  height: var(--switch-handle);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+  color: var(--color-white);
+  font-size: var(--font-size-body-2);
+  transition: left 0.2s ease-in-out;
+}
+
+.switchOn .switchIcon {
+  left: calc(100% - var(--switch-handle) - var(--switch-padding));
+  color: var(--color-primary);
+}
+
+.switchDisabled .switchIcon {
+  opacity: 0.65;
+}
+
+/* ===== Loc 篩選 chip：膠囊形、高 40px、BodyL ===== */
+.chip.chip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: var(--layout-control-height);
+  padding-inline: var(--chip-padding-inline);
+  margin: 0;
+  border: 1px solid var(--color-gray-3);
+  border-radius: calc(var(--layout-control-height) / 2);
+  background: var(--color-white);
+  color: var(--color-gray-2);
+  font-size: var(--font-size-body-l);
+  line-height: var(--line-height-body-l);
+  letter-spacing: var(--letter-spacing-body-l);
+}
+
+.chip.chip:not(:global(.ant-tag-checkable-checked)):hover {
+  color: var(--color-primary);
+  border-color: var(--color-primary);
+  background: var(--color-white);
+}
+
+.chip.chip:global(.ant-tag-checkable-checked) {
+  border-color: var(--color-primary);
+  background: var(--color-primary-bg);
+  color: var(--color-primary);
+}
