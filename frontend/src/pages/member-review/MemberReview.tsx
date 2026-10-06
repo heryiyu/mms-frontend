@@ -191,7 +191,7 @@ export default function MemberReview() {
 
       {showList && (
         <ActionBar
-          className={styles.actionBar}
+          bleed
           onCancel={goHome}
           onConfirm={() => void handleApprove()}
           confirmDisabled={selected.size === 0}

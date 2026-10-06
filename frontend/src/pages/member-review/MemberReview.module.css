@@ -73,13 +73,6 @@
   color: var(--color-gray-3);
 }
 
-/* 底部操作列：推到內容區底部，並以負 margin 抵銷內容區左右／下內距，貼齊內容區邊緣（同修改密碼頁） */
-.actionBar {
-  margin-top: auto;
-  margin-inline: calc(var(--content-padding) * -1);
-  margin-bottom: calc((var(--content-padding) + var(--safe-bottom)) * -1);
-}
-
 @media (min-width: 992px) {
   .page {
     --member-review-top-offset: 0px;

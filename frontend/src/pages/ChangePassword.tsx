@@ -159,7 +159,7 @@ export default function ChangePassword() {
           </Form.Item>
         </div>
         <ActionBar
-          className={styles.actionBar}
+          bleed
           onCancel={handleCancel}
           mobileConfirmText="送出"
           confirmHtmlType="submit"
