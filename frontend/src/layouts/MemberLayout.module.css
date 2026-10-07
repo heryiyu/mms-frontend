@@ -39,15 +39,8 @@
 /* ---------- Logo ---------- */
 .logo {
   display: inline-flex;
-  align-items: center;
-  justify-content: center;
   width: var(--member-logo-size-desktop);
   height: var(--member-logo-size-desktop);
-  border-radius: var(--radius-sm);
-  background: var(--color-primary);
-  color: var(--color-white);
-  text-decoration: none;
-  overflow: hidden;
 }
 
 .logoMobile {
@@ -55,13 +48,10 @@
   height: var(--member-logo-size);
 }
 
-.logoText {
-  font-family: 'Brush Script MT', 'Segoe Script', cursive;
-  font-size: var(--font-size-caption);
-  font-style: italic;
-  line-height: 1;
-  transform: scale(0.75);
-  white-space: nowrap;
+.logoImage {
+  display: block;
+  width: 100%;
+  height: 100%;
 }
 
 /* ---------- 桌機側邊選單（≥ lg） ---------- */
