@@ -70,6 +70,11 @@
 | 其他 4 碼數字（例如 `1234`、`7414`） | 通過 |
 | 發送 OTP 時信箱填 `frequent@test.com` | 429 `TOO_MANY_ATTEMPTS`（註冊、忘記密碼、個資修改、收據都適用） |
 
+OTP 元件示範：dev 模式開 `/dev/otp`（`PATHS.devOtp`，`OtpDemo.tsx`；正式 build 不會註冊這個路由）。
+- 「單獨使用」不打 API：可切換位數（4／5／6）、倒數（10 秒／1 分／5 分）、錯誤與停用狀態，測輸入、貼上整串簡訊（含全形數字）、倒數歸零後「重新發送」。
+- 「AppForm＋MSW」用忘記密碼 API（`member@test.com`＋`0912345678`）實際發送與驗證，上表的 OTP 規則都適用；預設把倒數改成 10 秒方便測重新發送。
+- 元件與 hook 在 `src/components/OtpInput/`（`OtpField`、`OtpInput`、`OtpCountdown`、`useOtpSender`、`otpRules`、`getOtpErrorMessage`）。
+
 ### 註冊
 
 - 發送 OTP：信箱或手機與現有帳號相同（例如 `member@test.com`、`0912345678`）→ 409 `ALREADY_REGISTERED`。
@@ -155,6 +160,7 @@ src/mocks/
   db.ts               假資料與記憶體資料庫（教會組織、使用者）
   utils.ts            延遲、錯誤回應、token／OTP／欄位驗證
   DevRoleSwitcher.tsx 開發用切換登入身分
+  OtpDemo.tsx         開發用 OTP 元件示範（/dev/otp）
   handlers/
     index.ts          彙整所有 handler
     auth.ts           登入、登出、Line（登入成功回 { token, role, status: 'ACTIVE' }）

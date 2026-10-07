@@ -1,4 +1,4 @@
-import { createBrowserRouter } from 'react-router'
+import { createBrowserRouter, type RouteObject } from 'react-router'
 import { GuestOnly, RequireAuth, RequireRole } from '../auth/guards'
 import GuestLayout from '../layouts/GuestLayout'
 import MemberLayout from '../layouts/MemberLayout'
@@ -16,9 +16,15 @@ import Profile from '../pages/Profile'
 import RegisterPrivacy from '../pages/register/RegisterPrivacy'
 import { PATHS } from './paths'
 
+// 開發用頁面：只在 dev 模式註冊；import.meta.env.DEV 讓正式 build 連同動態 import 一起移除
+const devRoutes: RouteObject[] = import.meta.env.DEV
+  ? [{ path: PATHS.devOtp, lazy: async () => ({ Component: (await import('../mocks/OtpDemo')).default }) }]
+  : []
+
 // 路由表（#10）。路徑一律用 routes/paths.ts 的 PATHS；*Placeholder 為尚未實作的頁面，完成後直接替換 element。
 // 可見角色要與 layouts/memberNav.ts 的選單／首頁卡片設定一致。
 export const router = createBrowserRouter([
+  ...devRoutes,
   // 未登入：已登入（且已核准）會被導回原頁或首頁
   {
     element: <GuestOnly />,

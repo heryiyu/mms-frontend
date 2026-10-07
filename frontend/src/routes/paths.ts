@@ -26,6 +26,10 @@ export const PATHS = {
   settings: '/settings',
   /** 權限不足 */
   forbidden: '/403',
+
+  /* 開發用（只在 dev 模式註冊，見 routes/index.tsx） */
+  /** OTP 元件示範（issue #5） */
+  devOtp: '/dev/otp',
 } as const
 
 /** 路由守衛導向登入頁時放在 location.state，登入後導回原頁 */
