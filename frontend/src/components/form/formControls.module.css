@@ -11,7 +11,7 @@
 /* 用法 2：AppForm 內的任何 Input（含直接使用 AntD Input） */
 .form.form :global(.ant-input-status-error):not(:global(.ant-input-disabled)),
 .form.form :global(.ant-input-affix-wrapper-status-error):not(:global(.ant-input-affix-wrapper-disabled)) {
-  /* TODO(#12): error 狀態框線是否真的維持灰色待設計確認 */
+  /* error 狀態框線維持灰色，已確認（#12） */
   border-color: var(--color-gray-3);
   color: var(--color-error);
 }

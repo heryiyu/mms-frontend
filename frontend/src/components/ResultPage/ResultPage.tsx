@@ -11,13 +11,23 @@ import styles from './ResultPage.module.css'
 // 內容區垂直水平置中：主色圓圈勾勾 + 標題 + 說明 + 主色文字「返回」
 // 例：「審核完成！」「變更完成！」「奉獻收據已送出，請至信箱查收！」
 //
-// TODO(#12)：只出過成功樣式；失敗／警告結果頁未出圖，先開放 icon 讓呼叫端替換。
-// TODO(#12)：「返回」導向哪裡（推測回會員首頁）由呼叫端 onBack 決定。
+// 只出過成功樣式；失敗／警告照成功頁版面，只換圖示與顏色（status，C3 已確認（#12））。
+// 「返回」導向哪裡由呼叫端 onBack 決定。
+
+export type ResultStatus = 'success' | 'error' | 'warning'
+
+const STATUS_ICONS: Record<ResultStatus, { name: string; color: string; label: string }> = {
+  success: { name: 'check-circle', color: colors.primary, label: '完成' },
+  error: { name: 'x-circle', color: colors.error, label: '失敗' },
+  warning: { name: 'exclamation-circle', color: colors.secondary2, label: '注意' },
+}
 
 export interface ResultPageProps {
   title: ReactNode
   description?: ReactNode
-  /** 預設為主色 check-circle；傳 null 不顯示圖示（例：等待審核頁） */
+  /** 決定預設圖示與顏色：成功主色勾勾、失敗紅色叉叉、警告橘色驚嘆號。預設 success */
+  status?: ResultStatus
+  /** 自訂圖示，優先於 status；傳 null 不顯示圖示（例：等待審核頁） */
   icon?: ReactNode
   /** 返回按鈕文字，預設「返回」 */
   backText?: ReactNode
@@ -45,6 +55,7 @@ const resultTheme = {
 export default function ResultPage({
   title,
   description,
+  status = 'success',
   icon,
   backText = '返回',
   onBack,
@@ -70,7 +81,12 @@ export default function ResultPage({
           className={styles.result}
           icon={
             icon === undefined ? (
-              <Icon name="check-circle" className={styles.icon} color={colors.primary} label="完成" />
+              <Icon
+                name={STATUS_ICONS[status].name}
+                className={styles.icon}
+                color={STATUS_ICONS[status].color}
+                label={STATUS_ICONS[status].label}
+              />
             ) : (
               icon
             )

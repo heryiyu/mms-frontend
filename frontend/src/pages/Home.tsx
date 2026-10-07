@@ -76,7 +76,7 @@ export default function Home() {
         <h2 id="home-quick-actions" className={cx(typography.headline5, styles.sectionTitle)}>
           常見功能
         </h2>
-        {/* TODO(#12)：設計稿只有兩張卡片，功能變多時每列幾張（web／mob）未定義，暫定一律兩欄 */}
+        {/* 設計稿只有兩張卡片，已確認（#12）：功能變多時 web／mob 一律兩欄 */}
         <Row gutter={[cardGap, cardGap]}>
           {actions.map((action) => (
             <Col key={action.path} span={12} className={styles.col}>

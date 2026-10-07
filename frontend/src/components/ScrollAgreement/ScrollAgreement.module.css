@@ -3,7 +3,7 @@
  * 尺寸量自 docs/design/register/{web,mob}/創建帳號/個資保護聲明.png（@2x 換算 1x，目測）：
  * 捲動區手機約 263px、桌機約 360px 高；框內距約 12px；Checkbox 列約一個控制項高（40px），
  * Checkbox 與文字間距約 16px，文字 BodyL。
- * TODO(#12)：mob 稿內文字級目測約 20px、web 為 Body1 16px，疑為稿面不一致，先統一用 Body1。
+ * mob 稿內文字級目測約 20px、web 為 Body1 16px，已確認（#12）：統一用 Body1。
  */
 .wrapper {
   /* 目測值 */

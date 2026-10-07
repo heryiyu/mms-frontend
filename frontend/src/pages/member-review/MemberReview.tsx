@@ -22,16 +22,17 @@ import styles from './MemberReview.module.css'
 // 退回：卡片「退回」→ 確認彈窗「注意／確定要退回此筆會員申請嗎？」→「確認」→ 已退回！
 // 權限：路由已包在 <RequireRole minRole="leader">（routes/index.tsx），一般會員直接輸入網址會被導到 403
 //
-// TODO(#12)：以下皆為設計未定、先依推測實作——
-// - 部分勾選時「全部選取」不顯示半選（稿中為未勾），點擊後改為全選
+// 已確認（#12）：
+// - R1 部分勾選時「全部選取」顯示半選（AntD indeterminate），點擊後改為全選
+// - R2 審核通過不跳確認彈窗，直接送出
+// - R3 批次通過時部分失敗（failedIds）在完成頁列出未通過的申請者姓名
+// TODO(#12)：以下仍為推測——
 // - 完成頁「返回」回到待審核清單（重新載入剩下的申請）；底部「取消／返回」回首頁
-// - 審核通過不跳確認彈窗，直接送出
-// - 批次通過時部分失敗（failedIds）在完成頁以說明文字提示筆數
 // - 退回只針對該筆、與勾選無關；其他已勾選的項目保留勾選（待確認 2）
 // - 退回完成頁「返回」比照審核完成：回待審核清單並重新載入
 // - 退回原因輸入、通知申請者、批次退回：設計稿未畫，不實作（待確認 1、2）
 
-// TODO(#12)：錯誤與部分失敗的文案設計未定
+// TODO(#12)：空狀態與載入失敗文案待確認（R3）
 const MESSAGES = {
   loadFailedTitle: '無法載入待審核清單',
   loadFailedContent: '請確認網路連線後重新載入。',
@@ -39,7 +40,7 @@ const MESSAGES = {
   approveFailedTitle: '審核失敗',
   approveFailedContent: '發生錯誤，請稍後再試',
   allProcessed: '勾選的申請已被處理，請重新整理清單。',
-  partialFailed: (n: number) => `有 ${n} 筆申請已被處理或不存在，未審核通過。`,
+  partialFailed: (names: string[]) => `以下 ${names.length} 筆申請已被處理或不存在，未審核通過：${names.join('、')}`,
   rejectFailedTitle: '退回失敗',
   rejectFailedContent: '發生錯誤，請稍後再試',
   rejectProcessed: '此筆申請已被處理，清單將重新載入。',
@@ -54,8 +55,8 @@ const REJECT_CONFIRM = {
 
 type LoadState = 'loading' | 'ready' | 'error'
 
-/** 完成頁：審核完成（附未能通過的筆數，部分失敗提示用）或已退回 */
-type DoneState = { kind: 'approved'; failedCount: number } | { kind: 'rejected' }
+/** 完成頁：審核完成（附未能通過的申請者姓名，部分失敗提示用）或已退回 */
+type DoneState = { kind: 'approved'; failedNames: string[] } | { kind: 'rejected' }
 
 export default function MemberReview() {
   const navigate = useNavigate()
@@ -100,6 +101,7 @@ export default function MemberReview() {
   const goHome = () => navigate(PATHS.home)
 
   const allSelected = members.length > 0 && members.every((m) => selected.has(m.id))
+  const someSelected = !allSelected && members.some((m) => selected.has(m.id))
 
   const handleSelectAll = (checked: boolean) => {
     setSelected(checked ? new Set(members.map((m) => m.id)) : new Set())
@@ -127,7 +129,8 @@ export default function MemberReview() {
         return
       }
       setSelected(new Set())
-      setDone({ kind: 'approved', failedCount: failedIds.length })
+      const failed = new Set(failedIds)
+      setDone({ kind: 'approved', failedNames: members.filter((m) => failed.has(m.id)).map((m) => m.name) })
     } catch (error) {
       if (isApiError(error, 'UNAUTHORIZED')) return
       void notify({ title: MESSAGES.approveFailedTitle, content: getApiErrorMessage(error, MESSAGES.approveFailedContent) })
@@ -184,7 +187,7 @@ export default function MemberReview() {
     return (
       <ResultPage
         title="審核完成！"
-        description={done.failedCount > 0 ? MESSAGES.partialFailed(done.failedCount) : undefined}
+        description={done.failedNames.length > 0 ? MESSAGES.partialFailed(done.failedNames) : undefined}
         onBack={handleResultBack}
       />
     )
@@ -215,6 +218,7 @@ export default function MemberReview() {
           <Checkbox
             className={styles.selectAll}
             checked={allSelected}
+            indeterminate={someSelected}
             disabled={loadState !== 'ready'}
             onChange={(e) => handleSelectAll(e.target.checked)}
           >
