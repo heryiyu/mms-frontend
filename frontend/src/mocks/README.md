@@ -91,8 +91,10 @@ OTP 元件示範：dev 模式開 `/dev/otp`（`PATHS.devOtp`，`OtpDemo.tsx`；�
   ```js
   const { registerToken } = await (await fetch('/api/register/otp/verify', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email: 'new@test.com', phone: '0911222333', otp: '1234' }) })).json()
   sessionStorage.setItem('nlc.registerFlow', JSON.stringify({ registerToken, birthDate: '1993-01-01', email: 'new@test.com', phone: '0911222333', agreedToPrivacy: true }))
-  location.href = '/register/profile'
+  history.pushState(null, '', '/register/profile'); dispatchEvent(new PopStateEvent('popstate'))
   ```
+
+  最後一行用站內導覽換頁：mock 的 `registerToken` 存在記憶體，若用 `location.href` 或重新整理，token 會跟著清掉，送出時變成 `TOKEN_INVALID`。要測個資聲明時，把 `agreedToPrivacy: true` 拿掉、網址改 `/register/privacy`。
 
 - 教會／牧區／小組／EKK 選項來自 `db.ts` 的 `ORG_TREE`（例：台北仁愛堂 → 新烏87 → Jessus → Hooo）；選了教會才展開牧區／小組／EKK，改上層會清空下層。
 - 身分證字號填 `Q123456789` → 通知彈窗「此身份證字號、電子信箱或手機已註冊」；`registerToken` 失效（例如同一 token 送出第二次）→ 通知彈窗後導回 `/register`。
