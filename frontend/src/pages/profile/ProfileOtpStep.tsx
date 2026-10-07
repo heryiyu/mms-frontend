@@ -4,7 +4,7 @@ import { getApiErrorMessage, isApiError } from '../../api/client'
 import { verifyProfileChange } from '../../api/member'
 import type { Me, ProfileChangeRequest } from '../../api/types'
 import ActionBar from '../../components/ActionBar'
-import { AppForm } from '../../components/form'
+import { AppForm, FormCard } from '../../components/form'
 import type { NotifyOptions } from '../../components/NoticeModal'
 import { getOtpErrorMessage, OtpField, otpRules, type OtpSender } from '../../components/OtpInput'
 import typography from '../../styles/typography.module.css'
@@ -59,12 +59,12 @@ export default function ProfileOtpStep({ otp, notify, onCancel, onVerified }: Pr
     <AppForm<OtpValues> form={form} className={styles.form} initialValues={{ otp: '' }} onFinish={handleFinish}>
       <div className={styles.otpBody}>
         <h1 className={cx(typography.pageTitle, styles.title, styles.otpTitle)}>資料變更驗證</h1>
-        <div className={styles.otpCard}>
+        <FormCard className={styles.otpCard}>
           <p className={styles.otpHint}>{MESSAGES.hint}</p>
           <Form.Item name="otp" rules={otpRules(otp.length)} className={styles.otpItem}>
             <OtpField length={otp.length} expiresAt={otp.expiresAt} onResend={otp.resend} autoFocus />
           </Form.Item>
-        </div>
+        </FormCard>
       </div>
       <ActionBar
         bleed

@@ -10,9 +10,7 @@
   --profile-title-gap: 12px;
   /* 檢視頁每列高約 48px（目測，web／mob 相同） */
   --profile-row-height: 48px;
-  /* label 欄寬：同修改頁表單卡片（theme/components/formControls.ts 的 labelWidth） */
-  --profile-label-width: 100px;
-  /* 驗證頁卡片上下內距約 40px、說明與 OTP 列間距手機約 12px／桌機約 8px（目測） */
+  /* 驗證頁卡片（FormCard）上下內距約 40px、說明與 OTP 列間距手機約 12px／桌機約 8px（目測） */
   --profile-otp-card-padding-block: 40px;
   --profile-otp-hint-gap: 12px;
 
@@ -72,7 +70,7 @@
   color: var(--color-gray-3);
 }
 
-/* 檢視頁描述清單：每列 48px、列間 gray5 分隔線（最後一列無），label 欄寬同表單卡片（100px） */
+/* 檢視頁描述清單：每列 48px、列間 gray5 分隔線（最後一列無），label 欄寬同表單卡片（--form-label-width） */
 .fields :global(.ant-descriptions-item) {
   padding: 0;
 }
@@ -87,7 +85,7 @@
 }
 
 .fields :global(.ant-descriptions-item-label) {
-  flex: 0 0 var(--profile-label-width);
+  flex: 0 0 var(--form-label-width);
   font-size: var(--font-size-body-1);
   line-height: var(--line-height-body-1);
   white-space: nowrap;
@@ -115,10 +113,8 @@
   text-align: center;
 }
 
-.otpCard {
+.otpCard.otpCard {
   padding: var(--profile-otp-card-padding-block) var(--layout-page-padding-mobile);
-  border-radius: var(--radius-lg);
-  background: var(--color-white);
 }
 
 .otpHint {

@@ -7,7 +7,6 @@
   --applicant-card-padding-block: 12px;
   --applicant-header-height: 56px;
   --applicant-row-height: 48px;
-  --applicant-label-width: 100px;
   --applicant-check-inset: 12px;
 
   padding: var(--applicant-card-padding-block) var(--layout-page-padding-mobile);
@@ -49,7 +48,7 @@
 }
 
 .fields :global(.ant-descriptions-item-label) {
-  flex: 0 0 var(--applicant-label-width);
+  flex: 0 0 var(--form-label-width);
   font-size: var(--font-size-body-1);
   line-height: var(--line-height-body-1);
 }
