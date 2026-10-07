@@ -1,6 +1,5 @@
 import { Form, Select } from 'antd'
 import type { FormProps } from 'antd'
-import type { Rule } from 'antd/es/form'
 import { useEffect, useState } from 'react'
 import { Navigate, useNavigate } from 'react-router'
 import { isApiError } from '../../api/client'
@@ -8,10 +7,21 @@ import { getChurches, getDistricts, getEkks, getGroups, getJourneys } from '../.
 import { submitRegister } from '../../api/register'
 import type { Gender, Journey, JourneyOption, Option } from '../../api/types'
 import ActionBar from '../../components/ActionBar'
-import { AppForm, FormCard, FormCardItem, formCardLayout, PasswordInput, Radio, TextInput } from '../../components/form'
+import {
+  AppForm,
+  confirmPasswordRules,
+  FormCard,
+  FormCardItem,
+  formCardLayout,
+  idNumberRules,
+  newPasswordRules,
+  PasswordInput,
+  Radio,
+  requiredRule,
+  TextInput,
+} from '../../components/form'
 import Icon from '../../components/Icon'
 import { useNotifyModal } from '../../components/NoticeModal'
-import { getPasswordRuleError } from '../../constants/password'
 import { useGuestLayout } from '../../layouts/guestLayoutContext'
 import { PATHS } from '../../routes/paths'
 import typography from '../../styles/typography.module.css'
@@ -72,7 +82,6 @@ const CASCADE_RESET: Partial<Record<FieldName, FieldName[]>> = {
 // TODO(#12)：錯誤文案設計未定
 const MESSAGES = {
   invalidTitle: '資料有誤',
-  idNumberFormat: '身份證字號格式錯誤',
   mismatch: '兩次輸入的密碼不一致',
   optionsFailed: '選項載入失敗，請稍後再試',
   tokenInvalidTitle: '驗證已失效',
@@ -82,30 +91,10 @@ const MESSAGES = {
   failedContent: '發生錯誤，請稍後再試',
 } as const
 
-// 身分證（1、2 開頭）與新式居留證（8、9 開頭）；TODO(#12)：是否需檢查碼、是否接受舊式居留證待確認
-const ID_NUMBER_PATTERN = /^[A-Z][1289]\d{8}$/i
-
-const required = (message: string): Rule => ({ required: true, whitespace: true, message })
-
-const passwordRules: Rule[] = [
-  required('請輸入密碼'),
-  {
-    validator(_, value?: string) {
-      const error = value ? getPasswordRuleError(value) : undefined
-      return error ? Promise.reject(new Error(error)) : Promise.resolve()
-    },
-  },
-]
-
-const confirmPasswordRules: Rule[] = [
-  required('請再次輸入密碼'),
-  ({ getFieldValue }) => ({
-    validator(_, value?: string) {
-      if (!value || value === getFieldValue('password')) return Promise.resolve()
-      return Promise.reject(new Error(MESSAGES.mismatch))
-    },
-  }),
-]
+const NAME_RULES = [requiredRule('請輸入姓名')]
+const ID_NUMBER_RULES = idNumberRules()
+const PASSWORD_RULES = newPasswordRules(undefined, '請輸入密碼')
+const CONFIRM_PASSWORD_RULES = confirmPasswordRules('password', { required: '請再次輸入密碼', mismatch: MESSAGES.mismatch })
 
 const selectFieldNames = { label: 'name', value: 'id' }
 const selectSuffix = <Icon name="chevron-down" className={styles.selectArrow} />
@@ -258,7 +247,7 @@ export default function RegisterProfile() {
       >
         <h1 className={cx(typography.headline5, styles.title)}>會員資料</h1>
         <FormCard>
-          <FormCardItem name="name" label="姓名" rules={[required('請輸入姓名')]}>
+          <FormCardItem name="name" label="姓名" rules={NAME_RULES}>
             <TextInput placeholder="請輸入姓名" autoComplete="name" maxLength={50} />
           </FormCardItem>
           <FormCardItem name="nickname" label="暱稱">
@@ -270,14 +259,10 @@ export default function RegisterProfile() {
               <Radio value="female">女</Radio>
             </Radio.Group>
           </FormCardItem>
-          <FormCardItem
-            name="idNumber"
-            label="身份證字號"
-            rules={[required('請輸入身份證字號'), { pattern: ID_NUMBER_PATTERN, message: MESSAGES.idNumberFormat }]}
-          >
+          <FormCardItem name="idNumber" label="身份證字號" rules={ID_NUMBER_RULES}>
             <TextInput placeholder="請輸入身份證字號" autoComplete="off" maxLength={10} />
           </FormCardItem>
-          <FormCardItem name="password" label="密碼" rules={passwordRules}>
+          <FormCardItem name="password" label="密碼" rules={PASSWORD_RULES}>
             {/* 稿上空白時沒有眼睛圖示，有值後才出現 */}
             <PasswordInput placeholder="請輸入密碼" autoComplete="new-password" visibilityToggle={!!values?.password} />
           </FormCardItem>
@@ -285,7 +270,7 @@ export default function RegisterProfile() {
             name="confirmPassword"
             label="確認密碼"
             dependencies={['password']}
-            rules={confirmPasswordRules}
+            rules={CONFIRM_PASSWORD_RULES}
           >
             <PasswordInput
               placeholder="再次輸入密碼"

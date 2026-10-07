@@ -5,7 +5,7 @@ import { getLineAuthUrl, login } from '../../api/auth'
 import { ApiError, isApiError } from '../../api/client'
 import type { ErrorCode } from '../../api/types'
 import { Button } from '../../components/Button'
-import { AppForm, Checkbox, PasswordInput, TextInput } from '../../components/form'
+import { AppForm, Checkbox, emailRules, PasswordInput, TextInput } from '../../components/form'
 import Icon from '../../components/Icon'
 import { useNotifyModal } from '../../components/NoticeModal'
 import GuestBrandHeader from '../../layouts/GuestBrandHeader'
@@ -33,6 +33,8 @@ interface LoginValues {
   password: string
   remember: boolean
 }
+
+const EMAIL_RULES = emailRules()
 
 /** 收到「登入過度頻繁」後，前端暫停送出的時間。TODO(#12)：實際門檻待後端定義 */
 const LOGIN_COOLDOWN_MS = 30_000
@@ -117,10 +119,7 @@ export default function Login() {
         <Form.Item
           name="email"
           className={styles.field}
-          rules={[
-            { required: true, whitespace: true, message: '請輸入電子信箱' },
-            { type: 'email', message: '電子信箱格式錯誤', transform: (value?: string) => value?.trim() },
-          ]}
+          rules={EMAIL_RULES}
         >
           <TextInput
             type="email"

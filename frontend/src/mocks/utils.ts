@@ -3,6 +3,7 @@
 import { delay, HttpResponse } from 'msw'
 import { API_BASE_URL } from '../api/client'
 import { getPasswordRuleError } from '../constants/password'
+import { PHONE_PATTERN } from '../constants/validation'
 import type { ErrorCode, Role } from '../api/types'
 import { db, normalizeEmail, type MockUser } from './db'
 
@@ -100,9 +101,8 @@ export function assertPassword(password: string, field = 'password') {
 }
 
 export const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-/** 台灣手機：09 開頭共 10 碼 */
-export const PHONE_PATTERN = /^09\d{8}$/
 
+/** 手機格式與前端表單共用 src/constants/validation.ts */
 export function assertEmailPhone(email: string, phone: string) {
   const fields: Record<string, string> = {}
   if (!EMAIL_PATTERN.test(email)) fields.email = '信箱格式錯誤'

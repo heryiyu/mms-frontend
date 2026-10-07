@@ -8,11 +8,13 @@ import { Button } from '../../components/Button'
 import {
   AppForm,
   confirmPasswordRules,
+  emailRules,
   FormCard,
   FormCardItem,
   formCardLayout,
   newPasswordRules,
   PasswordInput,
+  phoneRules,
   TextInput,
 } from '../../components/form'
 import { type NotifyOptions, useNotifyModal } from '../../components/NoticeModal'
@@ -44,18 +46,14 @@ const NOTICE_TITLE = '通知'
 
 // TODO(#12)：錯誤文案設計未定
 const MESSAGES = {
-  emailRequired: '請輸入電子信箱',
-  emailInvalid: '電子信箱格式錯誤',
-  phoneRequired: '請輸入手機號碼',
-  phoneInvalid: '手機號碼格式錯誤',
   accountNotFound: '查無此帳號',
   emailPhoneMismatch: '電子信箱與手機號碼不符',
   tokenInvalid: '驗證已逾時\n請重新驗證',
   failed: '發生錯誤，請稍後再試',
 } as const
 
-/** 台灣手機：09 開頭共 10 碼（與 mock 的 assertEmailPhone 一致）。TODO(#12)：是否接受國際號碼待確認 */
-const PHONE_PATTERN = /^09\d{8}$/
+const EMAIL_RULES = emailRules()
+const PHONE_RULES = phoneRules()
 
 /** 後端 VALIDATION_ERROR 的欄位錯誤（{ fields: { email: '…' } }） */
 function getFieldErrors(error: unknown): Record<string, string> {
@@ -159,14 +157,7 @@ function VerifyStep({ notify, onVerified }: { notify: Notify; onVerified: (reset
         if (otp.sent && ('email' in changed || 'phone' in changed)) otp.reset()
       }}
     >
-      <Form.Item
-        name="email"
-        className={styles.field}
-        rules={[
-          { required: true, whitespace: true, message: MESSAGES.emailRequired },
-          { type: 'email', message: MESSAGES.emailInvalid, transform: (value?: string) => value?.trim() },
-        ]}
-      >
+      <Form.Item name="email" className={styles.field} rules={EMAIL_RULES}>
         <TextInput
           type="email"
           inputMode="email"
@@ -176,14 +167,7 @@ function VerifyStep({ notify, onVerified }: { notify: Notify; onVerified: (reset
           maxLength={254}
         />
       </Form.Item>
-      <Form.Item
-        name="phone"
-        className={styles.field}
-        rules={[
-          { required: true, whitespace: true, message: MESSAGES.phoneRequired },
-          { pattern: PHONE_PATTERN, message: MESSAGES.phoneInvalid, transform: (value?: string) => value?.trim() },
-        ]}
-      >
+      <Form.Item name="phone" className={styles.field} rules={PHONE_RULES}>
         <TextInput type="tel" inputMode="tel" autoComplete="tel" placeholder="請輸入手機號碼" aria-label="手機號碼" maxLength={10} />
       </Form.Item>
       {otp.sent && (

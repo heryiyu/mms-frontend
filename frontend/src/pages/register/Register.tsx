@@ -6,7 +6,7 @@ import { getLineAuthUrl } from '../../api/auth'
 import { isApiError } from '../../api/client'
 import { sendRegisterOtp, verifyRegisterOtp } from '../../api/register'
 import { Button } from '../../components/Button'
-import { AppForm, TextInput } from '../../components/form'
+import { AppForm, emailRules, phoneRules, TextInput } from '../../components/form'
 import Icon from '../../components/Icon'
 import { useNotifyModal } from '../../components/NoticeModal'
 import { getOtpErrorMessage, OtpField, otpRules, useOtpSender } from '../../components/OtpInput'
@@ -52,16 +52,12 @@ const NOTICE_TITLE = '通知'
 // TODO(#12)：錯誤文案設計未定
 const MESSAGES = {
   birthDateRequired: '請選擇出生日期',
-  emailRequired: '請輸入電子信箱',
-  emailFormat: '電子信箱格式錯誤',
-  phoneRequired: '請輸入手機號碼',
-  phoneFormat: '手機號碼格式錯誤',
   alreadyRegistered: '此電子信箱或手機已註冊',
   failed: '發生錯誤，請稍後再試',
 } as const
 
-/** 台灣手機：09 開頭共 10 碼。TODO(#12)：是否接受國際號碼待確認 */
-const PHONE_PATTERN = /^09\d{8}$/
+const EMAIL_RULES = emailRules()
+const PHONE_RULES = phoneRules()
 
 const BIRTH_DATE_FORMAT = 'YYYY/MM/DD'
 const API_DATE_FORMAT = 'YYYY-MM-DD'
@@ -219,21 +215,7 @@ export default function Register() {
 
         <GuardianNameField />
 
-        <Form.Item
-          name="email"
-          rules={[
-            {
-              required: true,
-              whitespace: true,
-              message: MESSAGES.emailRequired,
-            },
-            {
-              type: 'email',
-              message: MESSAGES.emailFormat,
-              transform: (value?: string) => value?.trim(),
-            },
-          ]}
-        >
+        <Form.Item name="email" rules={EMAIL_RULES}>
           <TextInput
             type="email"
             inputMode="email"
@@ -244,21 +226,7 @@ export default function Register() {
           />
         </Form.Item>
 
-        <Form.Item
-          name="phone"
-          rules={[
-            {
-              required: true,
-              whitespace: true,
-              message: MESSAGES.phoneRequired,
-            },
-            {
-              pattern: PHONE_PATTERN,
-              message: MESSAGES.phoneFormat,
-              transform: (value?: string) => value?.trim(),
-            },
-          ]}
-        >
+        <Form.Item name="phone" rules={PHONE_RULES}>
           {/* 稿上 placeholder 為「手機驗證」，填手機號碼 */}
           <TextInput
             type="tel"

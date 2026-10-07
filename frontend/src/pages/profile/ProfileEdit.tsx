@@ -7,7 +7,16 @@ import { sendProfileChangeOtp } from '../../api/member'
 import type { Me, ProfileChangeRequest } from '../../api/types'
 import ActionBar from '../../components/ActionBar'
 import { Button } from '../../components/Button'
-import { AppForm, FormCard, FormCardItem, formCardLayout, TextInput } from '../../components/form'
+import {
+  AppForm,
+  emailRules,
+  FormCard,
+  FormCardItem,
+  formCardLayout,
+  phoneRules,
+  requiredRule,
+  TextInput,
+} from '../../components/form'
 import Icon from '../../components/Icon'
 import { type NotifyOptions, useNotifyModal } from '../../components/NoticeModal'
 import { getOtpErrorMessage, type OtpSender, useOtpSender } from '../../components/OtpInput'
@@ -36,8 +45,6 @@ type FieldName = keyof ProfileChangeRequest
 
 const FIELD_NAMES: FieldName[] = ['name', 'nickname', 'email', 'phone']
 
-const PHONE_PATTERN = /^09\d{8}$/
-
 // TODO(#12)：錯誤文案設計未定
 const MESSAGES = {
   nameRequired: '請輸入姓名',
@@ -53,19 +60,11 @@ const MESSAGES = {
   reload: '重新載入',
 } as const
 
-const trim = (value?: string) => value?.trim()
-
 const RULES: Record<FieldName, Rule[]> = {
-  name: [{ required: true, whitespace: true, message: MESSAGES.nameRequired }],
+  name: [requiredRule(MESSAGES.nameRequired)],
   nickname: [],
-  email: [
-    { required: true, whitespace: true, message: MESSAGES.emailRequired },
-    { type: 'email', message: MESSAGES.emailFormat, transform: trim },
-  ],
-  phone: [
-    { required: true, whitespace: true, message: MESSAGES.phoneRequired },
-    { pattern: PHONE_PATTERN, message: MESSAGES.phoneFormat, transform: trim },
-  ],
+  email: emailRules({ required: MESSAGES.emailRequired, format: MESSAGES.emailFormat }),
+  phone: phoneRules({ required: MESSAGES.phoneRequired, format: MESSAGES.phoneFormat }),
 }
 
 const toDraft = (me: Me): ProfileChangeRequest => ({

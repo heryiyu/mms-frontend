@@ -1,12 +1,11 @@
 import { Form } from 'antd'
-import type { Rule } from 'antd/es/form'
 import { useState } from 'react'
 import { useNavigate } from 'react-router'
 import { isApiError } from '../../api/client'
 import { sendReceipt, sendReceiptOtp } from '../../api/receipt'
 import type { ReceiptOtpRequest } from '../../api/types'
 import ActionBar from '../../components/ActionBar'
-import { AppForm, FormCard, TextInput } from '../../components/form'
+import { AppForm, emailRules, FormCard, phoneRules, TextInput } from '../../components/form'
 import { useNotifyModal } from '../../components/NoticeModal'
 import { getOtpErrorMessage, OtpField, otpRules, useOtpSender } from '../../components/OtpInput'
 import ResultPage from '../../components/ResultPage'
@@ -37,8 +36,6 @@ interface ReceiptValues {
 
 // TODO(#12)：錯誤文案設計未定
 const MESSAGES = {
-  emailRequired: '請輸入電子信箱',
-  emailFormat: '電子信箱格式錯誤',
   phoneRequired: '請輸入手機',
   phoneFormat: '手機格式錯誤',
   noticeTitle: '通知',
@@ -47,20 +44,9 @@ const MESSAGES = {
   failed: '發生錯誤，請稍後再試',
 } as const
 
-/** 手機：09 開頭共 10 碼（稿中範例 09XXXXXXXX，與 mock 驗證一致） */
-const PHONE_PATTERN = /^09\d{8}$/
-
-const trim = (value?: string) => value?.trim()
-
-const emailRules: Rule[] = [
-  { required: true, whitespace: true, message: MESSAGES.emailRequired },
-  { type: 'email', message: MESSAGES.emailFormat, transform: trim },
-]
-
-const phoneRules: Rule[] = [
-  { required: true, whitespace: true, message: MESSAGES.phoneRequired },
-  { pattern: PHONE_PATTERN, message: MESSAGES.phoneFormat, transform: trim },
-]
+const EMAIL_RULES = emailRules()
+/** 手機：09 開頭共 10 碼（稿中範例 09XXXXXXXX）；文案依稿上欄位「手機」 */
+const PHONE_RULES = phoneRules({ required: MESSAGES.phoneRequired, format: MESSAGES.phoneFormat })
 
 export default function ReceiptDownload() {
   const navigate = useNavigate()
@@ -155,10 +141,10 @@ export default function ReceiptDownload() {
           <h1 className={cx(typography.pageTitle, styles.title)}>奉獻收據下載</h1>
           <FormCard className={styles.card}>
             <p className={styles.description}>請輸入電子信箱，我們將寄送該年度的奉獻收據至此信箱。</p>
-            <Form.Item<ReceiptValues> name="email" rules={emailRules} className={styles.field}>
+            <Form.Item<ReceiptValues> name="email" rules={EMAIL_RULES} className={styles.field}>
               <TextInput placeholder="請輸入電子信箱" inputMode="email" autoComplete="email" aria-label="電子信箱" />
             </Form.Item>
-            <Form.Item<ReceiptValues> name="phone" rules={phoneRules} className={styles.field}>
+            <Form.Item<ReceiptValues> name="phone" rules={PHONE_RULES} className={styles.field}>
               <TextInput placeholder="請輸入手機" type="tel" inputMode="tel" autoComplete="tel" aria-label="手機" />
             </Form.Item>
             {otp.sent && (
