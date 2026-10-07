@@ -1,0 +1,12 @@
+// OTP 驗證碼（issue #5）：註冊、忘記密碼、個資修改、奉獻收據共用
+export { default as OtpField } from './OtpField'
+export type { OtpFieldProps } from './OtpField'
+export { default as OtpInput } from './OtpInput'
+export type { OtpInputProps } from './OtpInput'
+export { default as OtpCountdown } from './OtpCountdown'
+export type { OtpCountdownProps } from './OtpCountdown'
+export { useCountdown, formatCountdown } from './useCountdown'
+export type { Countdown } from './useCountdown'
+export { useOtpSender } from './useOtpSender'
+export type { OtpSender, UseOtpSenderOptions } from './useOtpSender'
+export { OTP_MESSAGES, getOtpErrorMessage, otpRules, sanitizeOtp } from './otp'

@@ -1,4 +1,4 @@
-import { createBrowserRouter } from 'react-router'
+import { createBrowserRouter, type RouteObject } from 'react-router'
 import { GuestOnly, RequireAuth, RequireRole } from '../auth/guards'
 import GuestLayout from '../layouts/GuestLayout'
 import MemberLayout from '../layouts/MemberLayout'
@@ -13,12 +13,21 @@ import MemberReview from '../pages/member-review/MemberReview'
 import NotFound from '../pages/NotFound'
 import PendingApproval from '../pages/PendingApproval'
 import Profile from '../pages/Profile'
+import RegisterDone from '../pages/register/RegisterDone'
+import RegisterLineSuccess from '../pages/register/RegisterLineSuccess'
 import RegisterPrivacy from '../pages/register/RegisterPrivacy'
+import RegisterProfile from '../pages/register/RegisterProfile'
 import { PATHS } from './paths'
+
+// 開發用頁面：只在 dev 模式註冊；import.meta.env.DEV 讓正式 build 連同動態 import 一起移除
+const devRoutes: RouteObject[] = import.meta.env.DEV
+  ? [{ path: PATHS.devOtp, lazy: async () => ({ Component: (await import('../mocks/OtpDemo')).default }) }]
+  : []
 
 // 路由表（#10）。路徑一律用 routes/paths.ts 的 PATHS；*Placeholder 為尚未實作的頁面，完成後直接替換 element。
 // 可見角色要與 layouts/memberNav.ts 的選單／首頁卡片設定一致。
 export const router = createBrowserRouter([
+  ...devRoutes,
   // 未登入：已登入（且已核准）會被導回原頁或首頁
   {
     element: <GuestOnly />,
@@ -29,6 +38,8 @@ export const router = createBrowserRouter([
           { path: PATHS.login, element: <Login /> },
           { path: PATHS.register, element: <GuestPlaceholder title="創建帳號" /> },
           { path: PATHS.registerPrivacy, element: <RegisterPrivacy /> },
+          // 全寬表單：頁面內以 useGuestLayout('full') 切換版型
+          { path: PATHS.registerProfile, element: <RegisterProfile /> },
           { path: PATHS.forgotPassword, element: <GuestPlaceholder title="忘記密碼" /> },
           // TODO(#12)：進度查詢設計未畫（查詢條件推測為信箱＋手機，見 api/register.ts queryProgress）
           { path: PATHS.progress, element: <GuestPlaceholder title="進度查詢" /> },
@@ -36,6 +47,9 @@ export const router = createBrowserRouter([
       },
       // Line 登入導回：只顯示 loading 遮罩，不套卡片版型
       { path: PATHS.lineCallback, element: <LineCallback /> },
+      // 註冊結果頁：整頁置中、無卡片
+      { path: PATHS.registerDone, element: <RegisterDone /> },
+      { path: PATHS.registerLine, element: <RegisterLineSuccess /> },
     ],
   },
   // 等待審核：登入與否皆可開啟

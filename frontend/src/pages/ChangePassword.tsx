@@ -5,14 +5,14 @@ import { useNavigate } from 'react-router'
 import { isApiError } from '../api/client'
 import { changePassword } from '../api/password'
 import ActionBar from '../components/ActionBar'
-import { AppForm, PasswordInput } from '../components/form'
+import { AppForm, FormCard, FormCardItem, formCardLayout, PasswordInput } from '../components/form'
 import { useNotifyModal } from '../components/NoticeModal'
 import ResultPage from '../components/ResultPage'
 import { getPasswordRuleError } from '../constants/password'
 import { PATHS } from '../routes/paths'
 import typography from '../styles/typography.module.css'
-import { formControlSize } from '../theme/components/formControls'
 import { cx } from '../utils/cx'
+import { hasInAppHistory } from '../utils/history'
 import styles from './ChangePassword.module.css'
 
 // 修改密碼（issue #22，docs/design/change-password/README.md）
@@ -83,8 +83,7 @@ export default function ChangePassword() {
 
   // 有站內上一頁就回上一頁，直接開啟此頁時回首頁
   const handleCancel = () => {
-    const idx = (window.history.state as { idx?: number } | null)?.idx ?? 0
-    if (idx > 0) navigate(-1)
+    if (hasInAppHistory()) navigate(-1)
     else goHome()
   }
 
@@ -123,41 +122,35 @@ export default function ChangePassword() {
         className={styles.form}
         requiredMark={false}
         validateTrigger="onBlur"
-        labelAlign="left"
-        labelCol={{ flex: `0 0 ${formControlSize.labelWidth}px` }}
-        // 字串 flex 原樣輸出；數字 1 會被轉成「1 1 auto」，xs 時輸入框會被擠到下一行
-        wrapperCol={{ flex: '1 1 0' }}
+        {...formCardLayout}
         onFinish={handleFinish}
       >
         <h1 className={cx(typography.pageTitle, styles.title)}>修改密碼</h1>
-        <div className={styles.card}>
-          <Form.Item
-            className={styles.row}
+        <FormCard className={styles.card}>
+          <FormCardItem
             name="currentPassword"
             label="密碼"
             rules={[{ required: true, message: MESSAGES.currentRequired }]}
           >
             <PasswordInput placeholder="請輸入密碼" autoComplete="current-password" />
-          </Form.Item>
-          <Form.Item
-            className={styles.row}
+          </FormCardItem>
+          <FormCardItem
             name="newPassword"
             label="新密碼"
             dependencies={['currentPassword']}
             rules={newPasswordRules}
           >
             <PasswordInput placeholder="請輸入新密碼" autoComplete="new-password" />
-          </Form.Item>
-          <Form.Item
-            className={styles.row}
+          </FormCardItem>
+          <FormCardItem
             name="confirmPassword"
             label="確認密碼"
             dependencies={['newPassword']}
             rules={confirmPasswordRules}
           >
             <PasswordInput placeholder="請確認新密碼" autoComplete="new-password" />
-          </Form.Item>
-        </div>
+          </FormCardItem>
+        </FormCard>
         <ActionBar
           bleed
           onCancel={handleCancel}

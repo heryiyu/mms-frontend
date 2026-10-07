@@ -10,9 +10,7 @@ import { PATHS } from '../../routes/paths'
 import typography from '../../styles/typography.module.css'
 import { cx } from '../../utils/cx'
 import styles from './RegisterPrivacy.module.css'
-
-// TODO(#12)：「會員資料輸入」頁尚未實作，路徑暫定（PATHS.registerProfile）
-const NEXT_PATH = PATHS.registerProfile
+import { updateRegisterFlow } from './registerFlow'
 
 type LoadState = { status: 'loading' } | { status: 'error' } | { status: 'ready'; statement: PrivacyStatement }
 
@@ -21,8 +19,8 @@ type LoadState = { status: 'loading' } | { status: 'error' } | { status: 'ready'
  * 內文要捲到底才能勾選「本人同意個資保護之聲明」，勾選後「確認」才可按。
  * 稿上沒有「返回」連結（web／mob 皆無）。
  *
- * TODO(#12)：註冊流程狀態（registerToken、同意版本）尚無共用 store，暫以 router state 帶到下一步；
- *            也還沒有步驟守衛（未完成 OTP 驗證就直接進入此頁）。
+ * 同意結果與聲明版本寫入註冊流程暫存（registerFlow），下一步「會員資料輸入」送出時帶回。
+ * TODO(#12)：還沒有步驟守衛（未完成 OTP 驗證就直接進入此頁）；會員資料頁會檢查 registerToken 並導回起點。
  */
 export default function RegisterPrivacy() {
   useGuestLayout('card')
@@ -48,7 +46,8 @@ export default function RegisterPrivacy() {
 
   const handleConfirm = () => {
     if (state.status !== 'ready' || !agreed) return
-    navigate(NEXT_PATH, { state: { agreedToPrivacy: true, privacyVersion: state.statement.version } })
+    updateRegisterFlow({ agreedToPrivacy: true, privacyVersion: state.statement.version })
+    navigate(PATHS.registerProfile)
   }
 
   return (

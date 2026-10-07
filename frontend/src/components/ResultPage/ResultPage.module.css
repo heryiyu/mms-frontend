@@ -41,6 +41,37 @@
   color: var(--color-gray-1);
 }
 
+/* 說明內的連結（例：聯繫信箱）為主色 */
+.description a,
+.description a:visited {
+  color: var(--color-primary);
+}
+
+/*
+ * 整頁版（fullPage）：無卡片，整頁 bgLayout，內容置中。
+ * 間距量自 docs/design/login、register 的等待審核／等待核准中截圖（@2x 換算 1x，目測）：
+ * 標題 → 說明約 4px、說明 → 「返回」約 8px。
+ */
+.fullPage {
+  display: flex;
+  min-height: 100dvh;
+  padding: var(--safe-top) 0 var(--safe-bottom);
+  background: var(--color-bg-layout);
+}
+
+.compact {
+  --result-title-gap: 4px;
+  --result-extra-gap: 8px;
+}
+
+.compact .result :global(.ant-result-title) {
+  margin-block: 0 var(--result-title-gap);
+}
+
+.compact .result :global(.ant-result-extra) {
+  margin-top: var(--result-extra-gap);
+}
+
 @media (min-width: 992px) {
   .wrapper {
     --result-icon-size: 80px;

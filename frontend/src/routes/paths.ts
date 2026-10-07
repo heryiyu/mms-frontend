@@ -5,8 +5,12 @@ export const PATHS = {
   register: '/register',
   /** 註冊：個資保護聲明 */
   registerPrivacy: '/register/privacy',
-  /** 註冊：基本資料（尚未實作，TODO(#12)） */
+  /** 註冊：會員資料輸入（全寬表單） */
   registerProfile: '/register/profile',
+  /** 註冊：送出完成「等待核准中」 */
+  registerDone: '/register/done',
+  /** 註冊：Line 授權成功「Line創建成功」，自動跳轉接回一般流程 */
+  registerLine: '/register/line',
   forgotPassword: '/forgot-password',
   /** 審核進度查詢（登入頁「進度查詢」；設計未畫，目前為佔位頁，TODO(#12)） */
   progress: '/progress',
@@ -26,6 +30,10 @@ export const PATHS = {
   settings: '/settings',
   /** 權限不足 */
   forbidden: '/403',
+
+  /* 開發用（只在 dev 模式註冊，見 routes/index.tsx） */
+  /** OTP 元件示範（issue #5） */
+  devOtp: '/dev/otp',
 } as const
 
 /** 路由守衛導向登入頁時放在 location.state，登入後導回原頁 */
@@ -38,6 +46,8 @@ const GUEST_PATHS: string[] = [
   PATHS.register,
   PATHS.registerPrivacy,
   PATHS.registerProfile,
+  PATHS.registerDone,
+  PATHS.registerLine,
   PATHS.forgotPassword,
   PATHS.progress,
   PATHS.lineCallback,

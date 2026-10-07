@@ -3,6 +3,7 @@ import type { ReactNode } from 'react'
 import { layout } from '../../theme/tokens'
 import { Button } from '../Button'
 import Icon from '../Icon'
+import { cx } from '../../utils/cx'
 import styles from './NoticeModal.module.css'
 
 // 通知彈窗（docs/design/components/README.md「pop-up說明」）
@@ -16,8 +17,8 @@ export interface NoticeModalProps {
   okText?: ReactNode
   /**
    * 有值時顯示雙按鈕（取消／確認）變體，例：會員審核的退回確認。
-   * TODO(#12): 設計稿只畫了單按鈕，雙按鈕版樣式（排列、文字「取消」或「返回」）待設計確認，
-   * 暫定左 Outline「取消」、右 Solid「確認」，並排置中。
+   * 樣式依 docs/design/member-review/{web,mob}/會員審核/退回機制.png：左 Outline「取消」、右 Solid「確認」，
+   * 兩顆等寬並排置中。
    */
   cancelText?: ReactNode
   /** 確認按鈕載入中（例：送出退回時） */
@@ -41,7 +42,7 @@ export default function NoticeModal({
   afterClose,
 }: NoticeModalProps) {
   const footer = (
-    <div className={styles.footer}>
+    <div className={cx(styles.footer, cancelText != null && styles.dual)}>
       {cancelText != null && (
         <Button variant="secondary" className={styles.button} onClick={onCancel}>
           {cancelText}

@@ -1,0 +1,43 @@
+/*
+ * OTP 列客製（issue #5）。規格：docs/design/register、forgot-password、profile、receipt 的 otp 畫面
+ * 「OTP 輸入框＋有效時間倒數框」左右並排、等寬，間距約 16px（AntD Flex gap="middle"）。
+ */
+
+.row {
+  width: 100%;
+}
+
+.cell {
+  flex: 1 1 0;
+  min-width: 0;
+}
+
+/* 倒數框：灰底停用樣式（gray4 底、1px gray3 框、gray2 字），高度與輸入框一致；稿上不可編輯 */
+.timer {
+  display: flex;
+  align-items: center;
+  height: var(--layout-control-height);
+  /* 左右內距與 AntD Input 相同，由 OtpCountdown 以 token 帶入 --otp-timer-padding-inline */
+  padding-inline: var(--otp-timer-padding-inline);
+  border: 1px solid var(--color-gray-3);
+  border-radius: var(--radius-md);
+  background: var(--color-gray-4);
+  color: var(--color-gray-2);
+  font-size: var(--font-size-body-1);
+  line-height: var(--line-height-body-1);
+  letter-spacing: var(--letter-spacing-body-1);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  user-select: none;
+}
+
+/* 單獨使用（未放在 Form.Item）時的錯誤訊息：Body1、colorError，與 AppForm 的驗證訊息一致 */
+.error {
+  margin-top: var(--otp-error-margin-top);
+  color: var(--color-error);
+  font-size: var(--font-size-body-1);
+  line-height: var(--line-height-body-1);
+  letter-spacing: var(--letter-spacing-body-1);
+}

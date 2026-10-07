@@ -27,7 +27,7 @@ export interface ApplicantCardProps {
   member: PendingMember
   checked: boolean
   onCheckedChange: (id: string, checked: boolean) => void
-  /** 卡片底部「退回」；TODO(#25)：退回流程（確認彈窗 → 已退回！）另案實作 */
+  /** 卡片底部「退回」：開啟退回確認彈窗（只針對該筆，與勾選無關） */
   onReject?: (member: PendingMember) => void
 }
 

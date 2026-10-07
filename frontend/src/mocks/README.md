@@ -70,6 +70,11 @@
 | 其他 4 碼數字（例如 `1234`、`7414`） | 通過 |
 | 發送 OTP 時信箱填 `frequent@test.com` | 429 `TOO_MANY_ATTEMPTS`（註冊、忘記密碼、個資修改、收據都適用） |
 
+OTP 元件示範：dev 模式開 `/dev/otp`（`PATHS.devOtp`，`OtpDemo.tsx`；正式 build 不會註冊這個路由）。
+- 「單獨使用」不打 API：可切換位數（4／5／6）、倒數（10 秒／1 分／5 分）、錯誤與停用狀態，測輸入、貼上整串簡訊（含全形數字）、倒數歸零後「重新發送」。
+- 「AppForm＋MSW」用忘記密碼 API（`member@test.com`＋`0912345678`）實際發送與驗證，上表的 OTP 規則都適用；預設把倒數改成 10 秒方便測重新發送。
+- 元件與 hook 在 `src/components/OtpInput/`（`OtpField`、`OtpInput`、`OtpCountdown`、`useOtpSender`、`otpRules`、`getOtpErrorMessage`）。
+
 ### 註冊
 
 - 發送 OTP：信箱或手機與現有帳號相同（例如 `member@test.com`、`0912345678`）→ 409 `ALREADY_REGISTERED`。
@@ -77,6 +82,23 @@
 - 發送 OTP：信箱／手機格式錯誤（手機需 `09` 開頭共 10 碼）→ 422 `VALIDATION_ERROR`。
 - 送出註冊：身分證字號填 `Q123456789`（已存在）→ 409 `ALREADY_REGISTERED`；`registerToken` 錯誤或已用過 → 400 `TOKEN_INVALID`；教會／牧區／小組／EKK 不屬於同一條線 → 422。
 - 註冊成功後該帳號為待審核：會出現在 `leader@test.com` 的審核清單，登入回 `ACCOUNT_PENDING`，進度查詢回 `PENDING`。
+
+註冊頁面（`pages/register/`）對應的畫面：
+
+- 跨步驟資料存在 `sessionStorage` 的 `nlc.registerFlow`（`pages/register/registerFlow.ts`）：OTP 驗證步驟寫入 `registerToken`／`birthDate`／`email`／`phone`（／`guardianName`），個資聲明寫入 `agreedToPrivacy`，Line 授權寫入 `lineToken`；送出成功後清除。
+- 會員資料輸入（`/register/profile`）缺 `registerToken`、`agreedToPrivacy`、生日、信箱或手機時導回 `/register`。註冊第一步（#15）完成前，可先在 DevTools Console 取得 token 再開頁：
+
+  ```js
+  const { registerToken } = await (await fetch('/api/register/otp/verify', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email: 'new@test.com', phone: '0911222333', otp: '1234' }) })).json()
+  sessionStorage.setItem('nlc.registerFlow', JSON.stringify({ registerToken, birthDate: '1993-01-01', email: 'new@test.com', phone: '0911222333', agreedToPrivacy: true }))
+  history.pushState(null, '', '/register/profile'); dispatchEvent(new PopStateEvent('popstate'))
+  ```
+
+  最後一行用站內導覽換頁：mock 的 `registerToken` 存在記憶體，若用 `location.href` 或重新整理，token 會跟著清掉，送出時變成 `TOKEN_INVALID`。要測個資聲明時，把 `agreedToPrivacy: true` 拿掉、網址改 `/register/privacy`。
+
+- 教會／牧區／小組／EKK 選項來自 `db.ts` 的 `ORG_TREE`（例：台北仁愛堂 → 新烏87 → Jessus → Hooo）；選了教會才展開牧區／小組／EKK，改上層會清空下層。
+- 身分證字號填 `Q123456789` → 通知彈窗「此身份證字號、電子信箱或手機已註冊」；`registerToken` 失效（例如同一 token 送出第二次）→ 通知彈窗後導回 `/register`。
+- 送出成功 → `/register/done`「等待核准中」，「返回」回登入頁。
 
 ### 進度查詢（`POST /register/progress`）
 
@@ -141,7 +163,7 @@
 | `mock-line-pending` | 403 `ACCOUNT_PENDING` |
 | 其他 | 400 `TOKEN_INVALID` |
 
-登入頁按「使用Line快速登入」會導到 `/auth/line/callback?code=mock-line-code&state=mock-state`（`pages/login/LineCallback.tsx`），直接登入 `member@test.com`。其他情境可直接開網址並改 `code`：`mock-line-new` → 註冊頁（state 帶 `lineToken`）、`mock-line-pending` → 等待審核頁、任意其他值 → 回登入頁並跳通知彈窗。
+登入頁按「使用Line快速登入」會導到 `/auth/line/callback?code=mock-line-code&state=mock-state`（`pages/login/LineCallback.tsx`），直接登入 `member@test.com`。其他情境可直接開網址並改 `code`：`mock-line-new` → 「Line創建成功」頁（`/register/line`，`lineToken` 存進 `nlc.registerFlow`），2 秒後自動跳到註冊第一步 `/register`、`mock-line-pending` → 等待審核頁、任意其他值 → 回登入頁並跳通知彈窗。
 
 ## 暫定的密碼規則
 
@@ -155,6 +177,7 @@ src/mocks/
   db.ts               假資料與記憶體資料庫（教會組織、使用者）
   utils.ts            延遲、錯誤回應、token／OTP／欄位驗證
   DevRoleSwitcher.tsx 開發用切換登入身分
+  OtpDemo.tsx         開發用 OTP 元件示範（/dev/otp）
   handlers/
     index.ts          彙整所有 handler
     auth.ts           登入、登出、Line（登入成功回 { token, role, status: 'ACTIVE' }）
