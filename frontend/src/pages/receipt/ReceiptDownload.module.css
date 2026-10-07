@@ -1,0 +1,78 @@
+/*
+ * 奉獻收據下載（docs/design/receipt/{web,mob}/奉獻收據下載/*.png），mobile-first，≥ lg 切桌機。
+ * 尺寸由 @2x 截圖換算 1x（目測）；色彩／字級／圓角一律用 CSS 變數。
+ * 手機稿：標題＋卡片在 top bar 與底部操作列之間垂直置中（OTP 狀態卡片變高、整體上移）。
+ * 桌機稿：標題靠左、距麵包屑列約 80px（版型預設內距），卡片滿寬。
+ */
+.page {
+  /* 手機垂直置中以整個內容區（top bar 到操作列）為準，抵銷版型的內容上距（MemberLayout 的 --member-content-top） */
+  --receipt-top-offset: calc(var(--member-content-top) * -1);
+  /* 標題與卡片間距約 12px（手機）／8px（桌機，同修改密碼）（目測） */
+  --receipt-title-gap: 12px;
+  /* 卡片上下內距約 40px、左右 20px；說明與輸入框、輸入框之間約 12px（目測） */
+  --receipt-card-padding-block: 40px;
+  --receipt-field-gap: 12px;
+
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  margin-top: var(--receipt-top-offset);
+}
+
+.form {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+}
+
+/* 手機：撐滿操作列以上的空間並垂直置中；上下保留間距，內容高時不貼住 top bar／操作列 */
+.body {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  justify-content: center;
+  padding-block: var(--app-gutter);
+}
+
+.title {
+  margin: 0 0 var(--receipt-title-gap);
+  text-align: center;
+}
+
+.card.card {
+  padding: var(--receipt-card-padding-block) var(--layout-page-padding-mobile);
+}
+
+/* 說明文字：Body1、gray2 */
+.description {
+  margin: 0 0 var(--receipt-field-gap);
+  font-size: var(--font-size-body-1);
+  line-height: var(--line-height-body-1);
+  letter-spacing: var(--letter-spacing-body-1);
+  color: var(--color-gray-2);
+}
+
+/* 選擇器重複 class 以蓋過 AntD css-in-js 的 Form.Item margin-bottom */
+.field.field {
+  margin-bottom: var(--receipt-field-gap);
+}
+
+.field.field:last-child {
+  margin-bottom: 0;
+}
+
+@media (min-width: 992px) {
+  .page {
+    --receipt-top-offset: 0px;
+    --receipt-title-gap: 8px;
+  }
+
+  .body {
+    justify-content: flex-start;
+    padding-block: 0 var(--app-gutter);
+  }
+
+  .title {
+    text-align: start;
+  }
+}

@@ -11,7 +11,10 @@ export const PATHS = {
   registerDone: '/register/done',
   /** 註冊：Line 授權成功「Line創建成功」，自動跳轉接回一般流程 */
   registerLine: '/register/line',
+  /** 忘記密碼：信箱＋手機 → OTP → 設定新密碼（同頁切換步驟） */
   forgotPassword: '/forgot-password',
+  /** 忘記密碼：「變更完成！」（整頁置中、無卡片） */
+  forgotPasswordDone: '/forgot-password/done',
   /** 審核進度查詢（登入頁「進度查詢」；設計未畫，目前為佔位頁，TODO(#12)） */
   progress: '/progress',
   /** Line OAuth 授權完成後的導回頁（需與後端設定的 redirect URI 一致，TODO(#12)） */
@@ -22,6 +25,8 @@ export const PATHS = {
   /* 已登入 */
   home: '/',
   profile: '/profile',
+  /** 個人資訊修改（修改 → OTP 驗證 → 變更完成） */
+  profileEdit: '/profile/edit',
   changePassword: '/change-password',
   receipt: '/receipt',
   /** 區長以上 */
@@ -49,6 +54,7 @@ const GUEST_PATHS: string[] = [
   PATHS.registerDone,
   PATHS.registerLine,
   PATHS.forgotPassword,
+  PATHS.forgotPasswordDone,
   PATHS.progress,
   PATHS.lineCallback,
   PATHS.pending,

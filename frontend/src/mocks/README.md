@@ -86,7 +86,8 @@ OTP 元件示範：dev 模式開 `/dev/otp`（`PATHS.devOtp`，`OtpDemo.tsx`；�
 註冊頁面（`pages/register/`）對應的畫面：
 
 - 跨步驟資料存在 `sessionStorage` 的 `nlc.registerFlow`（`pages/register/registerFlow.ts`）：OTP 驗證步驟寫入 `registerToken`／`birthDate`／`email`／`phone`（／`guardianName`），個資聲明寫入 `agreedToPrivacy`，Line 授權寫入 `lineToken`；送出成功後清除。
-- 會員資料輸入（`/register/profile`）缺 `registerToken`、`agreedToPrivacy`、生日、信箱或手機時導回 `/register`。註冊第一步（#15）完成前，可先在 DevTools Console 取得 token 再開頁：
+- 註冊第一步（`/register`，`Register.tsx`）：填出生／信箱（例如 `new@test.com`）／手機（例如 `0911222333`）按「確認」發送 OTP，上面「OTP」表的驗證碼規則都適用；驗證通過後寫入 `nlc.registerFlow` 並導向個資聲明。出生日期未滿 18 歲會多出「監護人名稱」欄；發送後改了上面任何欄位會回到未發送狀態。
+- 會員資料輸入（`/register/profile`）缺 `registerToken`、`agreedToPrivacy`、生日、信箱或手機時導回 `/register`。要跳過前面步驟直接測，可先在 DevTools Console 取得 token 再開頁：
 
   ```js
   const { registerToken } = await (await fetch('/api/register/otp/verify', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email: 'new@test.com', phone: '0911222333', otp: '1234' }) })).json()
@@ -119,6 +120,18 @@ OTP 元件示範：dev 模式開 `/dev/otp`（`PATHS.devOtp`，`OtpDemo.tsx`；�
 | 新密碼不符規則（見下） | 422 `VALIDATION_ERROR` |
 | `resetToken` 錯誤或已用過 | 400 `TOKEN_INVALID` |
 
+忘記密碼頁（`/forgot-password`，`pages/forgot-password/ForgotPassword.tsx`；登入頁「忘記密碼？」進入）對應的畫面：
+
+| 情境 | 畫面 |
+| --- | --- |
+| `member@test.com` + `0912345678` → 確認 | 出現 OTP 列與「有效時間」5 分鐘倒數；OTP 依上方「OTP」規則（`1234` 通過、`0000` 錯誤、`9999` 逾時，錯誤／逾時跳通知彈窗並清空 OTP） |
+| `notfound@test.com` | 通知彈窗「查無此帳號」 |
+| `member@test.com` + 其他手機（例如 `0999999999`） | 通知彈窗「電子信箱與手機號碼不符」 |
+| `frequent@test.com` | 通知彈窗「發送過於頻繁，請稍後再試」 |
+| 信箱格式錯誤（`abc`）、手機不是 `09` 開頭 10 碼 | 欄位下方 inline 錯誤，不會呼叫 API |
+| 已發送 OTP 後改信箱或手機 | OTP 列消失，回到未發送狀態，按「確認」重新發送 |
+| OTP 通過 → 設定新密碼 | 新密碼不符規則、兩次不一致 → inline 錯誤；成功 → `/forgot-password/done`「變更完成！」，「返回」回登入頁，可用新密碼登入（重新整理後還原為 `Member@123`） |
+
 ### 修改密碼（`PUT /me/password`）
 
 - 目前密碼錯誤 → 400 `WRONG_CURRENT_PASSWORD`
@@ -127,6 +140,7 @@ OTP 元件示範：dev 模式開 `/dev/otp`（`PATHS.devOtp`，`OtpDemo.tsx`；�
 
 ### 個人資訊修改
 
+- 流程：`/profile` 點「編輯資料」→ `/profile/edit` 修改後「確認」（`POST /me/profile-change/otp`）→ 輸入 OTP（上表規則，例如 `1234`）→ 變更完成；回檢視頁、首頁橫幅暱稱會顯示新資料（重新整理後還原）。
 - 新信箱／手機已被其他帳號使用（例如改成 `leader@test.com`）→ 409 `ALREADY_REGISTERED`
 - 沒先送出修改內容就驗證 OTP → 410 `OTP_EXPIRED`
 
@@ -134,6 +148,18 @@ OTP 元件示範：dev 模式開 `/dev/otp`（`PATHS.devOtp`，`OtpDemo.tsx`；�
 
 - 信箱與手機必須等於登入會員自己的資料，否則 400 `EMAIL_PHONE_MISMATCH`（用 `member@test.com` + `0912345678` 測成功）。
 - `year` 填 2020 以前（例如 `2019`）→ 404 `NO_RECORDS`；不帶 `year` 視為去年。
+
+奉獻收據頁（`pages/receipt/ReceiptDownload.tsx`，`/receipt`）對應的畫面（頁面目前不帶 `year`）：
+
+| 情境 | 畫面 |
+| --- | --- |
+| 信箱／手機格式錯誤（例如 `abc`、`0812`） | 欄位下方 inline 錯誤，不會呼叫 API |
+| 信箱或手機與登入會員不符 | 通知彈窗「電子信箱或手機與會員資料不符」 |
+| 信箱填 `frequent@test.com` | 通知彈窗「發送過於頻繁，請稍後再試」 |
+| `member@test.com` + `0912345678` | 出現驗證碼列與「有效時間」倒數；倒數結束可「重新發送」 |
+| 驗證碼 `0000`／`9999` | 通知彈窗「驗證碼錯誤，請重新輸入」／「驗證碼已逾時，請重新發送」 |
+| 其他 4 碼（例如 `7414`） | 完成頁「奉獻收據已送出，請至信箱查收！」 |
+| OTP 發送後修改信箱或手機 | 驗證碼列收起，需重新按「確認」發送 |
 
 ### 會員審核
 

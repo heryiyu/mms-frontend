@@ -21,10 +21,13 @@ const renderRequiredMark = (label: ReactNode, { required }: { required: boolean 
 // - 必填星號在標籤後、不顯示冒號
 // - 內含的 Input 在驗證失敗時框線維持灰色，只有文字與提示文字變紅
 // - 驗證訊息為 Body1、colorError
+// - 關閉瀏覽器原生驗證（noValidate）：type="email" 等欄位格式不符時，原生泡泡會擋下送出，
+//   AntD 的 inline 錯誤與 onFinishFailed（通知彈窗）就不會出現
 export default function AppForm<Values = unknown>({ className, ...props }: PropsWithChildren<FormProps<Values>>) {
   return (
     <Form<Values>
       className={cx(styles.form, className)}
+      noValidate
       colon={false}
       requiredMark={renderRequiredMark}
       {...props}

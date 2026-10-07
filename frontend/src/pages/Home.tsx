@@ -1,9 +1,9 @@
 import { Badge, Card, Col, Row, theme } from 'antd'
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router'
-import { getMe } from '../api/member'
 import { getPendingCount } from '../api/review'
 import { useAuth } from '../auth/useAuth'
+import { useMe } from '../auth/useMe'
 import IconCircle from '../components/IconCircle'
 import { getMemberQuickActions, type MemberQuickAction } from '../layouts/memberNav'
 import { PATHS } from '../routes/paths'
@@ -11,23 +11,10 @@ import typography from '../styles/typography.module.css'
 import { cx } from '../utils/cx'
 import styles from './Home.module.css'
 
-/** 橫幅顯示的稱呼：暱稱優先（註冊時暱稱可不填），沒有就用姓名 */
-function useDisplayName(token: string | undefined): string {
-  const [name, setName] = useState('')
-
-  useEffect(() => {
-    if (!token) return
-    let cancelled = false
-    getMe()
-      .then((me) => !cancelled && setName(me.nickname || me.name))
-      // 取不到資料時橫幅只顯示「Hi」，不擋住首頁其他功能
-      .catch(() => !cancelled && setName(''))
-    return () => {
-      cancelled = true
-    }
-  }, [token])
-
-  return name
+/** 橫幅顯示的稱呼：暱稱優先（註冊時暱稱可不填），沒有就用姓名；取不到資料時只顯示「Hi」，不擋住首頁其他功能 */
+function useDisplayName(): string {
+  const { me } = useMe()
+  return me ? me.nickname || me.name : ''
 }
 
 /** 待審核人數（會員審核卡片徽章）；只有區長以上才會去抓，其餘一律 0 */
@@ -72,7 +59,7 @@ function QuickActionCard({ action, badgeCount = 0 }: { action: MemberQuickAction
 export default function Home() {
   const { session, role, can } = useAuth()
   const token = session?.token
-  const displayName = useDisplayName(token)
+  const displayName = useDisplayName()
   const pendingCount = usePendingReviewCount(token, can('leader'))
   const actions = getMemberQuickActions(role)
   const { token: designToken } = theme.useToken()

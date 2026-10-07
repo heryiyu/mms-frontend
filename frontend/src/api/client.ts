@@ -93,3 +93,16 @@ export const put = <T>(path: string, body?: unknown, init: RequestInit = {}) =>
 export const patch = <T>(path: string, body?: unknown, init: RequestInit = {}) =>
   request<T>(path, withBody('PATCH', body, init))
 export const del = <T>(path: string, init: RequestInit = {}) => request<T>(path, { ...init, method: 'DELETE' })
+
+/**
+ * 錯誤彈窗的內文：後端有給錯誤碼時用後端訊息；沒給 code（例如 5xx）時不顯示「API 502」這類技術訊息，改用 fallback。
+ */
+export function getApiErrorMessage(error: unknown, fallback: string): string {
+  return isApiError(error) && error.code !== 'UNKNOWN' ? error.message : fallback
+}
+
+/** 後端 422 VALIDATION_ERROR 的欄位錯誤（body 為 { fields: { email: '…' } }）；其他錯誤回空物件 */
+export function getValidationFields(error: unknown): Record<string, string> {
+  if (!isApiError(error, 'VALIDATION_ERROR')) return {}
+  return (error.data as { fields?: Record<string, string> } | undefined)?.fields ?? {}
+}

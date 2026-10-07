@@ -4,6 +4,8 @@ import GuestLayout from '../layouts/GuestLayout'
 import MemberLayout from '../layouts/MemberLayout'
 import ChangePassword from '../pages/ChangePassword'
 import Forbidden from '../pages/Forbidden'
+import ForgotPassword from '../pages/forgot-password/ForgotPassword'
+import ForgotPasswordDone from '../pages/forgot-password/ForgotPasswordDone'
 import GuestPlaceholder from '../pages/GuestPlaceholder'
 import Home from '../pages/Home'
 import LineCallback from '../pages/login/LineCallback'
@@ -12,7 +14,10 @@ import MemberPlaceholder from '../pages/MemberPlaceholder'
 import MemberReview from '../pages/member-review/MemberReview'
 import NotFound from '../pages/NotFound'
 import PendingApproval from '../pages/PendingApproval'
-import Profile from '../pages/Profile'
+import Profile from '../pages/profile/Profile'
+import ProfileEdit from '../pages/profile/ProfileEdit'
+import ReceiptDownload from '../pages/receipt/ReceiptDownload'
+import Register from '../pages/register/Register'
 import RegisterDone from '../pages/register/RegisterDone'
 import RegisterLineSuccess from '../pages/register/RegisterLineSuccess'
 import RegisterPrivacy from '../pages/register/RegisterPrivacy'
@@ -36,11 +41,11 @@ export const router = createBrowserRouter([
         element: <GuestLayout />,
         children: [
           { path: PATHS.login, element: <Login /> },
-          { path: PATHS.register, element: <GuestPlaceholder title="創建帳號" /> },
+          { path: PATHS.register, element: <Register /> },
           { path: PATHS.registerPrivacy, element: <RegisterPrivacy /> },
           // 全寬表單：頁面內以 useGuestLayout('full') 切換版型
           { path: PATHS.registerProfile, element: <RegisterProfile /> },
-          { path: PATHS.forgotPassword, element: <GuestPlaceholder title="忘記密碼" /> },
+          { path: PATHS.forgotPassword, element: <ForgotPassword /> },
           // TODO(#12)：進度查詢設計未畫（查詢條件推測為信箱＋手機，見 api/register.ts queryProgress）
           { path: PATHS.progress, element: <GuestPlaceholder title="進度查詢" /> },
         ],
@@ -50,6 +55,7 @@ export const router = createBrowserRouter([
       // 註冊結果頁：整頁置中、無卡片
       { path: PATHS.registerDone, element: <RegisterDone /> },
       { path: PATHS.registerLine, element: <RegisterLineSuccess /> },
+      { path: PATHS.forgotPasswordDone, element: <ForgotPasswordDone /> },
     ],
   },
   // 等待審核：登入與否皆可開啟
@@ -63,8 +69,9 @@ export const router = createBrowserRouter([
         children: [
           { path: PATHS.home, element: <Home /> },
           { path: PATHS.profile, element: <Profile /> },
+          { path: PATHS.profileEdit, element: <ProfileEdit /> },
           { path: PATHS.changePassword, element: <ChangePassword /> },
-          { path: PATHS.receipt, element: <MemberPlaceholder title="奉獻收據下載" /> },
+          { path: PATHS.receipt, element: <ReceiptDownload /> },
           // 區長以上；權限不足 → 403
           {
             element: <RequireRole minRole="leader" />,

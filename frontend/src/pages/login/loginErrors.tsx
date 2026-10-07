@@ -1,4 +1,4 @@
-import { isApiError } from '../../api/client'
+import { getApiErrorMessage, isApiError } from '../../api/client'
 import type { NotifyOptions } from '../../components/NoticeModal'
 import ContactEmailLink from '../../components/ContactEmailLink'
 
@@ -46,6 +46,5 @@ export function getLoginErrorNotice(error: unknown): NotifyOptions {
   }
   if (isApiError(error, 'NETWORK_ERROR')) return { title: TITLE, content: error.message }
   // 其他錯誤（5xx、未知）不顯示「API 500」這類技術訊息。TODO(#12)：通用錯誤文案設計未定
-  const known = isApiError(error) && error.code !== 'UNKNOWN'
-  return { title: TITLE, content: known ? error.message : '登入失敗，請稍後再試' }
+  return { title: TITLE, content: getApiErrorMessage(error, '登入失敗，請稍後再試') }
 }
