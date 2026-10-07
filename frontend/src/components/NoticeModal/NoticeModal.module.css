@@ -1,7 +1,29 @@
-/* 通知彈窗：數值皆取自 design token 的 CSS 變數（src/theme/cssVars.ts） */
+/* 通知彈窗：色彩、字級、圓角取自 design token 的 CSS 變數（src/theme/cssVars.ts） */
+
+/*
+ * 間距由 @2x 截圖換算 1x（目測）：components/pop-up說明.png 與 member-review/{web,mob}/會員審核/退回機制.png 一致——
+ * 上內距 24、標題與內文距 32、內文與按鈕距 32、下內距 24（單行內文時彈窗高約 200px）。
+ * 雙按鈕：兩顆等寬、間距 16，左右再各內縮 36（距彈窗邊 60）→ 桌機各約 172px、手機（390 寬）各約 107px。
+ */
+.root {
+  --notice-modal-padding-y: 24px;
+  --notice-modal-section-gap: 32px;
+  --notice-modal-button-gap: 16px;
+  --notice-modal-dual-inset: 36px;
+}
 
 .root :global(.ant-modal-container) {
   border-radius: var(--radius-lg);
+  padding-top: var(--notice-modal-padding-y);
+  padding-bottom: var(--notice-modal-padding-y);
+}
+
+.root :global(.ant-modal-header) {
+  margin-bottom: var(--notice-modal-section-gap);
+}
+
+.root :global(.ant-modal-footer) {
+  margin-top: var(--notice-modal-section-gap);
 }
 
 /* 標題置中、粗體 Headline5 gray1 */
@@ -43,4 +65,14 @@
 .button {
   flex: 0 1 160px;
   min-width: 0;
+}
+
+/* 雙按鈕（取消／確認）：依退回機制.png，兩顆等寬平分內縮後的寬度 */
+.dual {
+  gap: var(--notice-modal-button-gap);
+  padding-inline: var(--notice-modal-dual-inset);
+}
+
+.dual .button {
+  flex: 1 1 0;
 }
