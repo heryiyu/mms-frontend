@@ -86,7 +86,8 @@ OTP 元件示範：dev 模式開 `/dev/otp`（`PATHS.devOtp`，`OtpDemo.tsx`；�
 註冊頁面（`pages/register/`）對應的畫面：
 
 - 跨步驟資料存在 `sessionStorage` 的 `nlc.registerFlow`（`pages/register/registerFlow.ts`）：OTP 驗證步驟寫入 `registerToken`／`birthDate`／`email`／`phone`（／`guardianName`），個資聲明寫入 `agreedToPrivacy`，Line 授權寫入 `lineToken`；送出成功後清除。
-- 會員資料輸入（`/register/profile`）缺 `registerToken`、`agreedToPrivacy`、生日、信箱或手機時導回 `/register`。註冊第一步（#15）完成前，可先在 DevTools Console 取得 token 再開頁：
+- 註冊第一步（`/register`，`Register.tsx`）：填出生／信箱（例如 `new@test.com`）／手機（例如 `0911222333`）按「確認」發送 OTP，上面「OTP」表的驗證碼規則都適用；驗證通過後寫入 `nlc.registerFlow` 並導向個資聲明。出生日期未滿 18 歲會多出「監護人名稱」欄；發送後改了上面任何欄位會回到未發送狀態。
+- 會員資料輸入（`/register/profile`）缺 `registerToken`、`agreedToPrivacy`、生日、信箱或手機時導回 `/register`。要跳過前面步驟直接測，可先在 DevTools Console 取得 token 再開頁：
 
   ```js
   const { registerToken } = await (await fetch('/api/register/otp/verify', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email: 'new@test.com', phone: '0911222333', otp: '1234' }) })).json()
