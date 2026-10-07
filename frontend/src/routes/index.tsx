@@ -13,6 +13,7 @@ import MemberReview from '../pages/member-review/MemberReview'
 import NotFound from '../pages/NotFound'
 import PendingApproval from '../pages/PendingApproval'
 import Profile from '../pages/Profile'
+import Register from '../pages/register/Register'
 import RegisterDone from '../pages/register/RegisterDone'
 import RegisterLineSuccess from '../pages/register/RegisterLineSuccess'
 import RegisterPrivacy from '../pages/register/RegisterPrivacy'
@@ -36,7 +37,7 @@ export const router = createBrowserRouter([
         element: <GuestLayout />,
         children: [
           { path: PATHS.login, element: <Login /> },
-          { path: PATHS.register, element: <GuestPlaceholder title="創建帳號" /> },
+          { path: PATHS.register, element: <Register /> },
           { path: PATHS.registerPrivacy, element: <RegisterPrivacy /> },
           // 全寬表單：頁面內以 useGuestLayout('full') 切換版型
           { path: PATHS.registerProfile, element: <RegisterProfile /> },
