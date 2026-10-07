@@ -45,6 +45,7 @@ export function getMemberQuickActions(role: Role | null): MemberQuickAction[] {
 export const memberRouteTitles: Record<string, string> = {
   [PATHS.home]: '首頁',
   [PATHS.profile]: '個人資訊',
+  [PATHS.profileEdit]: '編輯資料',
   [PATHS.changePassword]: '修改密碼',
   [PATHS.memberReview]: '會員審核',
   [PATHS.receipt]: '奉獻收據下載',
