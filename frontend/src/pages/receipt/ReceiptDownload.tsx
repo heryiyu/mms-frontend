@@ -5,7 +5,7 @@ import { isApiError } from '../../api/client'
 import { sendReceipt, sendReceiptOtp } from '../../api/receipt'
 import type { ReceiptOtpRequest } from '../../api/types'
 import ActionBar from '../../components/ActionBar'
-import { AppForm, emailRules, FormCard, phoneRules, TextInput } from '../../components/form'
+import { AppForm, applyServerFieldErrors, emailRules, FormCard, phoneRules, TextInput } from '../../components/form'
 import { useNotifyModal } from '../../components/NoticeModal'
 import { getOtpErrorMessage, OtpField, otpRules, useOtpSender } from '../../components/OtpInput'
 import ResultPage from '../../components/ResultPage'
@@ -87,13 +87,7 @@ export default function ReceiptDownload() {
   }
 
   // 後端回 VALIDATION_ERROR 時把欄位錯誤顯示在對應輸入框下方
-  const applyFieldErrors = (error: unknown) => {
-    if (!isApiError(error, 'VALIDATION_ERROR')) return false
-    const fields = (error.data as { fields?: Record<string, string> } | undefined)?.fields ?? {}
-    const matched = (['email', 'phone'] as const).filter((name) => fields[name])
-    form.setFields(matched.map((name) => ({ name, errors: [fields[name]] })))
-    return matched.length > 0
-  }
+  const applyFieldErrors = (error: unknown) => applyServerFieldErrors(form, error, ['email', 'phone']).length > 0
 
   const handleSendOtp = async (body: ReceiptOtpRequest) => {
     try {

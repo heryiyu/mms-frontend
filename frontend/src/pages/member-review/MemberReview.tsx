@@ -1,7 +1,7 @@
 import { Card, Result, Skeleton } from 'antd'
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router'
-import { isApiError } from '../../api/client'
+import { getApiErrorMessage, isApiError } from '../../api/client'
 import { approveMembers, getPendingMembers, rejectMember } from '../../api/review'
 import type { PendingMember } from '../../api/types'
 import ActionBar from '../../components/ActionBar'
@@ -130,8 +130,7 @@ export default function MemberReview() {
       setDone({ kind: 'approved', failedCount: failedIds.length })
     } catch (error) {
       if (isApiError(error, 'UNAUTHORIZED')) return
-      const known = isApiError(error) && error.code !== 'UNKNOWN'
-      void notify({ title: MESSAGES.approveFailedTitle, content: known ? error.message : MESSAGES.approveFailedContent })
+      void notify({ title: MESSAGES.approveFailedTitle, content: getApiErrorMessage(error, MESSAGES.approveFailedContent) })
     } finally {
       setSubmitting(false)
     }
@@ -170,8 +169,7 @@ export default function MemberReview() {
         reload()
         return
       }
-      const known = isApiError(error) && error.code !== 'UNKNOWN'
-      void notify({ title: MESSAGES.rejectFailedTitle, content: known ? error.message : MESSAGES.rejectFailedContent })
+      void notify({ title: MESSAGES.rejectFailedTitle, content: getApiErrorMessage(error, MESSAGES.rejectFailedContent) })
     } finally {
       setRejecting(false)
     }

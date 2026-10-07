@@ -1,6 +1,6 @@
 import { Form } from 'antd'
 import { useState } from 'react'
-import { isApiError } from '../../api/client'
+import { getApiErrorMessage, isApiError } from '../../api/client'
 import { verifyProfileChange } from '../../api/member'
 import type { Me, ProfileChangeRequest } from '../../api/types'
 import ActionBar from '../../components/ActionBar'
@@ -46,10 +46,9 @@ export default function ProfileOtpStep({ otp, notify, onCancel, onVerified }: Pr
       onVerified(await verifyProfileChange({ otp: value }))
     } catch (error) {
       if (isApiError(error, 'UNAUTHORIZED')) return // client 已統一導回登入頁
-      const known = isApiError(error) && error.code !== 'UNKNOWN'
       void notify({
         title: MESSAGES.failedTitle,
-        content: getOtpErrorMessage(error) ?? (known ? error.message : MESSAGES.failedContent),
+        content: getOtpErrorMessage(error) ?? getApiErrorMessage(error, MESSAGES.failedContent),
       })
     } finally {
       setVerifying(false)

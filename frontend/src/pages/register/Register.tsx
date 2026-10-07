@@ -3,10 +3,10 @@ import type { DatePickerProps, FormProps } from 'antd'
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router'
 import { getLineAuthUrl } from '../../api/auth'
-import { isApiError } from '../../api/client'
+import { getApiErrorMessage, isApiError } from '../../api/client'
 import { sendRegisterOtp, verifyRegisterOtp } from '../../api/register'
 import { Button } from '../../components/Button'
-import { AppForm, emailRules, phoneRules, TextInput } from '../../components/form'
+import { AppForm, applyServerFieldErrors, emailRules, phoneRules, TextInput } from '../../components/form'
 import Icon from '../../components/Icon'
 import { useNotifyModal } from '../../components/NoticeModal'
 import { getOtpErrorMessage, OtpField, otpRules, useOtpSender } from '../../components/OtpInput'
@@ -79,8 +79,7 @@ function apiErrorContent(error: unknown): string {
   const otpMessage = getOtpErrorMessage(error)
   if (otpMessage) return otpMessage
   if (isApiError(error, 'ALREADY_REGISTERED')) return MESSAGES.alreadyRegistered
-  // 後端沒給 code（例如 5xx）時不顯示「API 502」這類技術訊息
-  return isApiError(error) && error.code !== 'UNKNOWN' ? error.message : MESSAGES.failed
+  return getApiErrorMessage(error, MESSAGES.failed)
 }
 
 export default function Register() {
@@ -117,13 +116,8 @@ export default function Register() {
       form.setFieldValue('otp', '')
     } catch (error) {
       if (isApiError(error, 'VALIDATION_ERROR')) {
-        const fields = (error.data as { fields?: Record<string, string> } | undefined)?.fields ?? {}
-        const known = SERVER_FIELDS.filter((name) => fields[name])
-        form.setFields(known.map((name) => ({ name, errors: [fields[name]] })))
-        void notify({
-          title: NOTICE_TITLE,
-          content: known[0] ? fields[known[0]] : error.message,
-        })
+        const [first] = applyServerFieldErrors(form, error, SERVER_FIELDS)
+        void notify({ title: NOTICE_TITLE, content: first ?? error.message })
         return
       }
       void showError(error)

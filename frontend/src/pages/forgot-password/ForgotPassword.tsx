@@ -1,12 +1,13 @@
 import { Form } from 'antd'
 import { useState } from 'react'
 import { useNavigate } from 'react-router'
-import { isApiError } from '../../api/client'
+import { getApiErrorMessage, getValidationFields, isApiError } from '../../api/client'
 import { resetPassword, sendForgotPasswordOtp, verifyForgotPasswordOtp } from '../../api/password'
 import type { ForgotPasswordOtpRequest } from '../../api/types'
 import { Button } from '../../components/Button'
 import {
   AppForm,
+  applyServerFieldErrors,
   confirmPasswordRules,
   emailRules,
   FormCard,
@@ -55,20 +56,13 @@ const MESSAGES = {
 const EMAIL_RULES = emailRules()
 const PHONE_RULES = phoneRules()
 
-/** 後端 VALIDATION_ERROR 的欄位錯誤（{ fields: { email: '…' } }） */
-function getFieldErrors(error: unknown): Record<string, string> {
-  if (!isApiError(error, 'VALIDATION_ERROR')) return {}
-  return (error.data as { fields?: Record<string, string> } | undefined)?.fields ?? {}
-}
-
 /** 其他錯誤的通知彈窗：後端沒給 code（例如 5xx）時不顯示「API 502」這類技術訊息 */
 function getNotice(error: unknown): NotifyOptions {
   const otpMessage = getOtpErrorMessage(error)
   if (otpMessage) return { title: NOTICE_TITLE, content: otpMessage }
   if (isApiError(error, 'ACCOUNT_NOT_FOUND')) return { title: NOTICE_TITLE, content: MESSAGES.accountNotFound }
   if (isApiError(error, 'EMAIL_PHONE_MISMATCH')) return { title: NOTICE_TITLE, content: MESSAGES.emailPhoneMismatch }
-  const known = isApiError(error) && error.code !== 'UNKNOWN'
-  return { title: NOTICE_TITLE, content: known ? error.message : MESSAGES.failed }
+  return { title: NOTICE_TITLE, content: getApiErrorMessage(error, MESSAGES.failed) }
 }
 
 export default function ForgotPassword() {
@@ -114,12 +108,7 @@ function VerifyStep({ notify, onVerified }: { notify: Notify; onVerified: (reset
   const canSubmit = filled && (!otp.sent || otpValue.length === otp.length)
 
   const showError = (error: unknown) => {
-    const fields = getFieldErrors(error)
-    const matched = (['email', 'phone', 'otp'] as const).filter((name) => fields[name])
-    if (matched.length > 0) {
-      form.setFields(matched.map((name) => ({ name, errors: [fields[name]] })))
-      return
-    }
+    if (applyServerFieldErrors(form, error, ['email', 'phone', 'otp']).length > 0) return
     void notify(getNotice(error))
   }
 
@@ -223,7 +212,7 @@ function ResetStep({
         onTokenInvalid()
         return
       }
-      const fieldError = getFieldErrors(error).newPassword
+      const fieldError = getValidationFields(error).newPassword
       if (fieldError) {
         form.setFields([{ name: 'newPassword', errors: [fieldError] }])
         return

@@ -2,13 +2,14 @@ import { Form, Select } from 'antd'
 import type { FormProps } from 'antd'
 import { useEffect, useState } from 'react'
 import { Navigate, useNavigate } from 'react-router'
-import { isApiError } from '../../api/client'
+import { getApiErrorMessage, isApiError } from '../../api/client'
 import { getChurches, getDistricts, getEkks, getGroups, getJourneys } from '../../api/options'
 import { submitRegister } from '../../api/register'
 import type { Gender, Journey, JourneyOption, Option } from '../../api/types'
 import ActionBar from '../../components/ActionBar'
 import {
   AppForm,
+  applyServerFieldErrors,
   confirmPasswordRules,
   FormCard,
   FormCardItem,
@@ -216,16 +217,11 @@ export default function RegisterProfile() {
         return
       }
       if (isApiError(error, 'VALIDATION_ERROR')) {
-        const fields = (error.data as { fields?: Record<string, string> } | undefined)?.fields ?? {}
-        const known = Object.keys(fields).filter((name): name is FieldName => REQUIRED_FIELDS.includes(name as FieldName))
-        form.setFields(known.map((name) => ({ name, errors: [fields[name]] })))
-        const first = known[0] ? fields[known[0]] : error.message
-        void notify({ title: MESSAGES.invalidTitle, content: first })
+        const [first] = applyServerFieldErrors(form, error, REQUIRED_FIELDS)
+        void notify({ title: MESSAGES.invalidTitle, content: first ?? error.message })
         return
       }
-      // 後端沒給 code（例如 5xx）時不顯示「API 502」這類技術訊息
-      const known = isApiError(error) && error.code !== 'UNKNOWN'
-      void notify({ title: MESSAGES.failedTitle, content: known ? error.message : MESSAGES.failedContent })
+      void notify({ title: MESSAGES.failedTitle, content: getApiErrorMessage(error, MESSAGES.failedContent) })
     } finally {
       setSubmitting(false)
     }

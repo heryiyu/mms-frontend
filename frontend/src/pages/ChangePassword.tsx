@@ -1,11 +1,12 @@
 import { Form } from 'antd'
 import { useState } from 'react'
 import { useNavigate } from 'react-router'
-import { isApiError } from '../api/client'
+import { getApiErrorMessage, isApiError } from '../api/client'
 import { changePassword } from '../api/password'
 import ActionBar from '../components/ActionBar'
 import {
   AppForm,
+  applyServerFieldErrors,
   confirmPasswordRules,
   FormCard,
   FormCardItem,
@@ -85,15 +86,8 @@ export default function ChangePassword() {
       if (isApiError(error, 'UNAUTHORIZED')) return // client 已統一導回登入頁
       if (isApiError(error, 'WRONG_CURRENT_PASSWORD')) return setFieldError('currentPassword', MESSAGES.wrongCurrent)
       if (isApiError(error, 'PASSWORD_SAME_AS_OLD')) return setFieldError('newPassword', MESSAGES.sameAsOld)
-      if (isApiError(error, 'VALIDATION_ERROR')) {
-        const fields = (error.data as { fields?: Record<string, string> } | undefined)?.fields ?? {}
-        const matched = FIELD_NAMES.filter((name) => fields[name])
-        matched.forEach((name) => setFieldError(name, fields[name]))
-        if (matched.length > 0) return
-      }
-      // 後端沒給 code（例如 5xx）時不顯示「API 502」這類技術訊息
-      const known = isApiError(error) && error.code !== 'UNKNOWN'
-      void notify({ title: MESSAGES.failedTitle, content: known ? error.message : MESSAGES.failedContent })
+      if (applyServerFieldErrors(form, error, FIELD_NAMES).length > 0) return
+      void notify({ title: MESSAGES.failedTitle, content: getApiErrorMessage(error, MESSAGES.failedContent) })
     } finally {
       setSubmitting(false)
     }

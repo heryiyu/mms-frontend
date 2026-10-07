@@ -2,13 +2,14 @@ import { Form, Grid, Result, Skeleton } from 'antd'
 import type { Rule } from 'antd/es/form'
 import { useState } from 'react'
 import { useLocation, useNavigate } from 'react-router'
-import { isApiError } from '../../api/client'
+import { getApiErrorMessage, isApiError } from '../../api/client'
 import { sendProfileChangeOtp } from '../../api/member'
 import type { Me, ProfileChangeRequest } from '../../api/types'
 import ActionBar from '../../components/ActionBar'
 import { Button } from '../../components/Button'
 import {
   AppForm,
+  applyServerFieldErrors,
   emailRules,
   FormCard,
   FormCardItem,
@@ -102,19 +103,12 @@ function EditStep({ initialValues, otp, notify, onCancel, onSent }: EditStepProp
       onSent(body)
     } catch (error) {
       if (isApiError(error, 'UNAUTHORIZED')) return // client 已統一導回登入頁
-      if (isApiError(error, 'VALIDATION_ERROR')) {
-        const fields = (error.data as { fields?: Record<string, string> } | undefined)?.fields ?? {}
-        const matched = FIELD_NAMES.filter((name) => fields[name])
-        form.setFields(matched.map((name) => ({ name, errors: [fields[name]] })))
-        if (matched.length > 0) return
-      }
-      const otpMessage = getOtpErrorMessage(error)
-      const known = isApiError(error) && error.code !== 'UNKNOWN'
+      if (applyServerFieldErrors(form, error, FIELD_NAMES).length > 0) return
       void notify({
         title: MESSAGES.failedTitle,
         content: isApiError(error, 'ALREADY_REGISTERED')
           ? MESSAGES.alreadyRegistered
-          : (otpMessage ?? (known ? error.message : MESSAGES.failedContent)),
+          : (getOtpErrorMessage(error) ?? getApiErrorMessage(error, MESSAGES.failedContent)),
       })
     }
   }
