@@ -16,6 +16,7 @@ import NotFound from '../pages/NotFound'
 import PendingApproval from '../pages/PendingApproval'
 import Profile from '../pages/profile/Profile'
 import ProfileEdit from '../pages/profile/ProfileEdit'
+import ReceiptDownload from '../pages/receipt/ReceiptDownload'
 import Register from '../pages/register/Register'
 import RegisterDone from '../pages/register/RegisterDone'
 import RegisterLineSuccess from '../pages/register/RegisterLineSuccess'
@@ -70,7 +71,7 @@ export const router = createBrowserRouter([
           { path: PATHS.profile, element: <Profile /> },
           { path: PATHS.profileEdit, element: <ProfileEdit /> },
           { path: PATHS.changePassword, element: <ChangePassword /> },
-          { path: PATHS.receipt, element: <MemberPlaceholder title="奉獻收據下載" /> },
+          { path: PATHS.receipt, element: <ReceiptDownload /> },
           // 區長以上；權限不足 → 403
           {
             element: <RequireRole minRole="leader" />,
