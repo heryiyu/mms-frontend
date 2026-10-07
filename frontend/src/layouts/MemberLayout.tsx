@@ -5,17 +5,17 @@ import { logout } from '../api/auth'
 import IdleLogoutNotice from '../auth/IdleLogoutNotice'
 import { useAuth } from '../auth/useAuth'
 import Icon from '../components/Icon'
+import { BRAND_LOGO_SRC } from '../constants/brand'
 import { PATHS } from '../routes/paths'
 import { cx } from '../utils/cx'
 import styles from './MemberLayout.module.css'
 import { getMemberBreadcrumb, getMemberMenuItems, getSelectedMenuKey } from './memberNav'
 
-// 教會 Logo：設計稿為主色方形圓角底＋白色「NewLife」手寫字
-// TODO：拿到正式 Logo 圖檔後改用圖片
+// 教會 Logo，點擊回首頁
 function BrandLogo({ className }: { className?: string }) {
   return (
     <Link to={PATHS.home} className={cx(styles.logo, className)} aria-label="回到首頁">
-      <span className={styles.logoText}>NewLife</span>
+      <img src={BRAND_LOGO_SRC} alt="" className={styles.logoImage} />
     </Link>
   )
 }

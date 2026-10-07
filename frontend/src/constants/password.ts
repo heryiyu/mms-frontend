@@ -1,6 +1,5 @@
 // 密碼規則（前端表單驗證與 MSW mock 共用的唯一來源）
-// TODO(#12)：設計稿未定義密碼規則與提示文案（docs/design/change-password/README.md「待確認」），
-// 暫定「至少 8 碼，且同時包含英文與數字」。後端定案後只需改這個檔案。
+// 已確認（#12）：「至少 8 碼，且同時包含英文與數字」。規則若調整只需改這個檔案。
 
 export interface PasswordRule {
   /** 回傳 true 代表符合 */

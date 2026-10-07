@@ -71,7 +71,7 @@ export default function NoticeModal({
       closable={{ 'aria-label': '關閉' }}
       closeIcon={<Icon name="x-lg" />}
       keyboard
-      // TODO(#12): 點遮罩是否可關閉設計稿未註記，暫定可關閉（與 ✕ 同效果）
+      // 點遮罩可關閉（與 ✕ 同效果），已確認（#12） C2(b)
       mask={{ closable: true }}
       // 焦點鎖在彈窗內（驗收條件），關閉後焦點回到觸發元素
       focusable={{ trap: true, focusTriggerAfterClose: true }}

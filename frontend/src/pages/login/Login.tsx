@@ -21,12 +21,13 @@ import styles from './Login.module.css'
 //   → ACCOUNT_PENDING：導向等待審核頁
 //   → 其他失敗：通知彈窗，關閉後回到輸入中（保留已輸入內容）
 //
-// TODO(#12)：以下為設計未定、先依推測實作——
+// 已確認（#12）：
 // - web ing 稿的「登入」仍為停用色、mob ing 為可按：採「兩欄都有值就啟用」
 // - 稿上電子信箱欄右側也有眼睛圖示，判定為複製密碼欄的殘留，只在密碼欄放
 // - 欄位格式錯誤採 inline 訊息（稿未畫），伺服器回傳的錯誤用通知彈窗
-// - 「記住帳號」沿用 authStore 的 remember（勾選＝關閉瀏覽器仍保持登入），是否改為記住信箱待確認
-// - 登入過度頻繁的門檻（錯幾次暫停、暫停多久）待後端定義；前端收到 TOO_MANY_ATTEMPTS 後先暫停送出 LOGIN_COOLDOWN_MS
+// - 「記住帳號」沿用 authStore 的 remember（勾選＝關閉瀏覽器仍保持登入）
+// - 前端收到 TOO_MANY_ATTEMPTS 後暫停送出 LOGIN_COOLDOWN_MS
+// TODO(#12)：登入過度頻繁的門檻（錯幾次暫停、暫停多久）待後端定義
 
 interface LoginValues {
   email: string
@@ -36,7 +37,7 @@ interface LoginValues {
 
 const EMAIL_RULES = emailRules()
 
-/** 收到「登入過度頻繁」後，前端暫停送出的時間。TODO(#12)：實際門檻待後端定義 */
+/** 收到「登入過度頻繁」後，前端暫停送出的時間 */
 const LOGIN_COOLDOWN_MS = 30_000
 
 /** Line 登入失敗時，LineCallback 導回登入頁用 location.state 帶錯誤碼，由這裡顯示彈窗 */
@@ -142,7 +143,7 @@ export default function Login() {
       </AppForm>
 
       <div className={styles.links}>
-        {/* TODO(#12)：「進度查詢」設計未畫，暫導向進度查詢佔位頁 */}
+        {/* 已確認（#12） L3：查詢條件為信箱＋手機。TODO(#12)：「進度查詢」設計未畫，暫導向佔位頁 */}
         <Link to={PATHS.progress} className={styles.link}>
           進度查詢
         </Link>

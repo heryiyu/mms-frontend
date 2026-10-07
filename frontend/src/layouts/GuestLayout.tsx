@@ -9,7 +9,7 @@ import { defaultGuestLayoutOptions, GuestLayoutContext, type GuestLayoutOptions 
  * - 手機（< md）：卡片高 fill，寬 = 裝置寬 − 左右 20px
  * - 桌機（≥ md）：卡片固定 420px 靠右，四周 40px，高 fill，左側空白 fill
  * - full 變體：全寬表單（註冊「會員資料輸入」），左右 20px／lg 起 120px
- * 斷點依 docs 第 6 節建議用 md 切換卡片寬度；平板無設計稿。TODO(#12)：平板版型待設計確認。
+ * 斷點依 docs 第 6 節建議用 md 切換卡片寬度；平板無設計稿，已確認（#12）：沿用此斷點。
  */
 export default function GuestLayout() {
   const [options, setOptions] = useState<GuestLayoutOptions>(defaultGuestLayoutOptions)

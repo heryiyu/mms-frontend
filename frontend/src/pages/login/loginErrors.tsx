@@ -23,7 +23,7 @@ export function getLoginErrorNotice(error: unknown): NotifyOptions {
   if (isApiError(error, 'ACCOUNT_LOCKED')) {
     return {
       title: TITLE,
-      // 稿上為「帳號以鎖定」，判定為誤植改「已」。TODO(#12)：文案待確認
+      // 稿上為「帳號以鎖定」，判定為誤植改「已」
       content: (
         <>
           {'登入過度頻繁\n帳號已鎖定\n\n'}
@@ -33,7 +33,7 @@ export function getLoginErrorNotice(error: unknown): NotifyOptions {
     }
   }
   if (isApiError(error, 'ACCOUNT_REJECTED')) {
-    // TODO(#12)：申請被退回的彈窗設計未畫，暫比照帳號鎖定的版面
+    // 申請被退回的彈窗設計未畫，已確認（#12） L4：比照帳號鎖定的版面，只換文字
     return {
       title: TITLE,
       content: (
@@ -45,6 +45,6 @@ export function getLoginErrorNotice(error: unknown): NotifyOptions {
     }
   }
   if (isApiError(error, 'NETWORK_ERROR')) return { title: TITLE, content: error.message }
-  // 其他錯誤（5xx、未知）不顯示「API 500」這類技術訊息。TODO(#12)：通用錯誤文案設計未定
+  // 其他錯誤（5xx、未知）不顯示「API 500」這類技術訊息。TODO(#12) L4：系統錯誤文案待確認
   return { title: TITLE, content: getApiErrorMessage(error, '登入失敗，請稍後再試') }
 }

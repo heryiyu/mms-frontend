@@ -8,7 +8,7 @@ import styles from './ActionBar.module.css'
 // 桌機（≥ lg）：內容區底部白底列、上方分隔線，「取消」（次要）＋「確認」（主要）置中
 // 手機（< lg）：兩顆按鈕各半寬，左「返回」右「確認」，底部預留 safe area
 //
-// TODO(#12)：web「取消／確認」與 mob「返回／送出（稿中為確認）」文字是否統一未定，
+// TODO(#12) C4：web「取消／確認」與 mob「返回／送出（稿中為確認）」是否統一未定，
 // 先依稿預設，並開放 cancelText / confirmText（桌機）與 mobileCancelText / mobileConfirmText（手機）覆寫。
 
 export interface ActionBarProps {

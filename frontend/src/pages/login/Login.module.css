@@ -86,11 +86,9 @@
 .loading .loadingLogo.loadingLogo {
   --brand-logo-size: var(--layout-control-height);
 
-  display: flex;
+  display: block;
   width: var(--brand-logo-size);
   height: var(--brand-logo-size);
-  font-size: calc(var(--brand-logo-size) / 4);
-  border-radius: var(--radius-md);
 }
 
 .loadingText.loadingText {
@@ -104,7 +102,5 @@
 @media (min-width: 992px) {
   .loading .loadingLogo.loadingLogo {
     --brand-logo-size: calc(var(--layout-control-height) * 2);
-
-    border-radius: var(--radius-lg);
   }
 }

@@ -1,6 +1,7 @@
 import { Form } from 'antd'
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router'
+import { logout } from '../api/auth'
 import { getApiErrorMessage, isApiError } from '../api/client'
 import { changePassword } from '../api/password'
 import ActionBar from '../components/ActionBar'
@@ -23,13 +24,13 @@ import { hasInAppHistory } from '../utils/history'
 import styles from './ChangePassword.module.css'
 
 // 修改密碼（issue #22，docs/design/change-password/README.md）
-// 狀態流程：輸入中（三欄皆有值才可送出）→ 變更完成（結果頁）
+// 狀態流程：輸入中（三欄皆有值才可送出）→ 變更完成（結果頁）→ 強制重新登入
 //
-// TODO(#12)：以下皆為設計未定、先依推測實作——
-// - 第一欄 label 稿上只寫「密碼」，語意為目前密碼
-// - 錯誤狀態未出圖：欄位錯誤顯示在輸入框下方；其餘錯誤用通知彈窗
-// - 變更完成後是否強制重新登入、「返回」導向哪裡（暫回首頁）
-// - 「取消／返回」是否要確認放棄已輸入內容（暫不確認）
+// 已確認（#12）：
+// - P1 第一欄標籤由稿上的「密碼」改為「目前密碼」
+// - P2 變更完成後強制重新登入：結果頁按鈕為「重新登入」，離開結果頁（含點選單）一律登出
+// - P3 已輸入內容時按「取消／返回」，先確認是否放棄
+// - P4 欄位錯誤顯示在輸入框下方；其餘錯誤用通知彈窗
 
 interface ChangePasswordValues {
   currentPassword: string
@@ -41,13 +42,16 @@ type FieldName = keyof ChangePasswordValues
 
 const FIELD_NAMES: FieldName[] = ['currentPassword', 'newPassword', 'confirmPassword']
 
-// TODO(#12)：錯誤文案設計未定
 const MESSAGES = {
-  currentRequired: '請輸入密碼',
+  currentRequired: '請輸入目前密碼',
   sameAsOld: '新密碼不可與舊密碼相同',
   wrongCurrent: '密碼輸入錯誤',
   failedTitle: '變更失敗',
   failedContent: '發生錯誤，請稍後再試',
+  doneDescription: '請使用新密碼重新登入',
+  discardTitle: '注意',
+  discardContent: '確定要放棄已輸入的內容嗎？',
+  discardCancel: '取消',
 } as const
 
 // 新密碼／確認密碼規則與忘記密碼共用（components/form/passwordRules.ts），這裡只多「不可與舊密碼相同」
@@ -66,13 +70,43 @@ export default function ChangePassword() {
   const { notify, contextHolder } = useNotifyModal()
 
   const allFilled = FIELD_NAMES.every((name) => !!values?.[name])
+  const anyFilled = FIELD_NAMES.some((name) => !!values?.[name])
 
-  const goHome = () => navigate(PATHS.home, { replace: true })
+  // 密碼已變更：只登出一次（按「重新登入」與離開結果頁都會呼叫）
+  const loggedOutRef = useRef(false)
+  const forceLogout = () => {
+    if (loggedOutRef.current) return Promise.resolve()
+    loggedOutRef.current = true
+    return logout()
+  }
 
-  // 有站內上一頁就回上一頁，直接開啟此頁時回首頁
-  const handleCancel = () => {
+  // 變更完成後從選單等處離開結果頁，也一律登出
+  useEffect(() => {
+    if (!done) return
+    return () => void forceLogout().catch(() => {})
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- forceLogout 只讀 ref，不需重新訂閱
+  }, [done])
+
+  const handleRelogin = async () => {
+    try {
+      await forceLogout()
+    } finally {
+      navigate(PATHS.login, { replace: true })
+    }
+  }
+
+  // 有站內上一頁就回上一頁，直接開啟此頁時回首頁；已輸入內容時先確認放棄
+  const handleCancel = async () => {
+    if (anyFilled) {
+      const confirmed = await notify({
+        title: MESSAGES.discardTitle,
+        content: MESSAGES.discardContent,
+        cancelText: MESSAGES.discardCancel,
+      })
+      if (!confirmed) return
+    }
     if (hasInAppHistory()) navigate(-1)
-    else goHome()
+    else navigate(PATHS.home, { replace: true })
   }
 
   const setFieldError = (name: FieldName, message: string) => form.setFields([{ name, errors: [message] }])
@@ -93,7 +127,16 @@ export default function ChangePassword() {
     }
   }
 
-  if (done) return <ResultPage title="變更完成！" onBack={goHome} />
+  if (done) {
+    return (
+      <ResultPage
+        title="變更完成！"
+        description={MESSAGES.doneDescription}
+        backText="重新登入"
+        onBack={() => void handleRelogin()}
+      />
+    )
+  }
 
   return (
     <div className={styles.page}>
@@ -110,10 +153,10 @@ export default function ChangePassword() {
         <FormCard className={styles.card}>
           <FormCardItem
             name="currentPassword"
-            label="密碼"
+            label="目前密碼"
             rules={[{ required: true, message: MESSAGES.currentRequired }]}
           >
-            <PasswordInput placeholder="請輸入密碼" autoComplete="current-password" />
+            <PasswordInput placeholder="請輸入目前密碼" autoComplete="current-password" />
           </FormCardItem>
           <FormCardItem
             name="newPassword"
@@ -134,7 +177,7 @@ export default function ChangePassword() {
         </FormCard>
         <ActionBar
           bleed
-          onCancel={handleCancel}
+          onCancel={() => void handleCancel()}
           mobileConfirmText="送出"
           confirmHtmlType="submit"
           confirmDisabled={!allFilled}

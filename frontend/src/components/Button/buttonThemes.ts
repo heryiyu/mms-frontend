@@ -20,7 +20,7 @@ const disabled: ButtonToken = {
 }
 
 // 主要按鈕：黑底（gray1）白字膠囊。AntD 寫法 color="default" variant="solid"
-// TODO(#12)：元件頁第 4 個變體（gray1 80% 不透明度）推測為 hover／pressed，active 暫與 hover 相同
+// 元件頁第 4 個變體（gray1 80% 不透明度）視為 hover／pressed，active 與 hover 相同（已確認（#12））
 export const primaryButtonTheme: ButtonToken = {
   ...disabled,
   colorBgSolid: colors.gray1,
@@ -30,7 +30,7 @@ export const primaryButtonTheme: ButtonToken = {
 }
 
 // 次要按鈕：白底黑框膠囊。AntD 寫法 color="default" variant="outlined"
-// TODO(#12)：元件頁寫底色「透明」、tokens.md／issue 寫「白底」，暫用白底；hover／active 稿未畫，暫用 gray6／gray5 底
+// 元件頁寫底色「透明」、tokens.md／issue 寫「白底」，採白底；hover／active 用 gray6／gray5 底（已確認（#12））
 export const secondaryButtonTheme: ButtonToken = {
   ...disabled,
   defaultBg: colors.white,
@@ -46,7 +46,7 @@ export const secondaryButtonTheme: ButtonToken = {
 }
 
 // 文字按鈕：主色文字（連結、「退回」等）。AntD 寫法 color="primary" variant="link"，hover／active 用 AntD 由主色推導的色階
-// TODO(#12)：文字按鈕停用色稿未畫，沿用全域 colorTextDisabled（gray3）
+// 文字按鈕停用色沿用全域 colorTextDisabled（gray3），已確認（#12）
 export const textButtonTheme: ButtonToken = {}
 
 const ADD_BUTTON_HEIGHT = 32 // 元件頁目測 65 × 32px，僅此元件使用故不放全域 token
