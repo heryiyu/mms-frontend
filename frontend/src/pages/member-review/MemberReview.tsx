@@ -2,13 +2,13 @@ import { Card, Result, Skeleton } from 'antd'
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router'
 import { isApiError } from '../../api/client'
-import { approveMembers, getPendingMembers } from '../../api/review'
+import { approveMembers, getPendingMembers, rejectMember } from '../../api/review'
 import type { PendingMember } from '../../api/types'
 import ActionBar from '../../components/ActionBar'
 import { Button } from '../../components/Button'
 import { Checkbox } from '../../components/form'
 import Icon from '../../components/Icon'
-import { useNotifyModal } from '../../components/NoticeModal'
+import { NoticeModal, useNotifyModal } from '../../components/NoticeModal'
 import ResultPage from '../../components/ResultPage'
 import { PATHS } from '../../routes/paths'
 import typography from '../../styles/typography.module.css'
@@ -17,8 +17,9 @@ import ApplicantCard from './ApplicantCard'
 import ReviewEmpty from './ReviewEmpty'
 import styles from './MemberReview.module.css'
 
-// 會員審核：申請列表與批次通過（issue #24，docs/design/member-review/README.md）
+// 會員審核：申請列表與批次通過（issue #24）、單筆退回（issue #25），docs/design/member-review/README.md
 // 狀態流程：載入 → 待審核清單（未勾選時「確認」停用）→ 勾選後按「確認」只送出勾選的 id → 審核完成
+// 退回：卡片「退回」→ 確認彈窗「注意／確定要退回此筆會員申請嗎？」→「確認」→ 已退回！
 // 權限：路由已包在 <RequireRole minRole="leader">（routes/index.tsx），一般會員直接輸入網址會被導到 403
 //
 // TODO(#12)：以下皆為設計未定、先依推測實作——
@@ -26,7 +27,9 @@ import styles from './MemberReview.module.css'
 // - 完成頁「返回」回到待審核清單（重新載入剩下的申請）；底部「取消／返回」回首頁
 // - 審核通過不跳確認彈窗，直接送出
 // - 批次通過時部分失敗（failedIds）在完成頁以說明文字提示筆數
-// TODO(#25)：卡片「退回」的確認彈窗與「已退回！」完成頁另案實作
+// - 退回只針對該筆、與勾選無關；其他已勾選的項目保留勾選（待確認 2）
+// - 退回完成頁「返回」比照審核完成：回待審核清單並重新載入
+// - 退回原因輸入、通知申請者、批次退回：設計稿未畫，不實作（待確認 1、2）
 
 // TODO(#12)：錯誤與部分失敗的文案設計未定
 const MESSAGES = {
@@ -37,9 +40,22 @@ const MESSAGES = {
   approveFailedContent: '發生錯誤，請稍後再試',
   allProcessed: '勾選的申請已被處理，請重新整理清單。',
   partialFailed: (n: number) => `有 ${n} 筆申請已被處理或不存在，未審核通過。`,
+  rejectFailedTitle: '退回失敗',
+  rejectFailedContent: '發生錯誤，請稍後再試',
+  rejectProcessed: '此筆申請已被處理，清單將重新載入。',
+} as const
+
+// 退回確認彈窗文案（退回機制.png）
+const REJECT_CONFIRM = {
+  title: '注意',
+  content: '確定要退回此筆會員申請嗎？',
+  cancelText: '取消',
 } as const
 
 type LoadState = 'loading' | 'ready' | 'error'
+
+/** 完成頁：審核完成（附未能通過的筆數，部分失敗提示用）或已退回 */
+type DoneState = { kind: 'approved'; failedCount: number } | { kind: 'rejected' }
 
 export default function MemberReview() {
   const navigate = useNavigate()
@@ -48,8 +64,10 @@ export default function MemberReview() {
   const [loadState, setLoadState] = useState<LoadState>('loading')
   const [selected, setSelected] = useState<ReadonlySet<string>>(() => new Set())
   const [submitting, setSubmitting] = useState(false)
-  /** 審核完成；值為未能通過的筆數（部分失敗提示用） */
-  const [done, setDone] = useState<{ failedCount: number } | null>(null)
+  const [done, setDone] = useState<DoneState | null>(null)
+  /** 退回確認彈窗對象；null 為關閉 */
+  const [rejectTarget, setRejectTarget] = useState<PendingMember | null>(null)
+  const [rejecting, setRejecting] = useState(false)
 
   /** 每次 +1 觸發重新取得清單 */
   const [reloadKey, setReloadKey] = useState(0)
@@ -109,7 +127,7 @@ export default function MemberReview() {
         return
       }
       setSelected(new Set())
-      setDone({ failedCount: failedIds.length })
+      setDone({ kind: 'approved', failedCount: failedIds.length })
     } catch (error) {
       if (isApiError(error, 'UNAUTHORIZED')) return
       const known = isApiError(error) && error.code !== 'UNKNOWN'
@@ -119,12 +137,52 @@ export default function MemberReview() {
     }
   }
 
+  const openRejectConfirm = (member: PendingMember) => {
+    if (submitting) return
+    setRejectTarget(member)
+  }
+
+  const closeRejectConfirm = () => {
+    if (rejecting) return // 送出中不允許關閉，避免結果回來時畫面已不一致
+    setRejectTarget(null)
+  }
+
+  const handleReject = async () => {
+    if (!rejectTarget) return
+    const { id } = rejectTarget
+    setRejecting(true)
+    try {
+      await rejectMember(id)
+      setRejectTarget(null)
+      // 只移除被退回的這筆勾選，其他勾選保留（TODO(#12) 待確認 2）
+      setSelected((prev) => {
+        const next = new Set(prev)
+        next.delete(id)
+        return next
+      })
+      setDone({ kind: 'rejected' })
+    } catch (error) {
+      setRejectTarget(null)
+      if (isApiError(error, 'UNAUTHORIZED')) return
+      if (isApiError(error, 'ALREADY_PROCESSED') || isApiError(error, 'MEMBER_NOT_FOUND')) {
+        // 已被其他人審核／退回：提示後重新載入清單
+        void notify({ title: MESSAGES.rejectFailedTitle, content: MESSAGES.rejectProcessed })
+        reload()
+        return
+      }
+      const known = isApiError(error) && error.code !== 'UNKNOWN'
+      void notify({ title: MESSAGES.rejectFailedTitle, content: known ? error.message : MESSAGES.rejectFailedContent })
+    } finally {
+      setRejecting(false)
+    }
+  }
+
   const handleResultBack = () => {
     setDone(null)
     reload()
   }
 
-  if (done) {
+  if (done?.kind === 'approved') {
     return (
       <ResultPage
         title="審核完成！"
@@ -134,12 +192,25 @@ export default function MemberReview() {
     )
   }
 
+  if (done?.kind === 'rejected') {
+    return <ResultPage title="已退回！" onBack={handleResultBack} />
+  }
+
   const isEmpty = loadState === 'ready' && members.length === 0
   const showList = loadState === 'loading' || (loadState === 'ready' && members.length > 0)
 
   return (
     <div className={styles.page}>
       {contextHolder}
+      <NoticeModal
+        open={rejectTarget != null}
+        title={REJECT_CONFIRM.title}
+        content={REJECT_CONFIRM.content}
+        cancelText={REJECT_CONFIRM.cancelText}
+        confirmLoading={rejecting}
+        onOk={() => void handleReject()}
+        onCancel={closeRejectConfirm}
+      />
       <div className={styles.header}>
         <h1 className={cx(typography.pageTitle, styles.title)}>會員審核</h1>
         {showList && (
@@ -183,7 +254,12 @@ export default function MemberReview() {
         <ul className={styles.list} aria-label="待審核申請">
           {members.map((member) => (
             <li key={member.id}>
-              <ApplicantCard member={member} checked={selected.has(member.id)} onCheckedChange={handleSelect} />
+              <ApplicantCard
+                member={member}
+                checked={selected.has(member.id)}
+                onCheckedChange={handleSelect}
+                onReject={openRejectConfirm}
+              />
             </li>
           ))}
         </ul>
