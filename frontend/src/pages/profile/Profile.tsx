@@ -1,6 +1,7 @@
 import { ConfigProvider, Descriptions, Grid, Result, Skeleton, type DescriptionsProps, type ThemeConfig } from 'antd'
 import { useNavigate } from 'react-router'
 import type { Gender, Me } from '../../api/types'
+import { useMe } from '../../auth/useMe'
 import ActionBar from '../../components/ActionBar'
 import { Button } from '../../components/Button'
 import { FormCard } from '../../components/form'
@@ -10,7 +11,6 @@ import { colors } from '../../theme/tokens'
 import { hasInAppHistory } from '../../utils/history'
 import ProfileHeader from './ProfileHeader'
 import styles from './Profile.module.css'
-import { useMe } from './useMe'
 
 // 個人資訊檢視（issue #21，docs/design/profile/README.md「個人資訊檢視」menberinf）
 // 標題列（右上「編輯資料」→ 修改頁）＋唯讀描述清單卡片（label gray3／值 gray1、列間分隔線）

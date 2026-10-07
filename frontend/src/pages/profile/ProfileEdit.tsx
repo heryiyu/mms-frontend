@@ -5,6 +5,7 @@ import { useLocation, useNavigate } from 'react-router'
 import { getApiErrorMessage, isApiError } from '../../api/client'
 import { sendProfileChangeOtp } from '../../api/member'
 import type { Me, ProfileChangeRequest } from '../../api/types'
+import { useMe } from '../../auth/useMe'
 import ActionBar from '../../components/ActionBar'
 import { Button } from '../../components/Button'
 import {
@@ -26,12 +27,11 @@ import { PATHS } from '../../routes/paths'
 import ProfileHeader, { type ProfileEditLocationState } from './ProfileHeader'
 import ProfileOtpStep from './ProfileOtpStep'
 import styles from './Profile.module.css'
-import { useMe } from './useMe'
 
 // 個人資訊修改（issue #21，docs/design/profile/README.md menberedit → otp → changed）
 // 狀態流程：資料修改（姓名／暱稱／信箱／手機）→ 點「確認」送出修改內容並發送 OTP
 //          → 資料變更驗證（OTP）→ 驗證通過正式更新 → 變更完成（結果頁）→「返回」回個人資訊檢視
-// 首頁暱稱、檢視頁資料每次進頁都重新 GET /me（pages/Home.tsx、./useMe.ts），沒有前端快取需要同步。
+// 首頁暱稱、檢視頁資料每次進頁都重新 GET /me（auth/useMe.ts，首頁與個人資訊共用），沒有前端快取需要同步。
 //
 // TODO(#12)：以下皆為設計未定、先依稿／推測實作——
 // - OTP 寄送對象（簡訊／信箱？改了手機或信箱時寄新的還是舊的？）未定；前端只送修改內容，由後端決定寄送對象
