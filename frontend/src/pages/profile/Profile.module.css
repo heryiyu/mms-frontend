@@ -1,0 +1,150 @@
+/*
+ * 個人資訊檢視／修改／資料變更驗證（docs/design/profile/{web,mob}/個人資料/*.png），mobile-first，≥ lg 切桌機。
+ * 尺寸由 @2x 截圖換算 1x（目測）；色彩／字級／圓角一律用 CSS 變數。
+ * 卡片外框沿用 components/form 的 FormCard（白底圓角、上下 12px、左右 20px），修改頁的列樣式見 formCard.module.css。
+ */
+.page {
+  /* 手機稿標題距 top bar 約 20px，比版型預設的內容上距（40px）少 20px（目測，同修改密碼） */
+  --profile-top-offset: -20px;
+  /* 標題與卡片間距（目測） */
+  --profile-title-gap: 12px;
+  /* 檢視頁每列高約 48px（目測，web／mob 相同） */
+  --profile-row-height: 48px;
+  /* label 欄寬：同修改頁表單卡片（theme/components/formControls.ts 的 labelWidth） */
+  --profile-label-width: 100px;
+  /* 驗證頁卡片上下內距約 40px、說明與 OTP 列間距手機約 12px／桌機約 8px（目測） */
+  --profile-otp-card-padding-block: 40px;
+  --profile-otp-hint-gap: 12px;
+
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  margin-top: var(--profile-top-offset);
+}
+
+.form {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+}
+
+/* 標題列：左標題、右「編輯資料」連結 */
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--app-gutter);
+  margin-bottom: var(--profile-title-gap);
+}
+
+.title {
+  margin: 0;
+}
+
+.editLink {
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  gap: 4px;
+  font-size: var(--font-size-body-1);
+  line-height: var(--line-height-body-1);
+  letter-spacing: var(--letter-spacing-body-1);
+  color: var(--color-primary);
+}
+
+.editLink:hover,
+.editLink:focus-visible {
+  color: var(--color-primary);
+  text-decoration: underline;
+}
+
+/* 與底部操作列保留最小間距（畫面矮時不貼住） */
+.card {
+  margin-bottom: var(--app-gutter);
+}
+
+.skeleton {
+  padding-block: var(--form-card-row-padding-block);
+}
+
+.errorIcon {
+  font-size: var(--font-size-headline-2);
+  color: var(--color-gray-3);
+}
+
+/* 檢視頁描述清單：每列 48px、列間 gray5 分隔線（最後一列無），label 欄寬同表單卡片（100px） */
+.fields :global(.ant-descriptions-item) {
+  padding: 0;
+}
+
+.fields :global(.ant-descriptions-row:not(:last-child) .ant-descriptions-item-container) {
+  border-bottom: 1px solid var(--color-gray-5);
+}
+
+.fields :global(.ant-descriptions-item-container) {
+  align-items: center;
+  min-height: var(--profile-row-height);
+}
+
+.fields :global(.ant-descriptions-item-label) {
+  flex: 0 0 var(--profile-label-width);
+  font-size: var(--font-size-body-1);
+  line-height: var(--line-height-body-1);
+  white-space: nowrap;
+}
+
+/* 長 email 等值在手機可換行，不撐破卡片 */
+.fields :global(.ant-descriptions-item-content) {
+  min-width: 0;
+  font-size: var(--font-size-body-1);
+  line-height: var(--line-height-body-1);
+  overflow-wrap: anywhere;
+}
+
+/* 資料變更驗證：手機標題置中、標題＋卡片在內容區垂直置中 */
+.otpBody {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  justify-content: center;
+  margin-bottom: var(--app-gutter);
+}
+
+.otpTitle {
+  margin-bottom: var(--profile-title-gap);
+  text-align: center;
+}
+
+.otpCard {
+  padding: var(--profile-otp-card-padding-block) var(--layout-page-padding-mobile);
+  border-radius: var(--radius-lg);
+  background: var(--color-white);
+}
+
+.otpHint {
+  margin: 0 0 var(--profile-otp-hint-gap);
+  font-size: var(--font-size-body-1);
+  line-height: var(--line-height-body-1);
+  letter-spacing: var(--letter-spacing-body-1);
+  color: var(--color-gray-2);
+}
+
+.otpItem.otpItem {
+  margin-bottom: 0;
+}
+
+@media (min-width: 992px) {
+  .page {
+    --profile-top-offset: 0px;
+    --profile-title-gap: 8px;
+    --profile-otp-hint-gap: 8px;
+  }
+
+  .otpBody {
+    justify-content: flex-start;
+  }
+
+  .otpTitle {
+    text-align: start;
+  }
+}

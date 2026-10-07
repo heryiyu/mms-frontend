@@ -22,6 +22,8 @@ export const PATHS = {
   /* 已登入 */
   home: '/',
   profile: '/profile',
+  /** 個人資訊修改（修改 → OTP 驗證 → 變更完成） */
+  profileEdit: '/profile/edit',
   changePassword: '/change-password',
   receipt: '/receipt',
   /** 區長以上 */

@@ -127,6 +127,7 @@ OTP 元件示範：dev 模式開 `/dev/otp`（`PATHS.devOtp`，`OtpDemo.tsx`；�
 
 ### 個人資訊修改
 
+- 流程：`/profile` 點「編輯資料」→ `/profile/edit` 修改後「確認」（`POST /me/profile-change/otp`）→ 輸入 OTP（上表規則，例如 `1234`）→ 變更完成；回檢視頁、首頁橫幅暱稱會顯示新資料（重新整理後還原）。
 - 新信箱／手機已被其他帳號使用（例如改成 `leader@test.com`）→ 409 `ALREADY_REGISTERED`
 - 沒先送出修改內容就驗證 OTP → 410 `OTP_EXPIRED`
 
