@@ -13,6 +13,7 @@ import MemberReview from '../pages/member-review/MemberReview'
 import NotFound from '../pages/NotFound'
 import PendingApproval from '../pages/PendingApproval'
 import Profile from '../pages/Profile'
+import ReceiptDownload from '../pages/receipt/ReceiptDownload'
 import RegisterDone from '../pages/register/RegisterDone'
 import RegisterLineSuccess from '../pages/register/RegisterLineSuccess'
 import RegisterPrivacy from '../pages/register/RegisterPrivacy'
@@ -64,7 +65,7 @@ export const router = createBrowserRouter([
           { path: PATHS.home, element: <Home /> },
           { path: PATHS.profile, element: <Profile /> },
           { path: PATHS.changePassword, element: <ChangePassword /> },
-          { path: PATHS.receipt, element: <MemberPlaceholder title="奉獻收據下載" /> },
+          { path: PATHS.receipt, element: <ReceiptDownload /> },
           // 區長以上；權限不足 → 403
           {
             element: <RequireRole minRole="leader" />,
