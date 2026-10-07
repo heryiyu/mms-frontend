@@ -1,14 +1,20 @@
 import { Form } from 'antd'
-import type { Rule } from 'antd/es/form'
 import { useState } from 'react'
 import { useNavigate } from 'react-router'
 import { isApiError } from '../api/client'
 import { changePassword } from '../api/password'
 import ActionBar from '../components/ActionBar'
-import { AppForm, FormCard, FormCardItem, formCardLayout, PasswordInput } from '../components/form'
+import {
+  AppForm,
+  confirmPasswordRules,
+  FormCard,
+  FormCardItem,
+  formCardLayout,
+  newPasswordRules,
+  PasswordInput,
+} from '../components/form'
 import { useNotifyModal } from '../components/NoticeModal'
 import ResultPage from '../components/ResultPage'
-import { getPasswordRuleError } from '../constants/password'
 import { PATHS } from '../routes/paths'
 import typography from '../styles/typography.module.css'
 import { cx } from '../utils/cx'
@@ -37,37 +43,18 @@ const FIELD_NAMES: FieldName[] = ['currentPassword', 'newPassword', 'confirmPass
 // TODO(#12)：錯誤文案設計未定
 const MESSAGES = {
   currentRequired: '請輸入密碼',
-  newRequired: '請輸入新密碼',
-  confirmRequired: '請確認新密碼',
   sameAsOld: '新密碼不可與舊密碼相同',
-  mismatch: '兩次輸入的新密碼不一致',
   wrongCurrent: '密碼輸入錯誤',
   failedTitle: '變更失敗',
   failedContent: '發生錯誤，請稍後再試',
 } as const
 
-const newPasswordRules: Rule[] = [
-  { required: true, message: MESSAGES.newRequired },
-  ({ getFieldValue }) => ({
-    validator(_, value?: string) {
-      if (!value) return Promise.resolve()
-      const ruleError = getPasswordRuleError(value)
-      if (ruleError) return Promise.reject(new Error(ruleError))
-      if (value === getFieldValue('currentPassword')) return Promise.reject(new Error(MESSAGES.sameAsOld))
-      return Promise.resolve()
-    },
-  }),
-]
+// 新密碼／確認密碼規則與忘記密碼共用（components/form/passwordRules.ts），這裡只多「不可與舊密碼相同」
+const newPasswordFieldRules = newPasswordRules((value, getFieldValue) =>
+  value === getFieldValue('currentPassword') ? MESSAGES.sameAsOld : undefined,
+)
 
-const confirmPasswordRules: Rule[] = [
-  { required: true, message: MESSAGES.confirmRequired },
-  ({ getFieldValue }) => ({
-    validator(_, value?: string) {
-      if (!value || value === getFieldValue('newPassword')) return Promise.resolve()
-      return Promise.reject(new Error(MESSAGES.mismatch))
-    },
-  }),
-]
+const confirmPasswordFieldRules = confirmPasswordRules('newPassword')
 
 export default function ChangePassword() {
   const navigate = useNavigate()
@@ -138,7 +125,7 @@ export default function ChangePassword() {
             name="newPassword"
             label="新密碼"
             dependencies={['currentPassword']}
-            rules={newPasswordRules}
+            rules={newPasswordFieldRules}
           >
             <PasswordInput placeholder="請輸入新密碼" autoComplete="new-password" />
           </FormCardItem>
@@ -146,7 +133,7 @@ export default function ChangePassword() {
             name="confirmPassword"
             label="確認密碼"
             dependencies={['newPassword']}
-            rules={confirmPasswordRules}
+            rules={confirmPasswordFieldRules}
           >
             <PasswordInput placeholder="請確認新密碼" autoComplete="new-password" />
           </FormCardItem>

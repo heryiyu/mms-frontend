@@ -4,6 +4,8 @@ import GuestLayout from '../layouts/GuestLayout'
 import MemberLayout from '../layouts/MemberLayout'
 import ChangePassword from '../pages/ChangePassword'
 import Forbidden from '../pages/Forbidden'
+import ForgotPassword from '../pages/forgot-password/ForgotPassword'
+import ForgotPasswordDone from '../pages/forgot-password/ForgotPasswordDone'
 import GuestPlaceholder from '../pages/GuestPlaceholder'
 import Home from '../pages/Home'
 import LineCallback from '../pages/login/LineCallback'
@@ -40,7 +42,7 @@ export const router = createBrowserRouter([
           { path: PATHS.registerPrivacy, element: <RegisterPrivacy /> },
           // 全寬表單：頁面內以 useGuestLayout('full') 切換版型
           { path: PATHS.registerProfile, element: <RegisterProfile /> },
-          { path: PATHS.forgotPassword, element: <GuestPlaceholder title="忘記密碼" /> },
+          { path: PATHS.forgotPassword, element: <ForgotPassword /> },
           // TODO(#12)：進度查詢設計未畫（查詢條件推測為信箱＋手機，見 api/register.ts queryProgress）
           { path: PATHS.progress, element: <GuestPlaceholder title="進度查詢" /> },
         ],
@@ -50,6 +52,7 @@ export const router = createBrowserRouter([
       // 註冊結果頁：整頁置中、無卡片
       { path: PATHS.registerDone, element: <RegisterDone /> },
       { path: PATHS.registerLine, element: <RegisterLineSuccess /> },
+      { path: PATHS.forgotPasswordDone, element: <ForgotPasswordDone /> },
     ],
   },
   // 等待審核：登入與否皆可開啟
