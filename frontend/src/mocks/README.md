@@ -120,6 +120,18 @@ OTP 元件示範：dev 模式開 `/dev/otp`（`PATHS.devOtp`，`OtpDemo.tsx`；�
 | 新密碼不符規則（見下） | 422 `VALIDATION_ERROR` |
 | `resetToken` 錯誤或已用過 | 400 `TOKEN_INVALID` |
 
+忘記密碼頁（`/forgot-password`，`pages/forgot-password/ForgotPassword.tsx`；登入頁「忘記密碼？」進入）對應的畫面：
+
+| 情境 | 畫面 |
+| --- | --- |
+| `member@test.com` + `0912345678` → 確認 | 出現 OTP 列與「有效時間」5 分鐘倒數；OTP 依上方「OTP」規則（`1234` 通過、`0000` 錯誤、`9999` 逾時，錯誤／逾時跳通知彈窗並清空 OTP） |
+| `notfound@test.com` | 通知彈窗「查無此帳號」 |
+| `member@test.com` + 其他手機（例如 `0999999999`） | 通知彈窗「電子信箱與手機號碼不符」 |
+| `frequent@test.com` | 通知彈窗「發送過於頻繁，請稍後再試」 |
+| 信箱格式錯誤（`abc`）、手機不是 `09` 開頭 10 碼 | 欄位下方 inline 錯誤，不會呼叫 API |
+| 已發送 OTP 後改信箱或手機 | OTP 列消失，回到未發送狀態，按「確認」重新發送 |
+| OTP 通過 → 設定新密碼 | 新密碼不符規則、兩次不一致 → inline 錯誤；成功 → `/forgot-password/done`「變更完成！」，「返回」回登入頁，可用新密碼登入（重新整理後還原為 `Member@123`） |
+
 ### 修改密碼（`PUT /me/password`）
 
 - 目前密碼錯誤 → 400 `WRONG_CURRENT_PASSWORD`
