@@ -7,7 +7,7 @@ import type { ReceiptOtpRequest } from '../../api/types'
 import ActionBar from '../../components/ActionBar'
 import { AppForm, applyServerFieldErrors, emailRules, FormCard, phoneRules, TextInput } from '../../components/form'
 import { useNotifyModal } from '../../components/NoticeModal'
-import { getOtpErrorMessage, OtpField, otpRules, useOtpSender } from '../../components/OtpInput'
+import { getOtpErrorMessage, OtpField, otpRules, useOtpForm } from '../../components/OtpInput'
 import ResultPage from '../../components/ResultPage'
 import { PATHS } from '../../routes/paths'
 import typography from '../../styles/typography.module.css'
@@ -64,11 +64,11 @@ export default function ReceiptDownload() {
     void notify({ title: MESSAGES.noticeTitle, content })
   }
 
-  const otp = useOtpSender(sendReceiptOtp, { onResendError: showError })
+  // OTP 綁定送出時的信箱與手機：已發送後若修改，回到填寫中狀態重新發送
+  const otp = useOtpForm(form, sendReceiptOtp, { targetFields: ['email', 'phone'], onResendError: showError })
 
   const contactFilled = !!values?.email?.trim() && !!values?.phone?.trim()
-  const otpFilled = (values?.otp?.length ?? 0) === otp.length
-  const canConfirm = otp.sent ? contactFilled && otpFilled : contactFilled
+  const canConfirm = otp.sent ? contactFilled && otp.otpFilled : contactFilled
 
   const goHome = () => navigate(PATHS.home, { replace: true })
 
@@ -78,21 +78,12 @@ export default function ReceiptDownload() {
     else goHome()
   }
 
-  // OTP 綁定送出時的信箱與手機：已發送後若修改，回到填寫中狀態重新發送
-  const handleValuesChange = (changed: Partial<ReceiptValues>) => {
-    if (otp.sent && ('email' in changed || 'phone' in changed)) {
-      otp.reset()
-      form.setFieldValue('otp', '')
-    }
-  }
-
   // 後端回 VALIDATION_ERROR 時把欄位錯誤顯示在對應輸入框下方
   const applyFieldErrors = (error: unknown) => applyServerFieldErrors(form, error, ['email', 'phone']).length > 0
 
   const handleSendOtp = async (body: ReceiptOtpRequest) => {
     try {
       await otp.send(body)
-      form.setFieldValue('otp', '')
     } catch (error) {
       if (!applyFieldErrors(error)) showError(error)
     }
@@ -128,7 +119,7 @@ export default function ReceiptDownload() {
         requiredMark={false}
         validateTrigger="onBlur"
         initialValues={{ email: '', phone: '', otp: '' }}
-        onValuesChange={handleValuesChange}
+        onValuesChange={otp.handleValuesChange}
         onFinish={handleFinish}
       >
         <div className={styles.body}>

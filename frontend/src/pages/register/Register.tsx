@@ -9,7 +9,7 @@ import { Button } from '../../components/Button'
 import { AppForm, applyServerFieldErrors, emailRules, phoneRules, TextInput } from '../../components/form'
 import Icon from '../../components/Icon'
 import { useNotifyModal } from '../../components/NoticeModal'
-import { getOtpErrorMessage, OtpField, otpRules, useOtpSender } from '../../components/OtpInput'
+import { getOtpErrorMessage, OtpField, otpRules, useOtpForm } from '../../components/OtpInput'
 import { useGuestLayout } from '../../layouts/guestLayoutContext'
 import { PATHS } from '../../routes/paths'
 import typography from '../../styles/typography.module.css'
@@ -87,7 +87,6 @@ export default function Register() {
   const navigate = useNavigate()
   const screens = Grid.useBreakpoint()
   const [form] = Form.useForm<RegisterValues>()
-  const otpValue = (Form.useWatch('otp', form) as string | undefined) ?? ''
   const [hasLineToken] = useState(() => !!getRegisterFlow().lineToken)
   const [verifying, setVerifying] = useState(false)
   const [lineLoading, setLineLoading] = useState(false)
@@ -95,7 +94,8 @@ export default function Register() {
 
   const showError = (error: unknown) => notify({ title: NOTICE_TITLE, content: apiErrorContent(error) })
 
-  const otp = useOtpSender(sendRegisterOtp, {
+  const otp = useOtpForm(form, sendRegisterOtp, {
+    targetFields: OTP_TARGET_FIELDS,
     onResendError: (error) => void showError(error),
   })
 
@@ -113,7 +113,6 @@ export default function Register() {
   const handleSend = async (values: RegisterValues) => {
     try {
       await otp.send(toRequest(values))
-      form.setFieldValue('otp', '')
     } catch (error) {
       if (isApiError(error, 'VALIDATION_ERROR')) {
         const [first] = applyServerFieldErrors(form, error, SERVER_FIELDS)
@@ -143,7 +142,7 @@ export default function Register() {
       navigate(PATHS.registerPrivacy)
     } catch (error) {
       setVerifying(false)
-      if (isApiError(error, 'OTP_INVALID')) form.setFieldValue('otp', '')
+      if (isApiError(error, 'OTP_INVALID')) otp.clearOtp()
       // TODO(#12)：逾時後的狀態未畫，回到 Default 讓使用者按「確認」重新發送
       if (isApiError(error, 'OTP_EXPIRED')) otp.reset()
       void showError(error)
@@ -155,14 +154,6 @@ export default function Register() {
   const handleFinishFailed: FormProps<RegisterValues>['onFinishFailed'] = ({ errorFields }) => {
     const first = errorFields[0]?.errors[0]
     if (first) void notify({ title: NOTICE_TITLE, content: first })
-  }
-
-  const handleValuesChange: FormProps<RegisterValues>['onValuesChange'] = (changed) => {
-    if (!otp.sent) return
-    if (Object.keys(changed).some((name) => OTP_TARGET_FIELDS.includes(name as FieldName))) {
-      otp.reset()
-      form.setFieldValue('otp', '')
-    }
   }
 
   const handleLine = async () => {
@@ -190,7 +181,7 @@ export default function Register() {
         validateTrigger="onBlur"
         onFinish={handleFinish}
         onFinishFailed={handleFinishFailed}
-        onValuesChange={handleValuesChange}
+        onValuesChange={otp.handleValuesChange}
         className={styles.form}
       >
         <Form.Item name="birthDate" rules={[{ required: true, message: MESSAGES.birthDateRequired }]}>
@@ -248,7 +239,7 @@ export default function Register() {
           htmlType="submit"
           block
           loading={busy}
-          disabled={otp.sent && otpValue.length !== otp.length}
+          disabled={otp.sent && !otp.otpFilled}
           className={styles.submit}
         >
           確認

@@ -19,7 +19,7 @@ import {
   TextInput,
 } from '../../components/form'
 import { type NotifyOptions, useNotifyModal } from '../../components/NoticeModal'
-import { getOtpErrorMessage, OtpField, otpRules, useOtpSender } from '../../components/OtpInput'
+import { getOtpErrorMessage, OtpField, otpRules, useOtpForm } from '../../components/OtpInput'
 import { useGuestLayout } from '../../layouts/guestLayoutContext'
 import { PATHS } from '../../routes/paths'
 import typography from '../../styles/typography.module.css'
@@ -99,13 +99,15 @@ function VerifyStep({ notify, onVerified }: { notify: Notify; onVerified: (reset
   const [form] = Form.useForm<VerifyValues>()
   const email = Form.useWatch('email', form)
   const phone = Form.useWatch('phone', form)
-  const otpValue = Form.useWatch('otp', form) ?? ''
   const [verifying, setVerifying] = useState(false)
 
-  const otp = useOtpSender(sendForgotPasswordOtp, { onResendError: (error) => void notify(getNotice(error)) })
+  const otp = useOtpForm(form, sendForgotPasswordOtp, {
+    targetFields: ['email', 'phone'],
+    onResendError: (error) => void notify(getNotice(error)),
+  })
 
   const filled = !!email?.trim() && !!phone?.trim()
-  const canSubmit = filled && (!otp.sent || otpValue.length === otp.length)
+  const canSubmit = filled && (!otp.sent || otp.otpFilled)
 
   const showError = (error: unknown) => {
     if (applyServerFieldErrors(form, error, ['email', 'phone', 'otp']).length > 0) return
@@ -115,7 +117,6 @@ function VerifyStep({ notify, onVerified }: { notify: Notify; onVerified: (reset
   const send = async ({ email, phone }: ForgotPasswordOtpRequest) => {
     try {
       await otp.send({ email: email.trim(), phone: phone.trim() })
-      form.setFieldValue('otp', '')
     } catch (error) {
       showError(error)
     }
@@ -129,7 +130,7 @@ function VerifyStep({ notify, onVerified }: { notify: Notify; onVerified: (reset
     } catch (error) {
       setVerifying(false)
       // 驗證碼錯誤／逾時：清空讓使用者重新輸入（逾時可等倒數結束後「重新發送」）
-      if (getOtpErrorMessage(error)) form.setFieldValue('otp', '')
+      if (getOtpErrorMessage(error)) otp.clearOtp()
       showError(error)
     }
   }
@@ -142,9 +143,7 @@ function VerifyStep({ notify, onVerified }: { notify: Notify; onVerified: (reset
       className={styles.form}
       onFinish={(values) => (otp.sent ? verify(values) : send(values))}
       // 已發送後改了信箱或手機：原本的驗證碼作廢，回到「尚未發送」，按「確認」重新發送。TODO(#12)：設計未畫
-      onValuesChange={(changed: Partial<VerifyValues>) => {
-        if (otp.sent && ('email' in changed || 'phone' in changed)) otp.reset()
-      }}
+      onValuesChange={otp.handleValuesChange}
     >
       <Form.Item name="email" className={styles.field} rules={EMAIL_RULES}>
         <TextInput
