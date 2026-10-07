@@ -78,6 +78,21 @@
 - 送出註冊：身分證字號填 `Q123456789`（已存在）→ 409 `ALREADY_REGISTERED`；`registerToken` 錯誤或已用過 → 400 `TOKEN_INVALID`；教會／牧區／小組／EKK 不屬於同一條線 → 422。
 - 註冊成功後該帳號為待審核：會出現在 `leader@test.com` 的審核清單，登入回 `ACCOUNT_PENDING`，進度查詢回 `PENDING`。
 
+註冊頁面（`pages/register/`）對應的畫面：
+
+- 跨步驟資料存在 `sessionStorage` 的 `nlc.registerFlow`（`pages/register/registerFlow.ts`）：OTP 驗證步驟寫入 `registerToken`／`birthDate`／`email`／`phone`（／`guardianName`），個資聲明寫入 `agreedToPrivacy`，Line 授權寫入 `lineToken`；送出成功後清除。
+- 會員資料輸入（`/register/profile`）缺 `registerToken`、`agreedToPrivacy`、生日、信箱或手機時導回 `/register`。註冊第一步（#15）完成前，可先在 DevTools Console 取得 token 再開頁：
+
+  ```js
+  const { registerToken } = await (await fetch('/api/register/otp/verify', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email: 'new@test.com', phone: '0911222333', otp: '1234' }) })).json()
+  sessionStorage.setItem('nlc.registerFlow', JSON.stringify({ registerToken, birthDate: '1993-01-01', email: 'new@test.com', phone: '0911222333', agreedToPrivacy: true }))
+  location.href = '/register/profile'
+  ```
+
+- 教會／牧區／小組／EKK 選項來自 `db.ts` 的 `ORG_TREE`（例：台北仁愛堂 → 新烏87 → Jessus → Hooo）；選了教會才展開牧區／小組／EKK，改上層會清空下層。
+- 身分證字號填 `Q123456789` → 通知彈窗「此身份證字號、電子信箱或手機已註冊」；`registerToken` 失效（例如同一 token 送出第二次）→ 通知彈窗後導回 `/register`。
+- 送出成功 → `/register/done`「等待核准中」，「返回」回登入頁。
+
 ### 進度查詢（`POST /register/progress`）
 
 信箱＋手機都要符合才查得到，否則 404 `ACCOUNT_NOT_FOUND`。
@@ -141,7 +156,7 @@
 | `mock-line-pending` | 403 `ACCOUNT_PENDING` |
 | 其他 | 400 `TOKEN_INVALID` |
 
-登入頁按「使用Line快速登入」會導到 `/auth/line/callback?code=mock-line-code&state=mock-state`（`pages/login/LineCallback.tsx`），直接登入 `member@test.com`。其他情境可直接開網址並改 `code`：`mock-line-new` → 註冊頁（state 帶 `lineToken`）、`mock-line-pending` → 等待審核頁、任意其他值 → 回登入頁並跳通知彈窗。
+登入頁按「使用Line快速登入」會導到 `/auth/line/callback?code=mock-line-code&state=mock-state`（`pages/login/LineCallback.tsx`），直接登入 `member@test.com`。其他情境可直接開網址並改 `code`：`mock-line-new` → 「Line創建成功」頁（`/register/line`，`lineToken` 存進 `nlc.registerFlow`），2 秒後自動跳到註冊第一步 `/register`、`mock-line-pending` → 等待審核頁、任意其他值 → 回登入頁並跳通知彈窗。
 
 ## 暫定的密碼規則
 

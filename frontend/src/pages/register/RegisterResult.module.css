@@ -1,0 +1,34 @@
+/*
+ * 註冊結果頁（等待核准中、Line 創建成功）：無卡片，整頁 bgLayout，內容置中。
+ * 間距量自 docs/design/register/{web,mob}/ 對應截圖（@2x 換算 1x，目測），與等待審核頁（PendingApproval）相同：
+ * 標題 → 說明約 4px、說明 → 「返回」約 8px。
+ */
+.page {
+  display: flex;
+  min-height: 100dvh;
+  padding: var(--safe-top) 0 var(--safe-bottom);
+  background: var(--color-bg-layout);
+}
+
+.result {
+  --register-result-title-gap: 4px;
+  --register-result-back-gap: 8px;
+}
+
+.result :global(.ant-result-title) {
+  margin-block: 0 var(--register-result-title-gap);
+}
+
+.result :global(.ant-result-extra) {
+  margin-top: var(--register-result-back-gap);
+}
+
+/* Line 創建成功：圖示 web／mob 皆約 60px（ResultPage 桌機預設 80px），權重需高於 ResultPage 的 media query */
+.result.compactIcon {
+  --result-icon-size: 60px;
+}
+
+.contact,
+.contact:visited {
+  color: var(--color-primary);
+}
