@@ -8,15 +8,15 @@ import { getChurches, getDistricts, getEkks, getGroups, getJourneys } from '../.
 import { submitRegister } from '../../api/register'
 import type { Gender, Journey, JourneyOption, Option } from '../../api/types'
 import ActionBar from '../../components/ActionBar'
-import { AppForm, PasswordInput, Radio, TextInput } from '../../components/form'
+import { AppForm, FormCard, FormCardItem, formCardLayout, PasswordInput, Radio, TextInput } from '../../components/form'
 import Icon from '../../components/Icon'
 import { useNotifyModal } from '../../components/NoticeModal'
 import { getPasswordRuleError } from '../../constants/password'
 import { useGuestLayout } from '../../layouts/guestLayoutContext'
 import { PATHS } from '../../routes/paths'
 import typography from '../../styles/typography.module.css'
-import { formControlSize } from '../../theme/components/formControls'
 import { cx } from '../../utils/cx'
+import { hasInAppHistory } from '../../utils/history'
 import { clearRegisterFlow, getRegisterFlow } from './registerFlow'
 import styles from './RegisterProfile.module.css'
 
@@ -176,8 +176,7 @@ export default function RegisterProfile() {
 
   // 有站內上一頁（個資聲明）就回上一頁，直接開啟此頁時回個資聲明
   const handleBack = () => {
-    const idx = (window.history.state as { idx?: number } | null)?.idx ?? 0
-    if (idx > 0) navigate(-1)
+    if (hasInAppHistory()) navigate(-1)
     else navigate(PATHS.registerPrivacy, { replace: true })
   }
 
@@ -252,42 +251,37 @@ export default function RegisterProfile() {
         form={form}
         initialValues={INITIAL_VALUES}
         validateTrigger="onBlur"
-        labelAlign="left"
-        labelCol={{ flex: `0 0 ${formControlSize.labelWidth}px` }}
-        // 字串 flex 原樣輸出；數字 1 會被轉成「1 1 auto」，xs 時輸入框會被擠到下一行
-        wrapperCol={{ flex: '1 1 0' }}
+        {...formCardLayout}
         onValuesChange={handleValuesChange}
         onFinish={handleFinish}
         onFinishFailed={handleFinishFailed}
       >
         <h1 className={cx(typography.headline5, styles.title)}>會員資料</h1>
-        <div className={styles.card}>
-          <Form.Item className={styles.row} name="name" label="姓名" rules={[required('請輸入姓名')]}>
+        <FormCard>
+          <FormCardItem name="name" label="姓名" rules={[required('請輸入姓名')]}>
             <TextInput placeholder="請輸入姓名" autoComplete="name" maxLength={50} />
-          </Form.Item>
-          <Form.Item className={styles.row} name="nickname" label="暱稱">
+          </FormCardItem>
+          <FormCardItem name="nickname" label="暱稱">
             <TextInput placeholder="請輸入暱稱" autoComplete="nickname" maxLength={50} />
-          </Form.Item>
-          <Form.Item className={styles.row} name="gender" label="性別" rules={[{ required: true, message: '請選擇性別' }]}>
+          </FormCardItem>
+          <FormCardItem name="gender" label="性別" rules={[{ required: true, message: '請選擇性別' }]}>
             <Radio.Group className={styles.radioGroup}>
               <Radio value="male">男</Radio>
               <Radio value="female">女</Radio>
             </Radio.Group>
-          </Form.Item>
-          <Form.Item
-            className={styles.row}
+          </FormCardItem>
+          <FormCardItem
             name="idNumber"
             label="身份證字號"
             rules={[required('請輸入身份證字號'), { pattern: ID_NUMBER_PATTERN, message: MESSAGES.idNumberFormat }]}
           >
             <TextInput placeholder="請輸入身份證字號" autoComplete="off" maxLength={10} />
-          </Form.Item>
-          <Form.Item className={styles.row} name="password" label="密碼" rules={passwordRules}>
+          </FormCardItem>
+          <FormCardItem name="password" label="密碼" rules={passwordRules}>
             {/* 稿上空白時沒有眼睛圖示，有值後才出現 */}
             <PasswordInput placeholder="請輸入密碼" autoComplete="new-password" visibilityToggle={!!values?.password} />
-          </Form.Item>
-          <Form.Item
-            className={styles.row}
+          </FormCardItem>
+          <FormCardItem
             name="confirmPassword"
             label="確認密碼"
             dependencies={['password']}
@@ -298,9 +292,8 @@ export default function RegisterProfile() {
               autoComplete="new-password"
               visibilityToggle={!!values?.confirmPassword}
             />
-          </Form.Item>
-          <Form.Item
-            className={styles.row}
+          </FormCardItem>
+          <FormCardItem
             name="churchId"
             label="教會"
             rules={[{ required: true, message: '請選擇教會' }]}
@@ -313,11 +306,10 @@ export default function RegisterProfile() {
               loading={churches.loading}
               suffixIcon={selectSuffix}
             />
-          </Form.Item>
+          </FormCardItem>
           {hasChurch && (
             <>
-              <Form.Item
-                className={styles.row}
+              <FormCardItem
                 name="districtId"
                 label="牧區"
                 rules={[{ required: true, message: '請選擇牧區' }]}
@@ -330,9 +322,8 @@ export default function RegisterProfile() {
                   loading={districts.loading}
                   suffixIcon={selectSuffix}
                 />
-              </Form.Item>
-              <Form.Item
-                className={styles.row}
+              </FormCardItem>
+              <FormCardItem
                 name="groupId"
                 label="小組"
                 rules={[{ required: true, message: '請選擇小組' }]}
@@ -346,9 +337,8 @@ export default function RegisterProfile() {
                   disabled={!values?.districtId}
                   suffixIcon={selectSuffix}
                 />
-              </Form.Item>
-              <Form.Item
-                className={styles.row}
+              </FormCardItem>
+              <FormCardItem
                 name="ekkId"
                 label="EKK"
                 rules={[{ required: true, message: '請選擇 EKK' }]}
@@ -362,10 +352,10 @@ export default function RegisterProfile() {
                   disabled={!values?.groupId}
                   suffixIcon={selectSuffix}
                 />
-              </Form.Item>
+              </FormCardItem>
             </>
           )}
-          <Form.Item className={styles.row} name="journey" label="靈程" rules={[{ required: true, message: '請選擇靈程' }]}>
+          <FormCardItem name="journey" label="靈程" rules={[{ required: true, message: '請選擇靈程' }]}>
             <Radio.Group className={styles.radioGroup}>
               {journeys.options.map((j) => (
                 <Radio key={j.id} value={j.id}>
@@ -373,8 +363,8 @@ export default function RegisterProfile() {
                 </Radio>
               ))}
             </Radio.Group>
-          </Form.Item>
-        </div>
+          </FormCardItem>
+        </FormCard>
         <ActionBar
           fixed
           cancelText="返回"

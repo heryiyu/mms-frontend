@@ -24,6 +24,11 @@ export interface ResultPageProps {
   onBack?: () => void
   /** 額外動作，會放在返回按鈕旁 */
   extra?: ReactNode
+  /**
+   * 整頁版（不在任何版型內）：外包 <main>，整頁 bgLayout、避開安全區域，標題／說明／返回間距較緊。
+   * 例：等待審核、註冊等待核准中、Line 創建成功。
+   */
+  fullPage?: boolean
   className?: string
 }
 
@@ -44,6 +49,7 @@ export default function ResultPage({
   backText = '返回',
   onBack,
   extra,
+  fullPage,
   className,
 }: ResultPageProps) {
   const actions = (
@@ -57,8 +63,8 @@ export default function ResultPage({
     </>
   )
 
-  return (
-    <div className={cx(styles.wrapper, className)}>
+  const content = (
+    <div className={cx(styles.wrapper, fullPage && styles.compact, className)}>
       <ConfigProvider theme={resultTheme}>
         <Result
           className={styles.result}
@@ -76,4 +82,6 @@ export default function ResultPage({
       </ConfigProvider>
     </div>
   )
+
+  return fullPage ? <main className={styles.fullPage}>{content}</main> : content
 }

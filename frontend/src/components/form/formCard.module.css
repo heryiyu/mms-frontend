@@ -1,0 +1,43 @@
+/*
+ * 卡片式表單（修改密碼、註冊會員資料）：白底圓角卡片，每列「左 label／右欄位」，列間 gray5 分隔線。
+ * 手機稿也是左右排列。尺寸由 @2x 截圖換算 1x（目測）：列高約 56px、第一列距卡片上緣約 20px。
+ * 選擇器重複 class（.x.x）是為了蓋過 AntD css-in-js 的同等權重規則。
+ */
+.card {
+  --form-card-padding-block: 12px;
+  --form-card-row-padding-block: 8px;
+
+  padding: var(--form-card-padding-block) var(--layout-page-padding-mobile);
+  border-radius: var(--radius-lg);
+  background: var(--color-white);
+}
+
+.row.row {
+  margin-bottom: 0;
+  padding-block: var(--form-card-row-padding-block);
+  border-bottom: 1px solid var(--color-gray-5);
+}
+
+.row.row:last-child {
+  border-bottom: 0;
+}
+
+/* 取消 AntD 在 xs 時把 label 改成上方排列的內距／行高，讓 label 與欄位垂直置中 */
+.row.row :global(.ant-form-item-row) {
+  flex-wrap: nowrap;
+}
+
+/* 權重需高於 AntD xs 規則 .ant-form-item:not(.ant-form-item-vertical) > .ant-form-item-row > .ant-form-item-label */
+.row.row :global(.ant-form-item-row) > :global(.ant-form-item-label.ant-form-item-label) {
+  padding: 0;
+  line-height: var(--layout-control-height);
+  /* 例：「身份證字號*」在手機寬度剛好貼齊標籤欄寬，避免 AntD xs 規則讓它換行、撐高整列 */
+  white-space: nowrap;
+}
+
+/* 稿中 label 為 gray1、Body1（全域 Form labelColor 為 gray2） */
+.row.row :global(.ant-form-item-label > label) {
+  height: var(--layout-control-height);
+  font-size: var(--font-size-body-1);
+  color: var(--color-gray-1);
+}

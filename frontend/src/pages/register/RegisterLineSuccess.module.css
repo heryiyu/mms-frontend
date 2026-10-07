@@ -1,0 +1,4 @@
+/* Line 創建成功：圖示 web／mob 皆約 60px（ResultPage 桌機預設 80px），權重需高於 ResultPage 的 media query */
+.result.result {
+  --result-icon-size: 60px;
+}

@@ -1,6 +1,6 @@
 import { isApiError } from '../../api/client'
 import type { NotifyOptions } from '../../components/NoticeModal'
-import { CHURCH_CONTACT_EMAIL, CHURCH_CONTACT_MAILTO } from '../../constants/contact'
+import ContactEmailLink from '../../components/ContactEmailLink'
 
 // 登入失敗的通知彈窗內容（docs/design/login/README.md 各 popup）。標題一律「通知」，內文照稿換行。
 // ACCOUNT_PENDING 不走彈窗，由呼叫端導向等待審核頁。
@@ -9,7 +9,8 @@ const TITLE = '通知'
 
 const contactLine = (
   <>
-    請聯繫<a href={CHURCH_CONTACT_MAILTO}>{CHURCH_CONTACT_EMAIL}</a>
+    請聯繫
+    <ContactEmailLink />
   </>
 )
 

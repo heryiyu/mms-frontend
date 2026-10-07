@@ -1,8 +1,7 @@
 import { useNavigate } from 'react-router'
+import ContactEmailLink from '../../components/ContactEmailLink'
 import ResultPage from '../../components/ResultPage'
-import { CHURCH_CONTACT_EMAIL, CHURCH_CONTACT_MAILTO } from '../../constants/contact'
 import { PATHS } from '../../routes/paths'
-import styles from './RegisterResult.module.css'
 
 /**
  * 註冊：等待核准中（docs/design/register/README.md「等待核准中」）。
@@ -15,28 +14,24 @@ export default function RegisterDone() {
   const navigate = useNavigate()
 
   return (
-    <main className={styles.page}>
-      <ResultPage
-        title={
-          <>
-            目前資料已經完成
-            <br />
-            等待審核中
-          </>
-        }
-        description={
-          <>
-            有任何問題請聯繫
-            <a href={CHURCH_CONTACT_MAILTO} className={styles.contact}>
-              {CHURCH_CONTACT_EMAIL}
-            </a>
-            <br />
-            審核結果將以電子信箱或手機簡訊通知
-          </>
-        }
-        onBack={() => navigate(PATHS.login, { replace: true })}
-        className={styles.result}
-      />
-    </main>
+    <ResultPage
+      fullPage
+      title={
+        <>
+          目前資料已經完成
+          <br />
+          等待審核中
+        </>
+      }
+      description={
+        <>
+          有任何問題請聯繫
+          <ContactEmailLink />
+          <br />
+          審核結果將以電子信箱或手機簡訊通知
+        </>
+      }
+      onBack={() => navigate(PATHS.login, { replace: true })}
+    />
   )
 }

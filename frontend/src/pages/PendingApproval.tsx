@@ -1,9 +1,8 @@
 import { useNavigate } from 'react-router'
 import { authStore } from '../auth/store'
+import ContactEmailLink from '../components/ContactEmailLink'
 import ResultPage from '../components/ResultPage'
-import { CHURCH_CONTACT_EMAIL, CHURCH_CONTACT_MAILTO } from '../constants/contact'
 import { PATHS } from '../routes/paths'
-import styles from './PendingApproval.module.css'
 
 /**
  * 等待審核頁（docs/design/login/README.md「等待審核」，web/mob 等待審核.png）。
@@ -20,21 +19,17 @@ export default function PendingApproval() {
   }
 
   return (
-    <main className={styles.page}>
-      <ResultPage
-        icon={null}
-        title="等待審核中"
-        description={
-          <>
-            有任何問題請聯繫
-            <a href={CHURCH_CONTACT_MAILTO} className={styles.contact}>
-              {CHURCH_CONTACT_EMAIL}
-            </a>
-          </>
-        }
-        onBack={handleBack}
-        className={styles.result}
-      />
-    </main>
+    <ResultPage
+      fullPage
+      icon={null}
+      title="等待審核中"
+      description={
+        <>
+          有任何問題請聯繫
+          <ContactEmailLink />
+        </>
+      }
+      onBack={handleBack}
+    />
   )
 }

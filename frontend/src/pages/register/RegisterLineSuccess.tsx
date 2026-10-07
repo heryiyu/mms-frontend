@@ -2,9 +2,8 @@ import { useEffect, useState } from 'react'
 import { Navigate, useNavigate } from 'react-router'
 import ResultPage from '../../components/ResultPage'
 import { PATHS } from '../../routes/paths'
-import { cx } from '../../utils/cx'
 import { getRegisterFlow } from './registerFlow'
-import styles from './RegisterResult.module.css'
+import styles from './RegisterLineSuccess.module.css'
 
 /** 顯示「Line創建成功」後自動跳轉的等待時間（設計未定，暫定） */
 const REDIRECT_DELAY_MS = 2000
@@ -31,12 +30,11 @@ export default function RegisterLineSuccess() {
   if (!hasLineToken) return <Navigate to={PATHS.register} replace />
 
   return (
-    <main className={styles.page}>
-      <ResultPage
-        title="Line創建成功"
-        description={<span role="status">自動跳轉中請稍後</span>}
-        className={cx(styles.result, styles.compactIcon)}
-      />
-    </main>
+    <ResultPage
+      fullPage
+      title="Line創建成功"
+      description={<span role="status">自動跳轉中請稍後</span>}
+      className={styles.result}
+    />
   )
 }

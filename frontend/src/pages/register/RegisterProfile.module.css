@@ -1,13 +1,11 @@
 /*
  * 註冊：會員資料輸入（docs/design/register/{web,mob}/創建帳號/會員資料輸入*.png），mobile-first，≥ lg 切桌機。
  * 版面外框（左右 20px／lg 起 120px、底部預留固定操作列）由 GuestLayout full 變體處理。
- * 尺寸由 @2x 截圖換算 1x（目測）；列結構與修改密碼頁（pages/ChangePassword.module.css）相同。
+ * 尺寸由 @2x 截圖換算 1x（目測）；卡片與列樣式與修改密碼頁共用 components/form/formCard.module.css。
  */
 .page {
-  /* 標題與卡片間距、卡片上下內距、列上下內距（目測：列高約 56px、第一列距卡片上緣約 20px） */
+  /* 標題與卡片間距（目測） */
   --register-profile-title-gap: 12px;
-  --register-profile-card-padding-block: 12px;
-  --register-profile-row-padding-block: 8px;
   /* Radio：圓圈與文字約 16px、選項間約 20px（目測）；手機三個靈程選項需排在同一列 */
   --register-profile-radio-label-gap: 16px;
   --register-profile-radio-gap: 20px;
@@ -15,43 +13,6 @@
 
 .title {
   margin: 0 0 var(--register-profile-title-gap);
-}
-
-/* 白底圓角卡片：每列「左 label／右欄位」，列間 gray5 分隔線 */
-.card {
-  padding: var(--register-profile-card-padding-block) var(--layout-page-padding-mobile);
-  border-radius: var(--radius-lg);
-  background: var(--color-white);
-}
-
-.row.row {
-  margin-bottom: 0;
-  padding-block: var(--register-profile-row-padding-block);
-  border-bottom: 1px solid var(--color-gray-5);
-}
-
-.row.row:last-child {
-  border-bottom: 0;
-}
-
-/* 手機稿也是左右排列：取消 AntD 在 xs 時把 label 改成上方排列的內距／行高，讓 label 與欄位垂直置中 */
-.row.row :global(.ant-form-item-row) {
-  flex-wrap: nowrap;
-}
-
-/* 權重需高於 AntD xs 規則 .ant-form-item:not(.ant-form-item-vertical) > .ant-form-item-row > .ant-form-item-label */
-.row.row :global(.ant-form-item-row) > :global(.ant-form-item-label.ant-form-item-label) {
-  padding: 0;
-  line-height: var(--layout-control-height);
-  /* 「身份證字號*」在手機寬度剛好貼齊標籤欄寬，避免 AntD xs 規則讓它換行、撐高整列 */
-  white-space: nowrap;
-}
-
-/* 稿中 label 為 gray1、Body1（全域 Form labelColor 為 gray2） */
-.row.row :global(.ant-form-item-label > label) {
-  height: var(--layout-control-height);
-  font-size: var(--font-size-body-1);
-  color: var(--color-gray-1);
 }
 
 .radioGroup :global(.ant-radio-wrapper) {
