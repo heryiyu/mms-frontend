@@ -61,8 +61,8 @@ export default function RegisterPrivacy() {
         onChange={setAgreed}
         label={
           <>
-            {/* TODO(#12) S1：稿上「個資保護」有底線，是否為連結（開啟完整條款）、條款由誰提供待確認 */}
-            本人同意<span className={styles.underline}>個資保護</span>之聲明
+            {/* 已確認（#12） S1：「個資保護」不是連結，取消稿上的底線 */}
+            本人同意個資保護之聲明
           </>
         }
       >

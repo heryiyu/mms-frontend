@@ -15,7 +15,7 @@ export const PATHS = {
   forgotPassword: '/forgot-password',
   /** 忘記密碼：「變更完成！」（整頁置中、無卡片） */
   forgotPasswordDone: '/forgot-password/done',
-  /** 審核進度查詢（登入頁「進度查詢」；設計未畫，目前為佔位頁，TODO(#12)） */
+  /** 審核進度查詢（登入頁「進度查詢」；已確認不另出稿，#12 L3） */
   progress: '/progress',
   /** Line OAuth 授權完成後的導回頁（需與後端設定的 redirect URI 一致，TODO(#12)） */
   lineCallback: '/auth/line/callback',

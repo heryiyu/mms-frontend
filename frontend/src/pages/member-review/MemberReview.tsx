@@ -32,7 +32,7 @@ import styles from './MemberReview.module.css'
 // - 退回完成頁「返回」比照審核完成：回待審核清單並重新載入
 // - 退回原因輸入、通知申請者、批次退回：設計稿未畫，不實作（待確認 1、2）
 
-// TODO(#12)：空狀態與載入失敗文案待確認（R3）
+// 已確認（#12） R3：空狀態與載入失敗維持目前文案
 const MESSAGES = {
   loadFailedTitle: '無法載入待審核清單',
   loadFailedContent: '請確認網路連線後重新載入。',

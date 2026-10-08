@@ -13,7 +13,7 @@ import styles from './Profile.module.css'
 
 // 資料變更驗證（docs/design/profile/README.md「資料變更驗證（OTP）」otp／otp-ing）
 // web：標題靠左、卡片接在標題下；mob：標題置中、標題＋卡片在內容區垂直置中
-// 主要按鈕 web「確認」／mob「送出」，驗證碼未輸入完整前停用
+// 主要按鈕「確認」（#12 C4），驗證碼未輸入完整前停用
 //
 // TODO(#12)：驗證碼錯誤／逾時的提示樣式未出圖，先用通知彈窗（同 OTP 元件建議）
 
@@ -69,7 +69,6 @@ export default function ProfileOtpStep({ otp, notify, onCancel, onVerified }: Pr
       <ActionBar
         bleed
         onCancel={onCancel}
-        mobileConfirmText="送出"
         confirmHtmlType="submit"
         confirmDisabled={code.length !== otp.length}
         confirmLoading={verifying}

@@ -26,8 +26,8 @@ import styles from './Login.module.css'
 // - 稿上電子信箱欄右側也有眼睛圖示，判定為複製密碼欄的殘留，只在密碼欄放
 // - 欄位格式錯誤採 inline 訊息（稿未畫），伺服器回傳的錯誤用通知彈窗
 // - 「記住帳號」沿用 authStore 的 remember（勾選＝關閉瀏覽器仍保持登入）
-// - 前端收到 TOO_MANY_ATTEMPTS 後暫停送出 LOGIN_COOLDOWN_MS
-// TODO(#12)：登入過度頻繁的門檻（錯幾次暫停、暫停多久）待後端定義
+// - L2 密碼錯 3 次暫停 5 分鐘、暫停累計 3 次鎖帳號（由後端計數，回 TOO_MANY_ATTEMPTS／ACCOUNT_LOCKED）；
+//   前端收到 TOO_MANY_ATTEMPTS 後同樣暫停送出 LOGIN_COOLDOWN_MS
 
 interface LoginValues {
   email: string
@@ -37,8 +37,8 @@ interface LoginValues {
 
 const EMAIL_RULES = emailRules()
 
-/** 收到「登入過度頻繁」後，前端暫停送出的時間 */
-const LOGIN_COOLDOWN_MS = 30_000
+/** 收到「登入過度頻繁」後，前端暫停送出的時間（與後端暫停 5 分鐘一致，#12 L2） */
+const LOGIN_COOLDOWN_MS = 5 * 60_000
 
 /** Line 登入失敗時，LineCallback 導回登入頁用 location.state 帶錯誤碼，由這裡顯示彈窗 */
 export interface LoginPageState {
@@ -143,7 +143,7 @@ export default function Login() {
       </AppForm>
 
       <div className={styles.links}>
-        {/* 已確認（#12） L3：查詢條件為信箱＋手機。TODO(#12)：「進度查詢」設計未畫，暫導向佔位頁 */}
+        {/* 已確認（#12） L3：查詢條件為信箱＋手機，維持現行頁面、不另出稿 */}
         <Link to={PATHS.progress} className={styles.link}>
           進度查詢
         </Link>

@@ -178,7 +178,6 @@ export default function ChangePassword() {
         <ActionBar
           bleed
           onCancel={() => void handleCancel()}
-          mobileConfirmText="送出"
           confirmHtmlType="submit"
           confirmDisabled={!allFilled}
           confirmLoading={submitting}
