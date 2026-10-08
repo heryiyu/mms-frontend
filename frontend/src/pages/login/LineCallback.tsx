@@ -11,13 +11,12 @@ import LoginLoading from './LoginLoading'
  * Line OAuth 授權完成後的導回頁（設計未畫，只顯示 loading 遮罩）。
  * - LOGGED_IN：lineCallback() 寫入 auth store，GuestOnly 守衛自動導回首頁
  * - ACCOUNT_PENDING：等待審核頁
- * - REGISTER_REQUIRED：lineToken 寫入註冊流程暫存，導到「Line創建成功」頁，再自動接回一般創建流程
+ * - REGISTER_REQUIRED：lineToken 寫入註冊流程暫存，導到「Line創建成功」頁，再自動接回註冊第一步
  * - 其他錯誤：回登入頁並顯示通知彈窗
  *
  * TODO(#12)：
  * - state 參數應與發出授權前存下的值比對（防 CSRF），待後端定義 state 的產生方式
  * - 「記住帳號」在跳轉後無法帶回，Line 登入暫不記住
- * - REGISTER_REQUIRED 接回註冊流程的哪一步設計待確認（見 pages/register/RegisterLineSuccess.tsx）
  */
 export default function LineCallback() {
   const navigate = useNavigate()

@@ -47,7 +47,7 @@ export const router = createBrowserRouter([
               // 全寬表單：頁面內以 useGuestLayout('full') 切換版型
               { path: PATHS.registerProfile, lazy: page(() => import('../pages/register/RegisterProfile')) },
               { path: PATHS.forgotPassword, lazy: page(() => import('../pages/forgot-password/ForgotPassword')) },
-              // TODO(#12)：進度查詢設計未畫（查詢條件推測為信箱＋手機，見 api/register.ts queryProgress）
+              // 已確認（#12） L3：進度查詢以信箱＋手機查詢、不另出稿（見 api/register.ts queryProgress）
               {
                 path: PATHS.progress,
                 lazy: pageWith(() => import('../pages/GuestPlaceholder'), { title: '進度查詢' }),

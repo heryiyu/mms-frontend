@@ -45,6 +45,6 @@ export function getLoginErrorNotice(error: unknown): NotifyOptions {
     }
   }
   if (isApiError(error, 'NETWORK_ERROR')) return { title: TITLE, content: error.message }
-  // 其他錯誤（5xx、未知）不顯示「API 500」這類技術訊息。TODO(#12) L4：系統錯誤文案待確認
+  // 其他錯誤（5xx、未知）不顯示「API 500」這類技術訊息。已確認（#12） L4：維持目前文案
   return { title: TITLE, content: getApiErrorMessage(error, '登入失敗，請稍後再試') }
 }

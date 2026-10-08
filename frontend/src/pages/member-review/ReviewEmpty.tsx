@@ -8,7 +8,7 @@ import styles from './ReviewEmpty.module.css'
 // - 與申請者卡片同樣的白底圓角卡片，讓清單「被清空」而不是整頁換版
 // - 圖示沿用首頁「會員審核」卡片的人像＋勾（主色淺底圓），標題 Headline5、說明 Body2 gray2
 // - 唯一的下一步：主色文字按鈕回首頁
-// TODO(#12)：空狀態文案與樣式待設計確認
+// 已確認（#12） R3：維持目前文案與樣式
 
 export default function ReviewEmpty({ onBack }: { onBack: () => void }) {
   return (

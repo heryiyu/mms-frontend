@@ -23,6 +23,14 @@ const LOGIN_TRIGGERS: Record<string, () => Response> = {
   'error@test.com': () => HttpResponse.json({ message: 'Internal Server Error' }, { status: 500 }),
 }
 
+/** 已確認（#12 L2）：密碼錯 3 次暫停 5 分鐘，暫停累計 3 次鎖帳號 */
+const MAX_WRONG_PASSWORD = 3
+const PAUSE_MS = 5 * 60_000
+const MAX_PAUSES = 3
+
+/** 各使用者的密碼錯誤計數（使用者 id → 狀態），存記憶體，重新整理頁面即重置 */
+const loginAttempts = new Map<string, { wrong: number; pauses: number; pausedUntil: number }>()
+
 export const authHandlers = [
   http.post(api('/auth/login'), async ({ request }) => {
     await mockDelay()
@@ -39,7 +47,23 @@ export const authHandlers = [
     if (user.status === 'LOCKED') return errorResponse('ACCOUNT_LOCKED')
     if (user.status === 'PENDING') return errorResponse('ACCOUNT_PENDING')
     if (user.status === 'REJECTED') return errorResponse('ACCOUNT_REJECTED')
-    if (user.password !== password) return errorResponse('WRONG_PASSWORD')
+
+    const attempt = loginAttempts.get(user.id) ?? { wrong: 0, pauses: 0, pausedUntil: 0 }
+    loginAttempts.set(user.id, attempt)
+    if (Date.now() < attempt.pausedUntil) return errorResponse('TOO_MANY_ATTEMPTS')
+    if (user.password !== password) {
+      attempt.wrong += 1
+      if (attempt.wrong < MAX_WRONG_PASSWORD) return errorResponse('WRONG_PASSWORD')
+      attempt.wrong = 0
+      attempt.pauses += 1
+      if (attempt.pauses >= MAX_PAUSES) {
+        user.status = 'LOCKED'
+        return errorResponse('ACCOUNT_LOCKED')
+      }
+      attempt.pausedUntil = Date.now() + PAUSE_MS
+      return errorResponse('TOO_MANY_ATTEMPTS')
+    }
+    loginAttempts.delete(user.id)
 
     return HttpResponse.json({ token: makeToken(user), role: user.role, status: 'ACTIVE' })
   }),

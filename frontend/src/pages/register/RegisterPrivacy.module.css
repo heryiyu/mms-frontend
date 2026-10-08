@@ -13,11 +13,6 @@
   text-align: center;
 }
 
-.underline {
-  text-decoration: underline;
-  text-underline-offset: 2px;
-}
-
 /* 載入失敗訊息（捲動區內文為 pre-wrap，這裡還原成一般換行） */
 .error {
   padding-block: var(--privacy-gap);
