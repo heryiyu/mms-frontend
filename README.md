@@ -1,7 +1,7 @@
-# NLC 會員中心（NLC_mms）
+# NLC 會員中心（mms-frontend）
 
 ```
-NLC_mms/
+mms-frontend/
 ├── frontend/   # React + Vite + TypeScript，Ant Design，Bootstrap Icons，PWA + RWD
 └── backend/    # 待匯入
 ```
@@ -41,14 +41,14 @@ npm run dev
 2. 下載專案並啟動：
 
    ```bash
-   git clone https://github.com/heryiyu/NLC_mms.git
-   cd NLC_mms/frontend
+   git clone https://github.com/NLC-Ministry/mms-frontend.git
+   cd mms-frontend/frontend
    npm install
    npm run dev
    ```
 
 3. 用瀏覽器開 http://localhost:5173 。
-4. 之後要測最新版：在 `NLC_mms` 資料夾執行 `git pull`，再到 `frontend/` 執行 `npm install`、`npm run dev`。
+4. 之後要測最新版：在 `mms-frontend` 資料夾執行 `git pull`，再到 `frontend/` 執行 `npm install`、`npm run dev`。
 
 測試方式：
 
@@ -60,7 +60,7 @@ npm run dev
 
 - 假資料存在各自瀏覽器的記憶體，**重新整理頁面就會還原**，不同人之間也不共用。
 - 假資料只在 `npm run dev` 載入，正式建置（`npm run build`）不會包含，請勿為了線上測試改動這個設定。
-- 發現問題請到 [Issues](https://github.com/heryiyu/NLC_mms/issues) 回報，附上網址、操作步驟與截圖。
+- 發現問題請到 [Issues](https://github.com/NLC-Ministry/mms-frontend/issues) 回報，附上網址、操作步驟與截圖。
 
 ### 目錄
 
