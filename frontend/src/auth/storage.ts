@@ -5,9 +5,15 @@ import { isRole } from './roles'
 
 /** 目前登入者；null = 未登入 */
 export interface AuthSession {
-  token: string
+  /**
+   * 登入身分的識別值：換帳號登入時，頁面據此重新載入資料（useMe、首頁徽章）。
+   * Logto 模式為 Logto 使用者 ID（ID token 的 sub）；本機模式後端沒有回傳使用者 ID，以 token 代替。
+   */
+  id: string
   role: Role
   status: AccountStatus
+  /** 本機模式（未設定 Logto）才有：後端登入 API 發的 token。Logto 模式的 access token 由 SDK 保存與更新（src/auth/logto.ts） */
+  token?: string
 }
 
 export interface AuthStorage {
@@ -29,10 +35,11 @@ function parse(raw: string | null): AuthSession | null {
   if (!raw) return null
   try {
     const value = JSON.parse(raw) as Partial<AuthSession>
-    if (typeof value.token !== 'string' || !value.token) return null
+    if (typeof value.id !== 'string' || !value.id) return null
+    if (value.token !== undefined && (typeof value.token !== 'string' || !value.token)) return null
     if (!isRole(value.role)) return null
     if (!value.status || !ACCOUNT_STATUSES.includes(value.status)) return null
-    return { token: value.token, role: value.role, status: value.status }
+    return { id: value.id, role: value.role, status: value.status, ...(value.token ? { token: value.token } : {}) }
   } catch {
     return null
   }

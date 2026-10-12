@@ -18,7 +18,7 @@
 ## 通用規則
 
 - Base path：`/api`。Request／Response 一律 JSON（`Content-Type: application/json`），欄位使用 camelCase；時間為 ISO 8601 字串，生日為 `YYYY-MM-DD`。
-- 認證：登入後帶 `Authorization: Bearer <token>`。標示「需登入」的 API 缺少或帶無效 token 時回 `401 UNAUTHORIZED`。
+- 認證：登入後帶 `Authorization: Bearer <token>`。標示「需登入」的 API 缺少或帶無效 token 時回 `401 UNAUTHORIZED`。token 來源分兩種模式，見下方「認證模式」。
 - **401 只保留給 token 缺少／過期／無效。** 前端遇到任何 401 都會清掉 token 並導回登入頁，所以登入帳密錯誤、目前密碼錯誤等請用下方對應的 4xx，不要回 401。
 - 閒置 7 分鐘自動登出（前端計時）：後端 token／session 逾時時間需與此一致（待確認）。
 - 成功：有內容回 `200`（註冊回 `201`），無內容回 `204`（Response 欄位標「無」）。
@@ -49,7 +49,7 @@
 | `WRONG_CURRENT_PASSWORD` | 400 | 修改密碼時目前密碼錯誤 |
 | `PASSWORD_SAME_AS_OLD` | 400 | 新密碼與舊密碼相同 |
 | `NO_RECORDS` | 404 | 該年度無奉獻紀錄 |
-| `MEMBER_NOT_FOUND` | 404 | 審核對象不存在 |
+| `MEMBER_NOT_FOUND` | 404 | 審核對象不存在；`GET /auth/session`：Logto 帳號尚未建立會員資料 |
 | `ALREADY_PROCESSED` | 409 | 申請已被審核或退回 |
 | `VALIDATION_ERROR` | 422 | 欄位缺漏或格式錯誤，帶 `fields` |
 | `FORBIDDEN` | 403 | 已登入但沒有權限（例如一般會員呼叫會員審核） |
@@ -71,9 +71,35 @@
 
 設計未定義。前端 mock 暫定「至少 8 碼，且同時包含英文與數字」，不符回 `422 VALIDATION_ERROR`（`fields` 指到欄位）。
 
+### 認證模式（#44）
+
+前端依 `frontend/.env.local` 是否設定 `VITE_LOGTO_ENDPOINT`、`VITE_LOGTO_APP_ID` 切換：
+
+| | Logto 模式（正式） | 本機模式（開發用） |
+| --- | --- | --- |
+| 登入、註冊、忘記密碼 | 轉址到 Logto 登入頁（`sso.newlife.org.tw`），不經過本後端 | 前端頁面呼叫本後端 `/auth/login`、`/register/*`、`/password/forgot/*` |
+| Bearer token | Logto 發的 access token（JWT），audience 為 `VITE_LOGTO_RESOURCE` | `/auth/login` 回傳的 token |
+| 取得角色與帳號狀態 | 登入完成後呼叫 `GET /auth/session` | `/auth/login` 的回應 |
+
+Logto 模式下後端要：
+
+- 驗證 JWT：簽章用 `https://sso.newlife.org.tw/oidc/jwks`，`iss` 為 `https://sso.newlife.org.tw/oidc`，`aud` 為前端設定的 API resource，並檢查 `exp`。
+- 以 `sub`（Logto 使用者 ID）對應會員資料。會員資料、審核狀態、角色由本後端管理，Logto 只負責身分驗證。
+- refresh token 由前端 SDK 處理，後端不需要也不會收到。`POST /auth/logout` 在 Logto 模式不會被呼叫（前端直接結束 Logto session）。
+
 ---
 
 ## 登入與帳號
+
+### GET /auth/session
+
+Logto 模式：登入完成後，以 Logto access token 取得會員中心的角色與帳號狀態（暫定）。需登入。
+
+- Response 200：`{ "role": "member" | "leader", "status": "ACTIVE" | "PENDING" }`
+  - 待審核帳號也回 200 + `PENDING`（已通過 Logto 驗證），前端導到等待審核頁。
+- 錯誤：`ACCOUNT_REJECTED`（申請被退回）、`ACCOUNT_LOCKED`、`MEMBER_NOT_FOUND`（Logto 帳號尚未建立會員資料，之後接會員資料填寫流程，見 #43）、`UNAUTHORIZED`
+
+> 以下 `/auth/login`、`/auth/logout`、`/auth/line/*` 為本機模式使用。Logto 上線後，登入與 Line 登入改由 Logto 處理，這幾支可以不實作。
 
 ### POST /auth/login
 

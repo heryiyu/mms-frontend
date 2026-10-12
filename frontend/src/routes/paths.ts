@@ -21,6 +21,8 @@ export const PATHS = {
   lineCallback: '/auth/line/callback',
   /** 等待審核（帳號尚未核准）；登入回 ACCOUNT_PENDING 時導到這裡 */
   pending: '/pending',
+  /** Logto 登入完成後的導回頁（Logto 模式，#44）；需在 Logto 登記為 redirect URI */
+  signInCallback: '/callback',
 
   /* 已登入 */
   home: '/',
@@ -58,6 +60,7 @@ const GUEST_PATHS: string[] = [
   PATHS.progress,
   PATHS.lineCallback,
   PATHS.pending,
+  PATHS.signInCallback,
 ]
 
 /** 登入後要去的頁面：location.state.from（被守衛擋下的原頁），沒有則回首頁 */

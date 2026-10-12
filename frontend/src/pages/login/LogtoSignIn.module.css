@@ -1,0 +1,11 @@
+/*
+ * Logto 轉址頁（#44）的手動登入畫面：設計稿未畫，沿用登入頁的卡片版面（Logo＋標題），
+ * 下方一段說明＋主要按鈕，間距用既有變數。
+ */
+.hint {
+  margin: var(--app-gutter) 0;
+  color: var(--color-gray-1);
+  font-size: var(--font-size-body-1);
+  line-height: var(--line-height-body-1);
+  text-align: center;
+}

@@ -1,4 +1,5 @@
 import { useNavigate } from 'react-router'
+import { logout } from '../api/auth'
 import { authStore } from '../auth/store'
 import ContactEmailLink from '../components/ContactEmailLink'
 import ResultPage from '../components/ResultPage'
@@ -12,10 +13,16 @@ import { PATHS } from '../routes/paths'
 export default function PendingApproval() {
   const navigate = useNavigate()
 
-  const handleBack = () => {
-    // 待審核帳號不能使用會員中心，返回登入頁時一併清掉登入狀態
-    authStore.clear()
-    navigate(PATHS.login, { replace: true })
+  const handleBack = async () => {
+    // 待審核帳號不能使用會員中心，返回登入頁時一併登出。
+    // Logto 模式必須結束 Logto session（會轉址），否則回登入頁時 Logto 直接放行，又回到這一頁。
+    try {
+      if (authStore.getSession()) await logout()
+    } catch {
+      // logout() 失敗時也已清掉本機登入狀態
+    } finally {
+      navigate(PATHS.login, { replace: true })
+    }
   }
 
   return (

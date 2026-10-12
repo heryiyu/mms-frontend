@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useLocation } from 'react-router'
 import { logout } from '../api/auth'
 import { NoticeModal } from '../components/NoticeModal'
 import { useIdleTimeout } from './useIdleTimeout'
@@ -9,6 +10,7 @@ import { useIdleTimeout } from './useIdleTimeout'
  *
  * 彈窗蓋在原頁面上（照設計稿），按「確認」或 ✕／Esc／遮罩才真正登出：
  * logout() 清掉 auth store 後，RequireAuth 會導向登入頁並記住原頁，重新登入後回到原頁。
+ * Logto 模式會轉址到 Logto 登出，原頁改由 logout({ from }) 記下（src/auth/logto.ts）。
  * 若在彈窗出現前就清掉登入狀態，守衛會立刻導頁、版型卸載，彈窗就看不到了。
  * 彈窗期間遮罩擋住操作；重新整理或關閉後再開時，共用的最後操作時間已逾時，會立刻再跳出彈窗。
  *
@@ -17,13 +19,14 @@ import { useIdleTimeout } from './useIdleTimeout'
  */
 export default function IdleLogoutNotice() {
   const expired = useIdleTimeout()
+  const { pathname, search, hash } = useLocation()
   const [loggingOut, setLoggingOut] = useState(false)
 
   const handleClose = () => {
     if (loggingOut) return
     setLoggingOut(true)
     // logout() 不論 API 成功與否都會清掉本機登入狀態，這裡只需吞掉錯誤
-    logout().catch(() => {})
+    logout({ from: { pathname, search, hash } }).catch(() => {})
   }
 
   return (

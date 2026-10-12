@@ -15,6 +15,14 @@
 
 啟用 MSW 時，畫面左下角會出現切換按鈕（`DevRoleSwitcher.tsx`），可直接切成「未登入／一般會員／區長以上／等待審核」，不用經過登入頁；切換後 API 也會以該測試帳號身分回應。正式 build 不會包含。
 
+## Logto 模式（#44）
+
+`.env.local` 設定 `VITE_LOGTO_*`（見 `.env.example`）後，登入會轉址到真正的 Logto，API 仍由 MSW 回應：
+
+- Logto 發的 access token（JWT）一律對應到 `VITE_MOCK_LOGTO_EMAIL` 的測試帳號（預設 `member@test.com`）。改成 `leader@test.com`（區長以上）、`pending@test.com`（等待審核頁）、`locked@test.com`（帳號已鎖定）、`notfound@test.com`（尚未建立會員資料）可測各情境，改完要重啟 dev server。
+- 這個模式不顯示「切換登入身分」按鈕（token 由 Logto 發，切換不了）。
+- Logto 只接受登記過的 redirect URI，請用 `npm run dev`（`http://localhost:5173`）測試；預覽工具的隨機埠會被 Logto 拒絕。
+
 ## 測試帳號
 
 以下皆為測試用假資料。
