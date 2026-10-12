@@ -5,7 +5,7 @@ import { API_BASE_URL } from '../api/client'
 import { getPasswordRuleError } from '../constants/password'
 import { PHONE_PATTERN } from '../constants/validation'
 import type { ErrorCode, Role } from '../api/types'
-import { db, normalizeEmail, type MockUser } from './db'
+import { db, findUserByEmail, normalizeEmail, type MockUser } from './db'
 
 export const api = (path: string) => `${API_BASE_URL}${path}`
 
@@ -63,13 +63,31 @@ const TOKEN_PREFIX = 'mock-token-'
 
 export const makeToken = (user: MockUser) => `${TOKEN_PREFIX}${user.id}`
 
+/**
+ * Logto 模式（#44）：Logto 發的 access token（JWT）沒有對應的測試帳號，一律視為這個信箱的帳號。
+ * 在 .env.local 設 VITE_MOCK_LOGTO_EMAIL 可切換，例如 pending@test.com（等待審核）、notfound@test.com（尚未建立會員資料）。
+ */
+const MOCK_LOGTO_EMAIL: string = import.meta.env.VITE_MOCK_LOGTO_EMAIL || 'member@test.com'
+
+export const readBearer = (request: Request) => {
+  const header = request.headers.get('Authorization') ?? ''
+  return header.startsWith('Bearer ') ? header.slice('Bearer '.length) : ''
+}
+
+/** 是否為 Logto 發的 JWT（header.payload.signature） */
+export const isLogtoToken = (token: string) => token.split('.').length === 3
+
+/** 依 token 找測試帳號（不看帳號狀態）；找不到回 undefined */
+export function findUserByToken(token: string): MockUser | undefined {
+  if (token.startsWith(TOKEN_PREFIX)) return db.users.find((u) => u.id === token.slice(TOKEN_PREFIX.length))
+  if (isLogtoToken(token)) return findUserByEmail(MOCK_LOGTO_EMAIL)
+  return undefined
+}
+
 /** 從 Authorization: Bearer 取出登入者；token 無效回 401，role 不符回 403 */
 export function requireUser(request: Request, role?: Role): MockUser {
-  const header = request.headers.get('Authorization') ?? ''
-  const token = header.startsWith('Bearer ') ? header.slice('Bearer '.length) : ''
-  const id = token.startsWith(TOKEN_PREFIX) ? token.slice(TOKEN_PREFIX.length) : ''
-  const user = db.users.find((u) => u.id === id && u.status === 'ACTIVE')
-  if (!user) throw errorResponse('UNAUTHORIZED')
+  const user = findUserByToken(readBearer(request))
+  if (!user || user.status !== 'ACTIVE') throw errorResponse('UNAUTHORIZED')
   if (role && user.role !== role) throw errorResponse('FORBIDDEN')
   return user
 }

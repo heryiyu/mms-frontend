@@ -1,4 +1,4 @@
-// 開發用：不經登入頁直接切換登入身分（只在 npm run dev 且啟用 MSW 時出現，見 src/main.tsx）。
+// 開發用：不經登入頁直接切換登入身分（只在 npm run dev、啟用 MSW 且為本機模式時出現，見 src/main.tsx）。
 // 切換後寫入 auth store，token 為 MSW 測試帳號的 token，所以 API 也會以該身分回應。
 import { Dropdown, FloatButton, type MenuProps } from 'antd'
 import type { AccountStatus } from '../api/types'
@@ -41,7 +41,8 @@ export default function DevRoleSwitcher() {
       authStore.clear()
       return
     }
-    authStore.setSession({ token: makeToken(user), role: user.role, status: identity.status })
+    const token = makeToken(user)
+    authStore.setSession({ id: token, token, role: user.role, status: identity.status })
   }
 
   return (

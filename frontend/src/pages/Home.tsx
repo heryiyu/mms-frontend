@@ -17,12 +17,12 @@ function useDisplayName(): string {
   return me ? me.nickname || me.name : ''
 }
 
-/** 待審核人數（會員審核卡片徽章）；只有區長以上才會去抓，其餘一律 0 */
-function usePendingReviewCount(token: string | undefined, enabled: boolean): number {
+/** 待審核人數（會員審核卡片徽章）；只有區長以上才會去抓，其餘一律 0。切換登入身分（sessionId）時重抓 */
+function usePendingReviewCount(sessionId: string | undefined, enabled: boolean): number {
   const [count, setCount] = useState(0)
 
   useEffect(() => {
-    if (!token || !enabled) return
+    if (!sessionId || !enabled) return
     let cancelled = false
     getPendingCount()
       .then((res) => !cancelled && setCount(res.count))
@@ -30,7 +30,7 @@ function usePendingReviewCount(token: string | undefined, enabled: boolean): num
     return () => {
       cancelled = true
     }
-  }, [token, enabled])
+  }, [sessionId, enabled])
 
   return enabled ? count : 0
 }
@@ -58,9 +58,8 @@ function QuickActionCard({ action, badgeCount = 0 }: { action: MemberQuickAction
  */
 export default function Home() {
   const { session, role, can } = useAuth()
-  const token = session?.token
   const displayName = useDisplayName()
-  const pendingCount = usePendingReviewCount(token, can('leader'))
+  const pendingCount = usePendingReviewCount(session?.id, can('leader'))
   const actions = getMemberQuickActions(role)
   const { token: designToken } = theme.useToken()
   const cardGap = designToken.margin // 卡片左右／上下間距 16px（web、mob 相同）

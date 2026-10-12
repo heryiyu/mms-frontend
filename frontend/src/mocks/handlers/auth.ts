@@ -6,10 +6,13 @@ import {
   api,
   assertNotRateLimited,
   errorResponse,
+  findUserByToken,
+  isLogtoToken,
   makeToken,
   mockDelay,
   noContent,
   randomToken,
+  readBearer,
   readBody,
 } from '../utils'
 
@@ -66,6 +69,18 @@ export const authHandlers = [
     loginAttempts.delete(user.id)
 
     return HttpResponse.json({ token: makeToken(user), role: user.role, status: 'ACTIVE' })
+  }),
+
+  // Logto 模式（#44）：以 Logto access token 取得角色與帳號狀態；JWT 對應的測試帳號見 utils.ts 的 MOCK_LOGTO_EMAIL。
+  // 待審核回 200 + PENDING；被退回、鎖定回對應錯誤；JWT 對應不到測試帳號 → 尚未建立會員資料
+  http.get(api('/auth/session'), async ({ request }) => {
+    await mockDelay()
+    const token = readBearer(request)
+    const user = findUserByToken(token)
+    if (!user) return isLogtoToken(token) ? errorResponse('MEMBER_NOT_FOUND', '尚未建立會員資料') : errorResponse('UNAUTHORIZED')
+    if (user.status === 'REJECTED') return errorResponse('ACCOUNT_REJECTED')
+    if (user.status === 'LOCKED') return errorResponse('ACCOUNT_LOCKED')
+    return HttpResponse.json({ role: user.role, status: user.status === 'PENDING' ? 'PENDING' : 'ACTIVE' })
   }),
 
   // 登出：token 已失效也回 204，前端一律清掉本機 token

@@ -2,6 +2,8 @@
 // 頁面不要直接用 fetch，請呼叫 src/api/*.ts 的 domain 函式。
 // 注意：這個檔案不可 import router 或 React（避免循環相依）。401 時清除 auth store，路由守衛會自動導回登入頁；
 // 需要額外處理（例如提示「登入已失效」）再用 setUnauthorizedHandler 注入。
+// token：Logto 模式向 Logto SDK 取得（過期會自動更新），本機模式用 auth store 保存的後端 token（src/auth/logto.ts）。
+import * as logto from '../auth/logto'
 import { authStore } from '../auth/store'
 import type { ApiErrorBody, ErrorCode } from './types'
 
@@ -52,12 +54,35 @@ function toApiError(status: number, body: unknown): ApiError {
   return new ApiError(status, code, message, body)
 }
 
+/** 登入失效：清掉本機登入狀態（守衛會導回登入頁），再交給外部 handler */
+function handleUnauthorized(error: ApiError) {
+  authStore.clear()
+  if (logto.isLogtoEnabled) void logto.clearTokens().catch(() => {})
+  unauthorizedHandler?.(error)
+}
+
+async function getAccessToken(): Promise<string | null> {
+  if (!logto.isLogtoEnabled) return authStore.getToken()
+  try {
+    return await logto.getAccessToken()
+  } catch (cause) {
+    // 連不到 Logto（離線）時不登出，照一般連線錯誤處理
+    if (cause instanceof TypeError) throw new ApiError(0, 'NETWORK_ERROR', '網路連線異常，請稍後再試')
+    // refresh token 過期或被撤銷，無法更新 access token
+    const error = new ApiError(401, 'UNAUTHORIZED', '登入已失效，請重新登入')
+    handleUnauthorized(error)
+    throw error
+  }
+}
+
 export async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
   const headers = new Headers(init.headers)
   if (init.body != null && !headers.has('Content-Type')) headers.set('Content-Type', 'application/json')
   if (!headers.has('Accept')) headers.set('Accept', 'application/json')
-  const token = authStore.getToken()
-  if (token && !headers.has('Authorization')) headers.set('Authorization', `Bearer ${token}`)
+  if (!headers.has('Authorization')) {
+    const token = await getAccessToken()
+    if (token) headers.set('Authorization', `Bearer ${token}`)
+  }
 
   let res: Response
   try {
@@ -72,10 +97,7 @@ export async function request<T>(path: string, init: RequestInit = {}): Promise<
 
   if (!res.ok) {
     const error = toApiError(res.status, data)
-    if (res.status === 401) {
-      authStore.clear()
-      unauthorizedHandler?.(error)
-    }
+    if (res.status === 401) handleUnauthorized(error)
     throw error
   }
   return data as T

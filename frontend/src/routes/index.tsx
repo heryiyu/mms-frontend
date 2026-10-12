@@ -1,6 +1,7 @@
 import type { ComponentType } from 'react'
 import { createBrowserRouter, type RouteObject } from 'react-router'
 import { GuestOnly, RequireAuth, RequireRole } from '../auth/guards'
+import { isLogtoEnabled } from '../auth/logto'
 import PageLoading from '../components/PageLoading'
 import GuestLayout from '../layouts/GuestLayout'
 import MemberLayout from '../layouts/MemberLayout'
@@ -26,6 +27,28 @@ const devRoutes: RouteObject[] = import.meta.env.DEV
   ? [{ path: PATHS.devOtp, lazy: page(() => import('../mocks/OtpDemo')) }]
   : []
 
+// 登入、註冊、忘記密碼的入口。Logto 模式（#44，src/auth/logto.ts）改由 Logto 登入頁處理，這三個路徑只負責轉址；
+// 註冊與忘記密碼的後續步驟頁面仍保留在路由表，本機模式才會用到。
+const logtoSignIn = (firstScreen?: 'register' | 'reset_password') =>
+  pageWith(() => import('../pages/login/LogtoSignIn'), { firstScreen })
+
+const authEntryRoutes: RouteObject[] = isLogtoEnabled
+  ? [
+      { path: PATHS.login, lazy: logtoSignIn() },
+      { path: PATHS.register, lazy: logtoSignIn('register') },
+      { path: PATHS.forgotPassword, lazy: logtoSignIn('reset_password') },
+    ]
+  : [
+      { path: PATHS.login, lazy: page(() => import('../pages/login/Login')) },
+      { path: PATHS.register, lazy: page(() => import('../pages/register/Register')) },
+      { path: PATHS.forgotPassword, lazy: page(() => import('../pages/forgot-password/ForgotPassword')) },
+    ]
+
+// Logto 登入完成的導回頁：放在 GuestOnly 外，由頁面自己導回原頁（GuestOnly 只會導回首頁）
+const logtoCallbackRoutes: RouteObject[] = isLogtoEnabled
+  ? [{ path: PATHS.signInCallback, lazy: page(() => import('../pages/login/LogtoCallback')) }]
+  : []
+
 // 路由表（#10）。路徑一律用 routes/paths.ts 的 PATHS；*Placeholder 為尚未實作的頁面，完成後直接替換。
 // 可見角色要與 layouts/memberNav.ts 的選單／首頁卡片設定一致。
 export const router = createBrowserRouter([
@@ -41,12 +64,10 @@ export const router = createBrowserRouter([
           {
             element: <GuestLayout />,
             children: [
-              { path: PATHS.login, lazy: page(() => import('../pages/login/Login')) },
-              { path: PATHS.register, lazy: page(() => import('../pages/register/Register')) },
+              ...authEntryRoutes,
               { path: PATHS.registerPrivacy, lazy: page(() => import('../pages/register/RegisterPrivacy')) },
               // 全寬表單：頁面內以 useGuestLayout('full') 切換版型
               { path: PATHS.registerProfile, lazy: page(() => import('../pages/register/RegisterProfile')) },
-              { path: PATHS.forgotPassword, lazy: page(() => import('../pages/forgot-password/ForgotPassword')) },
               // 已確認（#12） L3：進度查詢以信箱＋手機查詢、不另出稿（見 api/register.ts queryProgress）
               {
                 path: PATHS.progress,
@@ -62,6 +83,7 @@ export const router = createBrowserRouter([
           { path: PATHS.forgotPasswordDone, lazy: page(() => import('../pages/forgot-password/ForgotPasswordDone')) },
         ],
       },
+      ...logtoCallbackRoutes,
       // 等待審核：登入與否皆可開啟
       { path: PATHS.pending, lazy: page(() => import('../pages/PendingApproval')) },
       // 已登入：未登入 → 登入頁；等待審核中 → 等待審核頁

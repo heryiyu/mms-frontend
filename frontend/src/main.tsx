@@ -4,6 +4,7 @@ import { lazy, StrictMode, Suspense } from 'react'
 import { createRoot } from 'react-dom/client'
 import { RouterProvider } from 'react-router'
 import 'bootstrap-icons/font/bootstrap-icons.min.css'
+import { isLogtoEnabled, syncSessionWithLogto } from './auth/logto'
 import PwaUpdatePrompt from './components/PwaUpdatePrompt'
 import { router } from './routes'
 import './styles/global.css'
@@ -25,8 +26,12 @@ async function enableMocking(): Promise<boolean> {
 
 const mockEnabled = await enableMocking()
 
-// 開發用切換登入身分（只在 MSW 啟用時出現；import.meta.env.DEV 讓正式 build 不會打包進去）
-const DevRoleSwitcher = import.meta.env.DEV ? lazy(() => import('./mocks/DevRoleSwitcher')) : null
+// Logto 模式（#44）：登入狀態還在、但 Logto token 已不在時視為未登入，避免畫面先進會員中心再被 401 踢出
+await syncSessionWithLogto()
+
+// 開發用切換登入身分（只在 MSW 啟用且為本機模式時出現；import.meta.env.DEV 讓正式 build 不會打包進去）。
+// Logto 模式的 token 由 Logto 發，切換不了身分，改用 VITE_MOCK_LOGTO_EMAIL（見 src/mocks/README.md）
+const DevRoleSwitcher = import.meta.env.DEV && !isLogtoEnabled ? lazy(() => import('./mocks/DevRoleSwitcher')) : null
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>

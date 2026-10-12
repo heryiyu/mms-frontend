@@ -8,8 +8,8 @@
 export type Role = 'member' | 'leader'
 /**
  * 帳號狀態：ACTIVE = 已核准可使用會員中心；PENDING = 等待審核（不可進入會員中心）。
- * 目前待審核帳號登入會直接回 ACCOUNT_PENDING，所以登入成功時一律為 ACTIVE；
- * 保留這個欄位，讓後端將來若改成「待審核也可登入」時前端路由守衛仍能擋住。
+ * 本機模式：待審核帳號登入會直接回 ACCOUNT_PENDING，所以登入成功時一律為 ACTIVE。
+ * Logto 模式：待審核帳號也能通過 Logto 登入，/auth/session 回 PENDING，由路由守衛導到等待審核頁。
  */
 export type AccountStatus = 'ACTIVE' | 'PENDING'
 export type Gender = 'male' | 'female'
@@ -61,7 +61,7 @@ export type ErrorCode =
   // 收據
   | 'NO_RECORDS' // 該年度無奉獻紀錄
   // 審核
-  | 'MEMBER_NOT_FOUND' // 查無此申請
+  | 'MEMBER_NOT_FOUND' // 查無此申請；/auth/session：Logto 帳號尚未建立會員資料
   | 'ALREADY_PROCESSED' // 此申請已被審核／退回
   // 通用
   | 'VALIDATION_ERROR' // 欄位格式錯誤，body 可帶 fields
@@ -80,6 +80,17 @@ export interface ApiErrorBody {
 
 /* ---------- 登入（auth.ts） ---------- */
 
+/**
+ * GET /auth/session（Logto 模式，#44）：以 Logto access token 取得會員中心的角色與帳號狀態。
+ * 待審核回 200 + PENDING（已通過 Logto 驗證，由前端守衛導到等待審核頁）；
+ * 被退回回 403 ACCOUNT_REJECTED；Logto 帳號尚未建立會員資料回 404 MEMBER_NOT_FOUND。
+ */
+export interface AuthSessionResponse {
+  role: Role
+  status: AccountStatus
+}
+
+/** 以下登入、Line OAuth 為本機模式（未設定 Logto）使用；Logto 模式由 Logto 登入頁處理 */
 export interface LoginRequest {
   email: string
   password: string
