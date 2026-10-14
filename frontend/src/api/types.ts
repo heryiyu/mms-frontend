@@ -235,11 +235,10 @@ export interface RegistrationResponse {
   status: 'PENDING'
 }
 
-/** 進度查詢的查詢條件（設計未畫，暫定 email＋手機） */
-export interface ProgressQueryRequest {
-  email: string
-  phone: string
-}
+/** 進度查詢：申請時的 email 或手機擇一，先收驗證碼（#52，架構整理 D8） */
+export type ProgressOtpRequest = { email: string; phone?: never } | { phone: string; email?: never }
+
+export type ProgressQueryRequest = ProgressOtpRequest & { otp: string }
 
 export type ProgressStatus = 'PENDING' | 'APPROVED' | 'REJECTED'
 
@@ -248,6 +247,8 @@ export interface ProgressQueryResponse {
   /** ISO 8601 */
   submittedAt: string
   reviewedAt?: string
+  /** 退回原因（status 為 REJECTED 時） */
+  rejectReason?: string
 }
 
 /* ---------- 密碼（password.ts） ---------- */

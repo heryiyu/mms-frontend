@@ -9,3 +9,12 @@
   line-height: var(--line-height-body-1);
   text-align: center;
 }
+
+/* 按鈕下方的「進度查詢」連結（#52）：字級同登入頁的連結列，置中 */
+.links {
+  margin: var(--app-gutter) 0 0;
+  font-size: var(--font-size-body-2);
+  line-height: var(--line-height-body-2);
+  letter-spacing: var(--letter-spacing-body-2);
+  text-align: center;
+}

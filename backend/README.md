@@ -137,13 +137,32 @@ Line 授權完成後，前端以 `code` 換登入結果（目前為 stub）。
   - `{ "status": "REGISTER_REQUIRED", "lineToken": string }`：Line 帳號尚未建立，接回一般創建流程（接回哪一步設計待確認）
 - 錯誤：`ACCOUNT_PENDING`、`TOKEN_INVALID`
 
-### POST /register/progress
+### 審核進度查詢（#52，架構整理 D8）
 
-審核進度查詢。查詢條件設計未畫，暫定信箱＋手機（用 POST 避免個資出現在網址）。信箱與手機任一不符都回 `ACCOUNT_NOT_FOUND`，避免被拿來探測帳號。
+不需登入。輸入申請時的 email **或**手機其中一個，收驗證碼後查看進度（會員可能只有其中一個）。用 POST 避免個資出現在網址。
 
-- Request：`{ "email": string, "phone": string }`
-- Response 200：`{ "status": "PENDING" | "APPROVED" | "REJECTED", "submittedAt": string, "reviewedAt"?: string }`
-- 錯誤：`ACCOUNT_NOT_FOUND`、`TOO_MANY_ATTEMPTS`
+**不透露帳號是否存在**：加驗證碼是為了避免別人輸入任意號碼探查誰申請過，所以查無申請紀錄時：
+
+- 發送驗證碼照樣回 200（實際上不寄出）
+- 驗證時一律回 `OTP_INVALID`（和驗證碼打錯一樣）
+
+#### POST /register/progress/otp
+
+發送驗證碼（email 寄信、手機發簡訊）。重新發送也是呼叫這支。
+
+- Request：`{ "email": string }` 或 `{ "phone": string }`（擇一）
+- Response 200：`{ "expiresIn": 300, "length": 4 }`
+- 錯誤：`VALIDATION_ERROR`（格式錯誤、兩個都帶或都沒帶）、`TOO_MANY_ATTEMPTS`
+
+#### POST /register/progress
+
+驗證通過後回傳進度。
+
+- Request：`{ "email": string, "otp": string }` 或 `{ "phone": string, "otp": string }`（與發送時相同）
+- Response 200：`{ "status": "PENDING" | "APPROVED" | "REJECTED", "submittedAt": string, "reviewedAt"?: string, "rejectReason"?: string }`
+  - `APPROVED` 含已通過後被鎖定的帳號；`rejectReason` 只在 `REJECTED` 時帶（#48 退回時填的原因）
+  - 已登入 SSO、但還沒送出會員資料的人（`UNREGISTERED`）視為查無申請紀錄
+- 錯誤：`OTP_INVALID`（含查無申請紀錄）、`OTP_EXPIRED`（含沒有對應的發送紀錄）、`VALIDATION_ERROR`、`TOO_MANY_ATTEMPTS`
 
 ## 註冊
 
@@ -463,7 +482,6 @@ Line 授權完成後，前端以 `code` 換登入結果（目前為 stub）。
 - 登入過度頻繁／帳號鎖定的門檻與時間；鎖定後教會解鎖並寄信的後台流程。
 - OTP 送達方式、長度、有效時間，以及修改信箱／手機時寄到舊或新位置。
 - 密碼規則；Line 建立的帳號沒有密碼時能否走忘記密碼流程。
-- 進度查詢的查詢條件。
 - Line OAuth 的 callback 處理與「接回一般創建流程」的步驟。
 - 奉獻收據的年度、是否必須與會員資料一致、附件格式與無身分證字號會員的處理。
 - 會員審核的資料範圍（區長只看自己牧區？「區長以上」的角色清單）。

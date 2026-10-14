@@ -1,10 +1,10 @@
 import { useEffect, useState } from 'react'
-import { useLocation } from 'react-router'
+import { Link, useLocation } from 'react-router'
 import { type LogtoFirstScreen, startSignIn } from '../../auth/logto'
 import { Button } from '../../components/Button'
 import { useNotifyModal } from '../../components/NoticeModal'
 import GuestBrandHeader from '../../layouts/GuestBrandHeader'
-import type { LoginRedirectState } from '../../routes/paths'
+import { type LoginRedirectState, PATHS } from '../../routes/paths'
 import LoginLoading from './LoginLoading'
 import loginStyles from './Login.module.css'
 import styles from './LogtoSignIn.module.css'
@@ -12,7 +12,7 @@ import styles from './LogtoSignIn.module.css'
 /**
  * Logto 模式（#44）的登入、註冊、忘記密碼頁：進入後直接轉址到 Logto 登入頁，期間顯示登入 loading 遮罩。
  * 自動轉址被防呆擋下（短時間內又回到這頁，見 src/auth/logto.ts）、從 Logto 按上一頁回來或轉址失敗時，
- * 改顯示手動按鈕（設計稿未畫）。
+ * 改顯示手動按鈕（設計稿未畫）。手動畫面下方放「進度查詢」連結（#52），SSO 登入頁加上連結（#47）前的入口。
  */
 
 /** 這三個路徑在 Logto 模式下的對應：/login 不傳；/register → register；/forgot-password → reset_password */
@@ -73,6 +73,11 @@ export default function LogtoSignIn({ firstScreen }: { firstScreen?: FirstScreen
           <Button block loading={starting} onClick={handleClick}>
             {BUTTON_TEXT[firstScreen ?? 'signIn']}
           </Button>
+          <p className={styles.links}>
+            <Link to={PATHS.progress} className={loginStyles.link}>
+              進度查詢
+            </Link>
+          </p>
         </>
       )}
       <LoginLoading spinning={!manual} />

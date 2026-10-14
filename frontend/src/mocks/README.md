@@ -133,15 +133,18 @@ OTP 元件示範：dev 模式開 `/dev/otp`（`PATHS.devOtp`，`OtpDemo.tsx`；�
 
 `rejected@test.com` 的申請被退回頁（`/apply/rejected`）顯示退回原因；按「修改資料」從第一步開始，出生日期與會員資料帶入上次填的內容，身分證字號需重新輸入。
 
-### 進度查詢（`POST /register/progress`）
+### 進度查詢（`/progress`，`POST /register/progress/otp` → `POST /register/progress`）
 
-信箱＋手機都要符合才查得到，否則 404 `ACCOUNT_NOT_FOUND`。
+輸入申請時的信箱**或**手機其中一個，收驗證碼後查看進度（#52）。驗證碼依上方「OTP」規則；查無申請紀錄時發送照樣成功，驗證時一律 400 `OTP_INVALID`（畫面顯示「驗證碼錯誤」，不透露帳號是否存在）。
 
-| 信箱 + 手機 | 結果 |
+| 信箱或手機 | 結果頁 |
 | --- | --- |
-| `pending@test.com` + `0945678901` | `PENDING` |
-| `member@test.com` + `0912345678` | `APPROVED` |
-| 審核通過／退回後的 `apply1@test.com`（`0956789012`）、`apply2@test.com`（`0967890123`） | `APPROVED`／`REJECTED` |
+| `pending@test.com` 或 `0945678901` | 等待審核中（附申請日期） |
+| `member@test.com` 或 `0912345678` | 已通過審核 |
+| `rejected@test.com` 或 `0978901234` | 申請未通過審核（附退回原因） |
+| 審核通過／退回後的 `apply1@test.com`（`0956789012`）、`apply2@test.com`（`0967890123`） | 已通過／未通過（同一個瀏覽器分頁內；重新整理會還原） |
+| `notfound@test.com` 或 `0900000000` | 發送成功，但驗證時「驗證碼錯誤」 |
+| `frequent@test.com` | 429 `TOO_MANY_ATTEMPTS` |
 
 ### 忘記密碼
 

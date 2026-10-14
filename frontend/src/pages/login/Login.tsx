@@ -143,7 +143,7 @@ export default function Login() {
       </AppForm>
 
       <div className={styles.links}>
-        {/* 已確認（#12） L3：查詢條件為信箱＋手機，維持現行頁面、不另出稿 */}
+        {/* 已確認（#12） L3 不另出稿；查詢條件改為信箱或手機擇一＋驗證碼（#52） */}
         <Link to={PATHS.progress} className={styles.link}>
           進度查詢
         </Link>

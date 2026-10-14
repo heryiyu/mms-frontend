@@ -1,6 +1,7 @@
 // 註冊流程：OTP → 個資聲明 → 送出；以及審核進度查詢
 import { http, HttpResponse } from 'msw'
 import type {
+  ProgressOtpRequest,
   ProgressQueryRequest,
   ProgressQueryResponse,
   ProgressStatus,
@@ -18,15 +19,26 @@ import {
   assertOrgAndJourney,
   assertOtp,
   assertPassword,
+  type Contact,
   errorResponse,
   mockDelay,
   otpResponse,
   randomToken,
   readBody,
+  readContact,
 } from '../utils'
 
 const PRIVACY_PARAGRAPH =
   '本會為執行會員管理、活動聯繫及奉獻收據開立等業務，需蒐集、處理及利用您的個人資料。您的個人資料僅在上述目的範圍內使用，並依個人資料保護法妥善保管，未經您同意不會提供予第三人。您可隨時向本會請求查詢、閱覽、補充、更正、停止蒐集處理利用或刪除您的個人資料。'
+
+/** 進度查詢：已發送驗證碼的對象 */
+let progressOtpContact: Contact | null = null
+
+/** 用申請時的 email 或手機找會員資料 */
+const findApplicant = (contact: Contact): MockUser | undefined =>
+  db.users.find((u) =>
+    contact.type === 'email' ? u.email.toLowerCase() === normalizeEmail(contact.value) : u.phone === contact.value,
+  )
 
 export const registerHandlers = [
   http.post(api('/register/otp'), async ({ request }) => {
@@ -117,13 +129,27 @@ export const registerHandlers = [
     return HttpResponse.json({ id: user.id, status: 'PENDING' as const }, { status: 201 })
   }),
 
+  // 進度查詢（#52）：email 或手機擇一 → 驗證碼 → 進度。不透露帳號是否存在：
+  // 查無申請紀錄時發送照樣回成功（真實後端不會寄出），驗證時一律回驗證碼錯誤
+  http.post(api('/register/progress/otp'), async ({ request }) => {
+    await mockDelay()
+    const contact = readContact(await readBody<ProgressOtpRequest>(request))
+    if (contact.type === 'email') assertNotRateLimited(contact.value)
+    progressOtpContact = contact
+    return otpResponse()
+  }),
+
   http.post(api('/register/progress'), async ({ request }) => {
     await mockDelay()
-    const body = await readBody<ProgressQueryRequest>(request, ['email', 'phone'])
-    assertNotRateLimited(body.email)
-    const user = findUserByEmail(body.email)
-    // 信箱與手機任一不符都回「查無此帳號」，避免被拿來探測帳號是否存在
-    if (!user || user.phone !== body.phone) return errorResponse('ACCOUNT_NOT_FOUND')
+    const body = await readBody<ProgressQueryRequest>(request, ['otp'])
+    const contact = readContact(body)
+    assertOtp(body.otp)
+    if (progressOtpContact?.type !== contact.type || progressOtpContact.value !== contact.value) {
+      return errorResponse('OTP_EXPIRED', '請重新發送驗證碼')
+    }
+    const user = findApplicant(contact)
+    if (!user) return errorResponse('OTP_INVALID')
+    progressOtpContact = null
 
     const status: ProgressStatus =
       user.status === 'PENDING' ? 'PENDING' : user.status === 'REJECTED' ? 'REJECTED' : 'APPROVED'
@@ -131,6 +157,7 @@ export const registerHandlers = [
       status,
       submittedAt: user.submittedAt,
       ...(user.reviewedAt ? { reviewedAt: user.reviewedAt } : {}),
+      ...(status === 'REJECTED' && user.rejectReason ? { rejectReason: user.rejectReason } : {}),
     }
     return HttpResponse.json(res)
   }),

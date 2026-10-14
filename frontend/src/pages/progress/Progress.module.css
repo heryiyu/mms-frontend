@@ -1,0 +1,21 @@
+/*
+ * 審核進度查詢（#52）：版面沿用忘記密碼頁（pages/forgot-password/ForgotPassword.module.css），
+ * 這裡只放設計稿沒畫的說明文字。
+ */
+
+/* 標題下方的說明：查什麼、要輸入什麼 */
+.intro {
+  margin: 0 0 var(--forgot-title-gap);
+  color: var(--color-gray-1);
+  font-size: var(--font-size-body-2);
+  line-height: var(--line-height-body-2);
+  text-align: center;
+}
+
+/* 已發送驗證碼後的提醒：接在 OTP 列下方、確認鈕上方 */
+.hint {
+  margin: 0 0 var(--forgot-field-gap);
+  color: var(--color-gray-1);
+  font-size: var(--font-size-body-2);
+  line-height: var(--line-height-body-2);
+}
