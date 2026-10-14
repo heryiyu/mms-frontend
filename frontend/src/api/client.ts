@@ -5,30 +5,13 @@
 // token：Logto 模式向 Logto SDK 取得（過期會自動更新），本機模式用 auth store 保存的後端 token（src/auth/logto.ts）。
 import * as logto from '../auth/logto'
 import { authStore } from '../auth/store'
+import { ApiError, isApiError } from './errors'
 import type { ApiErrorBody, ErrorCode } from './types'
 
+// 錯誤類別放在 errors.ts（不相依登入狀態，SSO 登入頁等共用元件也能用），這裡轉出維持原本的 import 路徑
+export { ApiError, getValidationFields, isApiError } from './errors'
+
 export const API_BASE_URL: string = import.meta.env.VITE_API_BASE_URL ?? '/api'
-
-export class ApiError extends Error {
-  /** HTTP status；連線失敗時為 0 */
-  status: number
-  code: ErrorCode
-  /** 後端回應 body（解析後的 JSON），可能是 undefined */
-  data: unknown
-
-  constructor(status: number, code: ErrorCode, message: string, data?: unknown) {
-    super(message)
-    this.name = 'ApiError'
-    this.status = status
-    this.code = code
-    this.data = data
-  }
-}
-
-/** 判斷是否為 ApiError，可選擇指定 code */
-export function isApiError(error: unknown, code?: ErrorCode): error is ApiError {
-  return error instanceof ApiError && (code === undefined || error.code === code)
-}
 
 type UnauthorizedHandler = (error: ApiError) => void
 let unauthorizedHandler: UnauthorizedHandler | null = null
@@ -121,10 +104,4 @@ export const del = <T>(path: string, init: RequestInit = {}) => request<T>(path,
  */
 export function getApiErrorMessage(error: unknown, fallback: string): string {
   return isApiError(error) && error.code !== 'UNKNOWN' ? error.message : fallback
-}
-
-/** 後端 422 VALIDATION_ERROR 的欄位錯誤（body 為 { fields: { email: '…' } }）；其他錯誤回空物件 */
-export function getValidationFields(error: unknown): Record<string, string> {
-  if (!isApiError(error, 'VALIDATION_ERROR')) return {}
-  return (error.data as { fields?: Record<string, string> } | undefined)?.fields ?? {}
 }
