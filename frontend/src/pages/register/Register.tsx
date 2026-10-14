@@ -10,10 +10,10 @@ import { AppForm, applyServerFieldErrors, emailRules, phoneRules, TextInput } fr
 import Icon from '../../components/Icon'
 import { useNotifyModal } from '../../components/NoticeModal'
 import { getOtpErrorMessage, OtpField, otpRules, useOtpForm } from '../../components/OtpInput'
+import SocialLoginButton from '../../components/SocialLoginButton'
 import { useGuestLayout } from '../../layouts/guestLayoutContext'
 import { PATHS } from '../../routes/paths'
 import typography from '../../styles/typography.module.css'
-import { brandColors } from '../../theme/tokens'
 import { isMinor } from '../../utils/age'
 import { cx } from '../../utils/cx'
 import GuardianNameField from './GuardianNameField'
@@ -252,16 +252,13 @@ export default function Register() {
           <Divider plain className={styles.divider}>
             or
           </Divider>
-          <Button
-            variant="secondary"
-            block
-            icon={<Icon name="line" color={brandColors.line} />}
+          <SocialLoginButton
+            provider="line"
+            action="register"
             loading={lineLoading}
             disabled={busy}
             onClick={handleLine}
-          >
-            使用Line創建帳號
-          </Button>
+          />
         </>
       )}
 

@@ -6,11 +6,10 @@ import { ApiError, isApiError } from '../../api/client'
 import type { ErrorCode } from '../../api/types'
 import { Button } from '../../components/Button'
 import { AppForm, Checkbox, emailRules, PasswordInput, TextInput } from '../../components/form'
-import Icon from '../../components/Icon'
 import { useNotifyModal } from '../../components/NoticeModal'
+import SocialLoginButton from '../../components/SocialLoginButton'
 import GuestBrandHeader from '../../layouts/GuestBrandHeader'
 import { PATHS } from '../../routes/paths'
-import { brandColors } from '../../theme/tokens'
 import LoginLoading from './LoginLoading'
 import { getLoginErrorNotice, TOO_MANY_ATTEMPTS_NOTICE } from './loginErrors'
 import styles from './Login.module.css'
@@ -156,15 +155,7 @@ export default function Login() {
         or
       </Divider>
 
-      <Button
-        variant="secondary"
-        block
-        icon={<Icon name="line" color={brandColors.line} />}
-        loading={lineLoading}
-        onClick={handleLineLogin}
-      >
-        使用Line快速登入
-      </Button>
+      <SocialLoginButton provider="line" loading={lineLoading} onClick={handleLineLogin} />
 
       <p className={styles.footer}>
         還沒有帳號？
