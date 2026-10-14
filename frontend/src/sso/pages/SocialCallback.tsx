@@ -50,8 +50,7 @@ export default function SocialCallback() {
           return
         }
         if (isExperienceError(error, 'user.missing_profile')) {
-          // TODO(#47)：社群帳號沒有 email／手機時，要讓使用者補填並驗證（sendVerificationCode → verifyCode →
-          // addProfile({ type: 'email' | 'phone', verificationId }) → identify → submit）；目前只顯示提示
+          // 不做補填：Google 帳號一定有 email、Line 帳號一定有手機（2026-10-14 決定），這裡只是保險的提示
           const missing = getMissingProfile(error)
           const lacksContact = missing.some((field) => field === 'email' || field === 'phone' || field === 'emailOrPhone')
           setFailure({

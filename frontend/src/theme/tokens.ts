@@ -23,7 +23,6 @@ export const colors = {
 // 第三方品牌色：不屬於設計系統色票（docs/design/tokens.md），也不產生 CSS 變數、不進 AntD 主題
 export const brandColors = {
   line: '#06C755', // LINE 品牌綠（「使用Line快速登入」圖示，LINE 官方色）
-  google: '#4285F4', // Google 藍（「使用Google快速登入」圖示；設計稿沒有 Google 按鈕，TODO(#12) 待設計確認）
 } as const
 
 export const fontFamily =

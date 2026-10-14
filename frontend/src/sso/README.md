@@ -103,7 +103,7 @@ Experience API 用 Logto 網域的 cookie 記住「進行到哪一步」（inter
 - **驗證碼位數與時效**：用 Logto 預設 6 碼、10 分鐘（`verificationCode.ts`），收到實際驗證信／簡訊時確認；後台改設定時要一起改。
 - **密碼錯誤碼**：密碼不符規則可能是 `password.rejected`（含 `data.result` 細項）或規格寫的 `user.password_policy_violation`；`user.same_password` 也未實測。
 - **鎖定錯誤碼**：錯太多次是否回 `session.verification_blocked_too_many_attempts`（要等 IT 把 `sentinelPolicy` 設成錯 3 次停 5 分鐘後再測）。
-- **社群帳號缺 email／手機**：Line 帳號可能沒有 email；目前只提示改用 email／手機註冊，要不要做「補填並驗證」（`sendVerificationCode` → `verifyCode` → `addProfile` → `identify` → `submit`）待決定（`pages/SocialCallback.tsx`）。
+- **社群帳號缺 email／手機**：不做「補填並驗證」，因為 Google 帳號一定有 email、Line 帳號一定有手機（2026-10-14 決定）。萬一 Logto 仍回 `user.missing_profile`，`pages/SocialCallback.tsx` 只提示改用 email／手機註冊；第一次實際用 Line 註冊時確認 Logto 有拿到手機。
 - 其他沒標「實測」的錯誤碼見 `api/errors.ts`。
 
 ## Cloudflare 分流（上線時，細節待和 IT 確認，#43）
