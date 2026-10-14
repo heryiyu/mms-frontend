@@ -1,5 +1,5 @@
 /*
- * 登入頁（docs/design/login/README.md）。mobile-first，web（≥ lg）與 mob 內容一致，只有 GuestLayout 卡片寬度不同。
+ * 登入畫面（docs/design/login/README.md），會員中心與 SSO 登入頁共用（LoginView）。mobile-first，web（≥ lg）與 mob 內容一致，只有 GuestLayout 卡片寬度不同。
  * 間距量自 web/mob default.png（@2x 換算 1x，目測），兩版相同；能對應既有變數的直接引用。
  */
 .page {
@@ -37,6 +37,11 @@
 .form .remember {
   margin-bottom: var(--login-submit-gap);
   padding-inline-start: var(--login-remember-indent);
+}
+
+.form .submitNoRemember {
+  /* 沒有「記住帳號」列（SSO 登入頁）時，密碼欄 → 登入按鈕的間距同「記住帳號」列 → 按鈕 */
+  margin-top: calc(var(--login-submit-gap) - var(--login-field-gap));
 }
 
 .remember :global(.ant-checkbox-label) {

@@ -1,6 +1,6 @@
 import { Spin } from 'antd'
 import { BrandLogo } from '../../layouts/GuestBrandHeader'
-import styles from './Login.module.css'
+import styles from './LoginView.module.css'
 
 /**
  * 登入 loading（docs/design/login/README.md「loading」）：整頁半透明遮罩＋置中主色 Logo＋白字「Loading」，
