@@ -16,31 +16,16 @@ import {
   assertNotRateLimited,
   assertOrgAndJourney,
   assertOtp,
-  EMAIL_PATTERN,
+  type Contact,
   errorResponse,
   findSsoMember,
   linkSsoMember,
   mockDelay,
   otpResponse,
   readBody,
+  readContact,
   requireSsoAccount,
 } from '../utils'
-import { PHONE_PATTERN } from '../../constants/validation'
-
-type Contact = { type: 'email'; value: string } | { type: 'phone'; value: string }
-
-/** 補填的聯絡方式：email、phone 擇一且格式正確 */
-function readContact(body: ContactOtpRequest): Contact {
-  const email = body.email?.trim()
-  const phone = body.phone?.trim()
-  if (!!email === !!phone) throw errorResponse('VALIDATION_ERROR', '請填寫電子信箱或手機其中一個')
-  if (email) {
-    if (!EMAIL_PATTERN.test(email)) throw errorResponse('VALIDATION_ERROR', undefined, { email: '信箱格式錯誤' })
-    return { type: 'email', value: email }
-  }
-  if (!PHONE_PATTERN.test(phone ?? '')) throw errorResponse('VALIDATION_ERROR', undefined, { phone: '手機格式錯誤' })
-  return { type: 'phone', value: phone ?? '' }
-}
 
 /** 已被其他帳號使用（真實後端要查 SSO 的所有使用者） */
 function isContactUsed(contact: Contact, self: MockUser | undefined) {

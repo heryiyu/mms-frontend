@@ -97,11 +97,8 @@ export const router = createBrowserRouter([
               { path: PATHS.registerPrivacy, lazy: page(() => import('../pages/register/RegisterPrivacy')) },
               // 全寬表單：頁面內以 useGuestLayout('full') 切換版型
               { path: PATHS.registerProfile, lazy: page(() => import('../pages/register/RegisterProfile')) },
-              // 已確認（#12） L3：進度查詢以信箱＋手機查詢、不另出稿（見 api/register.ts queryProgress）
-              {
-                path: PATHS.progress,
-                lazy: pageWith(() => import('../pages/GuestPlaceholder'), { title: '進度查詢' }),
-              },
+              // 進度查詢：email 或手機擇一＋驗證碼（#52）；已確認（#12） L3 不另出稿，兩種登入模式都有
+              { path: PATHS.progress, lazy: page(() => import('../pages/progress/Progress')) },
             ],
           },
           // Line 登入導回：只顯示 loading 遮罩，不套卡片版型
@@ -110,6 +107,7 @@ export const router = createBrowserRouter([
           { path: PATHS.registerDone, lazy: page(() => import('../pages/register/RegisterDone')) },
           { path: PATHS.registerLine, lazy: page(() => import('../pages/register/RegisterLineSuccess')) },
           { path: PATHS.forgotPasswordDone, lazy: page(() => import('../pages/forgot-password/ForgotPasswordDone')) },
+          { path: PATHS.progressResult, lazy: page(() => import('../pages/progress/ProgressResult')) },
         ],
       },
       ...logtoCallbackRoutes,

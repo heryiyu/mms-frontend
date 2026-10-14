@@ -17,8 +17,10 @@ export const PATHS = {
   forgotPassword: '/forgot-password',
   /** 忘記密碼：「變更完成！」（整頁置中、無卡片） */
   forgotPasswordDone: '/forgot-password/done',
-  /** 審核進度查詢（登入頁「進度查詢」；已確認不另出稿，#12 L3） */
+  /** 審核進度查詢（登入頁「進度查詢」；已確認不另出稿，#12 L3）：email 或手機擇一＋驗證碼（#52） */
   progress: '/progress',
+  /** 審核進度查詢結果（整頁置中、無卡片） */
+  progressResult: '/progress/result',
   /** Line OAuth 授權完成後的導回頁（需與後端設定的 redirect URI 一致，TODO(#12)） */
   lineCallback: '/auth/line/callback',
   /** 等待審核（帳號尚未核准）；登入回 ACCOUNT_PENDING 時導到這裡 */
@@ -67,6 +69,7 @@ const GUEST_PATHS: string[] = [
   PATHS.forgotPassword,
   PATHS.forgotPasswordDone,
   PATHS.progress,
+  PATHS.progressResult,
   PATHS.lineCallback,
   PATHS.pending,
   PATHS.signInCallback,

@@ -5,6 +5,7 @@ import type {
   ContactVerifyRequest,
   OtpSendResponse,
   PrivacyStatement,
+  ProgressOtpRequest,
   ProgressQueryRequest,
   ProgressQueryResponse,
   RegisterOtpRequest,
@@ -70,7 +71,15 @@ export function submitRegistration(body: RegistrationRequest): Promise<Registrat
   return post<RegistrationResponse>('/me/registration', body)
 }
 
-/** 審核進度查詢。查無資料回 ACCOUNT_NOT_FOUND */
+/**
+ * 審核進度查詢第一步：發驗證碼到 email 或手機（重新發送也呼叫這支）。
+ * 查無申請紀錄也回成功、不透露帳號是否存在。錯誤碼：VALIDATION_ERROR、TOO_MANY_ATTEMPTS
+ */
+export function sendProgressOtp(body: ProgressOtpRequest): Promise<OtpSendResponse> {
+  return post<OtpSendResponse>('/register/progress/otp', body)
+}
+
+/** 審核進度查詢第二步：驗證通過回傳進度。查無申請紀錄一律當驗證碼錯誤（OTP_INVALID）；另有 OTP_EXPIRED */
 export function queryProgress(body: ProgressQueryRequest): Promise<ProgressQueryResponse> {
   return post<ProgressQueryResponse>('/register/progress', body)
 }

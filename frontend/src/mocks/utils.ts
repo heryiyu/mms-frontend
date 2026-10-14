@@ -188,6 +188,22 @@ export function assertEmailPhone(email: string, phone: string) {
   if (Object.keys(fields).length > 0) throw errorResponse('VALIDATION_ERROR', undefined, fields)
 }
 
+/** email、手機擇一的聯絡方式（#48 補填聯絡方式、#52 進度查詢） */
+export type Contact = { type: 'email'; value: string } | { type: 'phone'; value: string }
+
+/** 讀取 email、phone 擇一且格式正確的聯絡方式；兩個都帶或都沒帶、格式錯誤回 VALIDATION_ERROR */
+export function readContact(body: { email?: string; phone?: string }): Contact {
+  const email = body.email?.trim()
+  const phone = body.phone?.trim()
+  if (!!email === !!phone) throw errorResponse('VALIDATION_ERROR', '請填寫電子信箱或手機其中一個')
+  if (email) {
+    if (!EMAIL_PATTERN.test(email)) throw errorResponse('VALIDATION_ERROR', undefined, { email: '信箱格式錯誤' })
+    return { type: 'email', value: email }
+  }
+  if (!PHONE_PATTERN.test(phone ?? '')) throw errorResponse('VALIDATION_ERROR', undefined, { phone: '手機格式錯誤' })
+  return { type: 'phone', value: phone ?? '' }
+}
+
 /* ---------- 會員資料（註冊、會員資料申請共用） ---------- */
 
 function isMinor(birthDate: string) {
