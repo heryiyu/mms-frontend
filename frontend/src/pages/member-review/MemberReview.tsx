@@ -1,4 +1,4 @@
-import { Card, Result, Skeleton } from 'antd'
+import { Card, Input, Result, Skeleton } from 'antd'
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router'
 import { getApiErrorMessage, isApiError } from '../../api/client'
@@ -30,7 +30,9 @@ import styles from './MemberReview.module.css'
 // - 完成頁「返回」回到待審核清單（重新載入剩下的申請）；底部「取消／返回」回首頁
 // - 退回只針對該筆、與勾選無關；其他已勾選的項目保留勾選（待確認 2）
 // - 退回完成頁「返回」比照審核完成：回待審核清單並重新載入
-// - 退回原因輸入、通知申請者、批次退回：設計稿未畫，不實作（待確認 1、2）
+// - 通知申請者、批次退回：設計稿未畫，不實作（待確認 1、2）
+// 退回原因（#48，架構整理 D10 決定要填）：設計稿的退回確認彈窗沒有輸入欄位，先在內文下方加必填的多行輸入框，
+// 原因會顯示給申請者（重新送出頁）並附在退回通知；樣式待設計確認。
 
 // 已確認（#12） R3：空狀態與載入失敗維持目前文案
 const MESSAGES = {
@@ -46,12 +48,16 @@ const MESSAGES = {
   rejectProcessed: '此筆申請已被處理，清單將重新載入。',
 } as const
 
-// 退回確認彈窗文案（退回機制.png）
+// 退回確認彈窗文案（退回機制.png）；退回原因欄位設計稿未畫
 const REJECT_CONFIRM = {
   title: '注意',
   content: '確定要退回此筆會員申請嗎？',
   cancelText: '取消',
+  reasonLabel: '退回原因',
+  reasonPlaceholder: '請輸入退回原因，會通知申請者',
 } as const
+
+const REJECT_REASON_MAX_LENGTH = 200
 
 type LoadState = 'loading' | 'ready' | 'error'
 
@@ -68,6 +74,7 @@ export default function MemberReview() {
   const [done, setDone] = useState<DoneState | null>(null)
   /** 退回確認彈窗對象；null 為關閉 */
   const [rejectTarget, setRejectTarget] = useState<PendingMember | null>(null)
+  const [rejectReason, setRejectReason] = useState('')
   const [rejecting, setRejecting] = useState(false)
 
   /** 每次 +1 觸發重新取得清單 */
@@ -141,6 +148,7 @@ export default function MemberReview() {
 
   const openRejectConfirm = (member: PendingMember) => {
     if (submitting) return
+    setRejectReason('')
     setRejectTarget(member)
   }
 
@@ -150,11 +158,12 @@ export default function MemberReview() {
   }
 
   const handleReject = async () => {
-    if (!rejectTarget) return
+    const reason = rejectReason.trim()
+    if (!rejectTarget || !reason) return
     const { id } = rejectTarget
     setRejecting(true)
     try {
-      await rejectMember(id)
+      await rejectMember(id, reason)
       setRejectTarget(null)
       // 只移除被退回的這筆勾選，其他勾選保留（TODO(#12) 待確認 2）
       setSelected((prev) => {
@@ -206,9 +215,26 @@ export default function MemberReview() {
       <NoticeModal
         open={rejectTarget != null}
         title={REJECT_CONFIRM.title}
-        content={REJECT_CONFIRM.content}
+        content={
+          <>
+            {REJECT_CONFIRM.content}
+            <Input.TextArea
+              className={styles.rejectReason}
+              value={rejectReason}
+              onChange={(e) => setRejectReason(e.target.value)}
+              placeholder={REJECT_CONFIRM.reasonPlaceholder}
+              aria-label={REJECT_CONFIRM.reasonLabel}
+              maxLength={REJECT_REASON_MAX_LENGTH}
+              showCount
+              autoSize={{ minRows: 3, maxRows: 6 }}
+              disabled={rejecting}
+              autoFocus
+            />
+          </>
+        }
         cancelText={REJECT_CONFIRM.cancelText}
         confirmLoading={rejecting}
+        confirmDisabled={!rejectReason.trim()}
         onOk={() => void handleReject()}
         onCancel={closeRejectConfirm}
       />

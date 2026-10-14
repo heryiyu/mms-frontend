@@ -1,6 +1,6 @@
 import { Flex, Skeleton, Typography } from 'antd'
 import { useEffect, useState } from 'react'
-import { useNavigate } from 'react-router'
+import { Navigate, useNavigate } from 'react-router'
 import { getPrivacyStatement } from '../../api/register'
 import type { PrivacyStatement } from '../../api/types'
 import { Button } from '../../components/Button'
@@ -10,7 +10,7 @@ import { PATHS } from '../../routes/paths'
 import typography from '../../styles/typography.module.css'
 import { cx } from '../../utils/cx'
 import styles from './RegisterPrivacy.module.css'
-import { updateRegisterFlow } from './registerFlow'
+import { getRegisterFlow, type RegisterFlowKind, updateRegisterFlow } from './registerFlow'
 
 type LoadState = { status: 'loading' } | { status: 'error' } | { status: 'ready'; statement: PrivacyStatement }
 
@@ -20,11 +20,14 @@ type LoadState = { status: 'loading' } | { status: 'error' } | { status: 'ready'
  * 稿上沒有「返回」連結（web／mob 皆無）。
  *
  * 同意結果與聲明版本寫入註冊流程暫存（registerFlow），下一步「會員資料輸入」送出時帶回。
- * TODO(#12)：還沒有步驟守衛（未完成 OTP 驗證就直接進入此頁）；會員資料頁會檢查 registerToken 並導回起點。
+ * TODO(#12)：本機註冊還沒有步驟守衛（未完成 OTP 驗證就直接進入此頁）；會員資料頁會檢查 registerToken 並導回起點。
+ *
+ * flow = 'apply'：Logto 模式第一次登入填寫會員資料（#48）的第二步，沒填出生日期就進來時導回第一步。
  */
-export default function RegisterPrivacy() {
+export default function RegisterPrivacy({ flow = 'register' }: { flow?: RegisterFlowKind }) {
   useGuestLayout('card')
   const navigate = useNavigate()
+  const [hasBasic] = useState(() => !!getRegisterFlow(flow).birthDate)
   const [state, setState] = useState<LoadState>({ status: 'loading' })
   const [reloadKey, setReloadKey] = useState(0)
   const [agreed, setAgreed] = useState(false)
@@ -44,10 +47,12 @@ export default function RegisterPrivacy() {
     setReloadKey((k) => k + 1)
   }
 
+  if (flow === 'apply' && !hasBasic) return <Navigate to={PATHS.apply} replace />
+
   const handleConfirm = () => {
     if (state.status !== 'ready' || !agreed) return
-    updateRegisterFlow({ agreedToPrivacy: true, privacyVersion: state.statement.version })
-    navigate(PATHS.registerProfile)
+    updateRegisterFlow({ agreedToPrivacy: true, privacyVersion: state.statement.version }, flow)
+    navigate(flow === 'apply' ? PATHS.applyProfile : PATHS.registerProfile)
   }
 
   return (

@@ -4,8 +4,8 @@ import { useEffect, useState } from 'react'
 import { Navigate, useNavigate } from 'react-router'
 import { getApiErrorMessage, isApiError } from '../../api/client'
 import { getChurches, getDistricts, getEkks, getGroups, getJourneys } from '../../api/options'
-import { submitRegister } from '../../api/register'
-import type { Gender, Journey, JourneyOption, Option } from '../../api/types'
+import { submitRegister, submitRegistration } from '../../api/register'
+import type { Gender, Journey, JourneyOption, Option, RegistrationRequest } from '../../api/types'
 import ActionBar from '../../components/ActionBar'
 import {
   AppForm,
@@ -23,17 +23,21 @@ import {
 } from '../../components/form'
 import Icon from '../../components/Icon'
 import { useNotifyModal } from '../../components/NoticeModal'
+import { authStore } from '../../auth/store'
 import { useGuestLayout } from '../../layouts/guestLayoutContext'
 import { PATHS } from '../../routes/paths'
 import typography from '../../styles/typography.module.css'
 import { cx } from '../../utils/cx'
 import { hasInAppHistory } from '../../utils/history'
-import { clearRegisterFlow, getRegisterFlow } from './registerFlow'
+import { clearRegisterFlow, getRegisterFlow, type RegisterFlowKind } from './registerFlow'
 import styles from './RegisterProfile.module.css'
 
 // 註冊：會員資料輸入（issue #17，docs/design/register/README.md「會員資料輸入」「會員資料輸入中」）
 // 全寬表單（GuestLayout full 變體）＋底部固定操作列；選了教會後才展開牧區／小組／EKK（連動下拉）。
 // 送出成功 → 等待核准中（PATHS.registerDone）。
+//
+// flow = 'apply'：Logto 模式第一次登入填寫會員資料（#48）的最後一步。帳號密碼已在 SSO 建立，
+// 不顯示密碼欄位；姓名先帶入 SSO 的名字，被退回重新送出時帶入上次填的內容（身分證字號需重新輸入）。
 //
 // TODO(#12)：以下皆為設計未定、先依推測實作——
 // - 「確認」啟用時機：web 稿填完仍是停用、mob 稿已啟用，以 mob 為準（必填皆有值即可按）
@@ -47,8 +51,9 @@ interface ProfileValues {
   nickname?: string
   gender: Gender
   idNumber: string
-  password: string
-  confirmPassword: string
+  /** 只有本機註冊（flow = 'register'）有 */
+  password?: string
+  confirmPassword?: string
   churchId?: string
   districtId?: string
   groupId?: string
@@ -58,18 +63,12 @@ interface ProfileValues {
 
 type FieldName = keyof ProfileValues
 
-const REQUIRED_FIELDS: FieldName[] = [
-  'name',
-  'gender',
-  'idNumber',
-  'password',
-  'confirmPassword',
-  'churchId',
-  'districtId',
-  'groupId',
-  'ekkId',
-  'journey',
-]
+const MEMBER_FIELDS: FieldName[] = ['name', 'gender', 'idNumber', 'churchId', 'districtId', 'groupId', 'ekkId', 'journey']
+
+const REQUIRED_FIELDS: Record<RegisterFlowKind, FieldName[]> = {
+  register: [...MEMBER_FIELDS, 'password', 'confirmPassword'],
+  apply: MEMBER_FIELDS,
+}
 
 const INITIAL_VALUES: Partial<ProfileValues> = { gender: 'male', journey: 'XN' }
 
@@ -88,6 +87,9 @@ const MESSAGES = {
   tokenInvalidTitle: '驗證已失效',
   tokenInvalid: '手機驗證已逾時，請重新驗證',
   alreadyRegistered: '此身份證字號、電子信箱或手機已註冊',
+  idNumberUsed: '此身份證字號已被使用',
+  alreadySubmittedTitle: '已送出申請',
+  alreadySubmitted: '會員資料已送出，請等待審核',
   failedTitle: '註冊失敗',
   failedContent: '發生錯誤，請稍後再試',
 } as const
@@ -133,10 +135,12 @@ const ROOT = 'root'
 const loadChurches = () => getChurches()
 const loadJourneys = () => getJourneys()
 
-export default function RegisterProfile() {
+export default function RegisterProfile({ flow: kind = 'register' }: { flow?: RegisterFlowKind }) {
   useGuestLayout('full')
   const navigate = useNavigate()
-  const [flow] = useState(getRegisterFlow)
+  const [flow] = useState(() => getRegisterFlow(kind))
+  const isApply = kind === 'apply'
+  const requiredFields = REQUIRED_FIELDS[kind]
   const [form] = Form.useForm<ProfileValues>()
   const values = Form.useWatch([], form) as Partial<ProfileValues> | undefined
   const [submitting, setSubmitting] = useState(false)
@@ -153,13 +157,15 @@ export default function RegisterProfile() {
     if (optionsFailed) void notify({ title: MESSAGES.failedTitle, content: MESSAGES.optionsFailed })
   }, [optionsFailed, notify])
 
-  // TODO(#12)：前面步驟（#15 出生／信箱／手機＋OTP、個資聲明）未完成就直接進入此頁時，暫導回註冊起點
+  // 前面步驟未完成就直接進入此頁時，導回流程起點。
+  // TODO(#12)：本機註冊（#15 出生／信箱／手機＋OTP、個資聲明）暫導回註冊起點
   const { registerToken, agreedToPrivacy, birthDate, email, phone } = flow
-  if (!registerToken || !agreedToPrivacy || !birthDate || !email || !phone) {
-    return <Navigate to={PATHS.register} replace />
+  const ready = isApply ? birthDate && agreedToPrivacy : registerToken && agreedToPrivacy && birthDate && email && phone
+  if (!ready || !birthDate) {
+    return <Navigate to={isApply ? PATHS.apply : PATHS.register} replace />
   }
 
-  const allFilled = REQUIRED_FIELDS.every((name) => {
+  const allFilled = requiredFields.every((name) => {
     const value = values?.[name]
     return typeof value === 'string' ? value.trim() !== '' : value != null
   })
@@ -167,7 +173,7 @@ export default function RegisterProfile() {
   // 有站內上一頁（個資聲明）就回上一頁，直接開啟此頁時回個資聲明
   const handleBack = () => {
     if (hasInAppHistory()) navigate(-1)
-    else navigate(PATHS.registerPrivacy, { replace: true })
+    else navigate(isApply ? PATHS.applyPrivacy : PATHS.registerPrivacy, { replace: true })
   }
 
   const handleValuesChange: FormProps<ProfileValues>['onValuesChange'] = (changed) => {
@@ -180,32 +186,46 @@ export default function RegisterProfile() {
     if (first) void notify({ title: MESSAGES.invalidTitle, content: first })
   }
 
+  /** 送出：本機註冊連同帳密一起建立；apply 流程帳號已在 SSO，只送會員資料 */
+  const submit = async (v: ProfileValues, org: Pick<RegistrationRequest, 'churchId' | 'districtId' | 'groupId' | 'ekkId'>) => {
+    const member = {
+      ...org,
+      birthDate,
+      guardianName: flow.guardianName,
+      name: v.name.trim(),
+      nickname: v.nickname?.trim() || undefined,
+      gender: v.gender,
+      idNumber: v.idNumber.trim().toUpperCase(),
+      journey: v.journey,
+      agreedToPrivacy: true,
+    }
+    if (isApply) {
+      await submitRegistration({ ...member, privacyVersion: flow.privacyVersion })
+      // 已登入 SSO，送出後狀態改為待審核（RegisterDone 的「返回」會一併登出 SSO）
+      authStore.updateSession({ status: 'PENDING' })
+      return
+    }
+    if (!registerToken || !email || !phone || !v.password) return
+    await submitRegister({ ...member, registerToken, lineToken: flow.lineToken, email, phone, password: v.password })
+  }
+
   const handleFinish = async (v: ProfileValues) => {
-    if (!v.churchId || !v.districtId || !v.groupId || !v.ekkId) return
+    const { churchId, districtId, groupId, ekkId } = v
+    if (!churchId || !districtId || !groupId || !ekkId) return
     setSubmitting(true)
     try {
-      await submitRegister({
-        registerToken,
-        lineToken: flow.lineToken,
-        birthDate,
-        email,
-        phone,
-        guardianName: flow.guardianName,
-        name: v.name.trim(),
-        nickname: v.nickname?.trim() || undefined,
-        gender: v.gender,
-        idNumber: v.idNumber.trim().toUpperCase(),
-        password: v.password,
-        churchId: v.churchId,
-        districtId: v.districtId,
-        groupId: v.groupId,
-        ekkId: v.ekkId,
-        journey: v.journey,
-        agreedToPrivacy: true,
-      })
-      clearRegisterFlow()
+      await submit(v, { churchId, districtId, groupId, ekkId })
+      clearRegisterFlow(kind)
       navigate(PATHS.registerDone, { replace: true })
     } catch (error) {
+      if (isApply && isApiError(error, 'ALREADY_PROCESSED')) {
+        // 已經送出過（例如另一個分頁）：改為待審核
+        await notify({ title: MESSAGES.alreadySubmittedTitle, content: MESSAGES.alreadySubmitted })
+        clearRegisterFlow(kind)
+        authStore.updateSession({ status: 'PENDING' })
+        navigate(PATHS.pending, { replace: true })
+        return
+      }
       if (isApiError(error, 'TOKEN_INVALID')) {
         await notify({ title: MESSAGES.tokenInvalidTitle, content: MESSAGES.tokenInvalid })
         clearRegisterFlow()
@@ -213,11 +233,11 @@ export default function RegisterProfile() {
         return
       }
       if (isApiError(error, 'ALREADY_REGISTERED')) {
-        void notify({ title: MESSAGES.failedTitle, content: MESSAGES.alreadyRegistered })
+        void notify({ title: MESSAGES.failedTitle, content: isApply ? MESSAGES.idNumberUsed : MESSAGES.alreadyRegistered })
         return
       }
       if (isApiError(error, 'VALIDATION_ERROR')) {
-        const [first] = applyServerFieldErrors(form, error, REQUIRED_FIELDS)
+        const [first] = applyServerFieldErrors(form, error, requiredFields)
         void notify({ title: MESSAGES.invalidTitle, content: first ?? error.message })
         return
       }
@@ -234,7 +254,7 @@ export default function RegisterProfile() {
       {contextHolder}
       <AppForm<ProfileValues>
         form={form}
-        initialValues={INITIAL_VALUES}
+        initialValues={isApply ? { ...INITIAL_VALUES, ...flow.prefill } : INITIAL_VALUES}
         validateTrigger="onBlur"
         {...formCardLayout}
         onValuesChange={handleValuesChange}
@@ -258,22 +278,31 @@ export default function RegisterProfile() {
           <FormCardItem name="idNumber" label="身份證字號" rules={ID_NUMBER_RULES}>
             <TextInput placeholder="請輸入身份證字號" autoComplete="off" maxLength={10} />
           </FormCardItem>
-          <FormCardItem name="password" label="密碼" rules={PASSWORD_RULES}>
-            {/* 稿上空白時沒有眼睛圖示，有值後才出現 */}
-            <PasswordInput placeholder="請輸入密碼" autoComplete="new-password" visibilityToggle={!!values?.password} />
-          </FormCardItem>
-          <FormCardItem
-            name="confirmPassword"
-            label="確認密碼"
-            dependencies={['password']}
-            rules={CONFIRM_PASSWORD_RULES}
-          >
-            <PasswordInput
-              placeholder="再次輸入密碼"
-              autoComplete="new-password"
-              visibilityToggle={!!values?.confirmPassword}
-            />
-          </FormCardItem>
+          {/* apply 流程的帳號密碼已在 SSO 建立，不顯示密碼欄位 */}
+          {!isApply && (
+            <>
+              <FormCardItem name="password" label="密碼" rules={PASSWORD_RULES}>
+                {/* 稿上空白時沒有眼睛圖示，有值後才出現 */}
+                <PasswordInput
+                  placeholder="請輸入密碼"
+                  autoComplete="new-password"
+                  visibilityToggle={!!values?.password}
+                />
+              </FormCardItem>
+              <FormCardItem
+                name="confirmPassword"
+                label="確認密碼"
+                dependencies={['password']}
+                rules={CONFIRM_PASSWORD_RULES}
+              >
+                <PasswordInput
+                  placeholder="再次輸入密碼"
+                  autoComplete="new-password"
+                  visibilityToggle={!!values?.confirmPassword}
+                />
+              </FormCardItem>
+            </>
+          )}
           <FormCardItem
             name="churchId"
             label="教會"

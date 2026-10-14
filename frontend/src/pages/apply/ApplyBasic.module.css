@@ -1,0 +1,43 @@
+/*
+ * 會員資料填寫第一步（#48）：版面沿用註冊第一步（pages/register/Register.module.css），
+ * 這裡只放設計稿沒畫的部分：已驗證標示、補填說明、登出用的「返回」。
+ */
+
+/* 唯讀的已驗證聯絡方式：輸入框右側「✓ 已驗證」 */
+.verified {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--color-primary);
+  font-size: var(--font-size-body-2);
+  white-space: nowrap;
+}
+
+/* 補填說明：接在聯絡方式欄位下方、確認鈕上方 */
+.hint {
+  margin: 0 0 var(--register-field-gap);
+  color: var(--color-gray-1);
+  font-size: var(--font-size-body-2);
+  line-height: var(--line-height-body-2);
+}
+
+/* 「返回」：外觀同註冊頁底部的返回連結，但會登出，用 button */
+.back {
+  padding: 0;
+  border: 0;
+  background: none;
+  cursor: pointer;
+  font: inherit;
+  color: var(--color-gray-1);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.back:hover {
+  color: var(--color-primary);
+}
+
+.back:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}

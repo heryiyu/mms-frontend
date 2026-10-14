@@ -8,12 +8,14 @@ import type {
   RegisterOtpVerifyRequest,
   RegisterRequest,
 } from '../../api/types'
-import { churches, db, districts, ekks, findUserByEmail, groups, journeys, newUserId, normalizeEmail } from '../db'
+import { db, findUserByEmail, newUserId, normalizeEmail } from '../db'
 import type { MockUser } from '../db'
 import {
   api,
   assertEmailPhone,
+  assertGuardian,
   assertNotRateLimited,
+  assertOrgAndJourney,
   assertOtp,
   assertPassword,
   errorResponse,
@@ -22,14 +24,6 @@ import {
   randomToken,
   readBody,
 } from '../utils'
-
-function isMinor(birthDate: string) {
-  const birth = new Date(birthDate)
-  if (Number.isNaN(birth.getTime())) return false
-  const adultOn = new Date(birth)
-  adultOn.setFullYear(adultOn.getFullYear() + 18)
-  return adultOn.getTime() > Date.now()
-}
 
 const PRIVACY_PARAGRAPH =
   '本會為執行會員管理、活動聯繫及奉獻收據開立等業務，需蒐集、處理及利用您的個人資料。您的個人資料僅在上述目的範圍內使用，並依個人資料保護法妥善保管，未經您同意不會提供予第三人。您可隨時向本會請求查詢、閱覽、補充、更正、停止蒐集處理利用或刪除您的個人資料。'
@@ -40,9 +34,7 @@ export const registerHandlers = [
     const body = await readBody<RegisterOtpRequest>(request, ['birthDate', 'email', 'phone'])
     assertNotRateLimited(body.email)
     assertEmailPhone(body.email, body.phone)
-    if (isMinor(body.birthDate) && !body.guardianName?.trim()) {
-      return errorResponse('VALIDATION_ERROR', '未滿 18 歲需填寫監護人名稱', { guardianName: '必填' })
-    }
+    assertGuardian(body.birthDate, body.guardianName)
     // 已有帳號（含已鎖定／待審核）的信箱或手機不可再註冊
     if (db.users.some((u) => u.email.toLowerCase() === normalizeEmail(body.email) || u.phone === body.phone)) {
       return errorResponse('ALREADY_REGISTERED')
@@ -91,17 +83,7 @@ export const registerHandlers = [
     assertEmailPhone(body.email, body.phone)
     assertPassword(body.password)
 
-    const ekk = ekks.find((e) => e.id === body.ekkId)
-    const group = groups.find((g) => g.id === body.groupId)
-    const district = districts.find((d) => d.id === body.districtId)
-    const church = churches.find((c) => c.id === body.churchId)
-    const orgOk = ekk?.groupId === group?.id && group?.districtId === district?.id && district?.churchId === church?.id
-    if (!church || !district || !group || !ekk || !orgOk) {
-      return errorResponse('VALIDATION_ERROR', '教會／牧區／小組／EKK 不相符', { ekkId: '選項不相符' })
-    }
-    if (!journeys.some((j) => j.id === body.journey)) {
-      return errorResponse('VALIDATION_ERROR', undefined, { journey: '無此靈程' })
-    }
+    assertOrgAndJourney(body)
 
     if (
       findUserByEmail(body.email) ||
@@ -127,6 +109,8 @@ export const registerHandlers = [
       role: 'member',
       status: 'PENDING',
       submittedAt: new Date().toISOString(),
+      birthDate: body.birthDate,
+      guardianName: body.guardianName,
     }
     db.users.push(user)
     db.registerTokens.delete(body.registerToken)

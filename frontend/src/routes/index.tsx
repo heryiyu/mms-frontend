@@ -1,6 +1,6 @@
 import type { ComponentType } from 'react'
 import { createBrowserRouter, type RouteObject } from 'react-router'
-import { GuestOnly, RequireAuth, RequireRole } from '../auth/guards'
+import { GuestOnly, RequireApplicant, RequireAuth, RequireRole } from '../auth/guards'
 import { isLogtoEnabled } from '../auth/logto'
 import PageLoading from '../components/PageLoading'
 import GuestLayout from '../layouts/GuestLayout'
@@ -49,6 +49,35 @@ const logtoCallbackRoutes: RouteObject[] = isLogtoEnabled
   ? [{ path: PATHS.signInCallback, lazy: page(() => import('../pages/login/LogtoCallback')) }]
   : []
 
+// 第一次用 SSO 登入、還沒有會員資料（#48）：出生／補填聯絡方式 → 個資聲明 → 會員資料 → 等待核准中（PATHS.registerDone）。
+// 個資聲明與會員資料沿用註冊流程的頁面（flow = 'apply'）。只有 Logto 模式會用到。
+const applyRoutes: RouteObject[] = isLogtoEnabled
+  ? [
+      {
+        element: <RequireApplicant />,
+        children: [
+          {
+            element: <GuestLayout />,
+            children: [
+              { path: PATHS.apply, lazy: page(() => import('../pages/apply/ApplyBasic')) },
+              {
+                path: PATHS.applyPrivacy,
+                lazy: pageWith(() => import('../pages/register/RegisterPrivacy'), { flow: 'apply' as const }),
+              },
+              // 全寬表單：頁面內以 useGuestLayout('full') 切換版型
+              {
+                path: PATHS.applyProfile,
+                lazy: pageWith(() => import('../pages/register/RegisterProfile'), { flow: 'apply' as const }),
+              },
+            ],
+          },
+          // 整頁結果版面，不套卡片
+          { path: PATHS.applyRejected, lazy: page(() => import('../pages/apply/ApplyRejected')) },
+        ],
+      },
+    ]
+  : []
+
 // 路由表（#10）。路徑一律用 routes/paths.ts 的 PATHS；*Placeholder 為尚未實作的頁面，完成後直接替換。
 // 可見角色要與 layouts/memberNav.ts 的選單／首頁卡片設定一致。
 export const router = createBrowserRouter([
@@ -84,6 +113,7 @@ export const router = createBrowserRouter([
         ],
       },
       ...logtoCallbackRoutes,
+      ...applyRoutes,
       // 等待審核：登入與否皆可開啟
       { path: PATHS.pending, lazy: page(() => import('../pages/PendingApproval')) },
       // 已登入：未登入 → 登入頁；等待審核中 → 等待審核頁

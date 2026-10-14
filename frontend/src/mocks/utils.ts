@@ -4,8 +4,8 @@ import { delay, HttpResponse } from 'msw'
 import { API_BASE_URL } from '../api/client'
 import { getPasswordRuleError } from '../constants/password'
 import { PHONE_PATTERN } from '../constants/validation'
-import type { ErrorCode, Role } from '../api/types'
-import { db, findUserByEmail, normalizeEmail, type MockUser } from './db'
+import type { ErrorCode, Role, SsoAccount } from '../api/types'
+import { churches, db, districts, ekks, findUserByEmail, groups, journeys, normalizeEmail, type MockUser } from './db'
 
 export const api = (path: string) => `${API_BASE_URL}${path}`
 
@@ -63,11 +63,65 @@ const TOKEN_PREFIX = 'mock-token-'
 
 export const makeToken = (user: MockUser) => `${TOKEN_PREFIX}${user.id}`
 
-/**
- * Logto 模式（#44）：Logto 發的 access token（JWT）沒有對應的測試帳號，一律視為這個信箱的帳號。
- * 在 .env.local 設 VITE_MOCK_LOGTO_EMAIL 可切換，例如 pending@test.com（等待審核）、notfound@test.com（尚未建立會員資料）。
+/*
+ * Logto 模式（#44、#48）：Logto 發的 access token（JWT）一律視為同一個 SSO 帳號（mockSsoAccount），
+ * 再用它的 email／手機對應會員資料（findMemberBySso）。切換方式見 mocks/README.md「Logto 模式」：
+ * - .env.local 的 VITE_MOCK_LOGTO_EMAIL（改完要重啟 dev server）
+ * - 網址加 ?mockLogto=<信箱>，存在 sessionStorage，經過 SSO 轉址後仍有效，關閉分頁即還原
  */
-const MOCK_LOGTO_EMAIL: string = import.meta.env.VITE_MOCK_LOGTO_EMAIL || 'member@test.com'
+const MOCK_LOGTO_PARAM = 'mockLogto'
+const MOCK_LOGTO_STORAGE_KEY = 'nlc_mms_mock_logto'
+
+// 啟動時讀一次（之後轉址到 SSO、回到 /callback 時網址已經沒有參數）
+function readMockLogtoEmail(): string {
+  const fallback: string = import.meta.env.VITE_MOCK_LOGTO_EMAIL || 'member@test.com'
+  try {
+    const fromUrl = new URLSearchParams(window.location.search).get(MOCK_LOGTO_PARAM)
+    if (fromUrl) sessionStorage.setItem(MOCK_LOGTO_STORAGE_KEY, fromUrl)
+    return sessionStorage.getItem(MOCK_LOGTO_STORAGE_KEY) || fallback
+  } catch {
+    return fallback
+  }
+}
+
+/** 沒有對應會員資料的 SSO 帳號（第一次登入填寫會員資料，#48） */
+const NEW_SSO_ACCOUNTS: Record<string, SsoAccount> = {
+  // SSO 用手機註冊：只有手機，可補填 email
+  'phoneonly@test.com': { name: '陳小安', email: null, phone: '0911000111' },
+  // 用 Line、Google 註冊：email、手機都沒有，至少要補一個
+  'nocontact@test.com': { name: 'Line 使用者', email: null, phone: null },
+}
+
+function createMockSsoAccount(email: string): SsoAccount {
+  const preset = NEW_SSO_ACCOUNTS[normalizeEmail(email)]
+  if (preset) return { ...preset }
+  const user = findUserByEmail(email)
+  if (user) return { name: user.name, email: user.email, phone: user.phone }
+  // 其他未註冊信箱（例如 notfound@test.com）：SSO 用 email 註冊，可補填手機
+  return { name: '新朋友', email: email.trim(), phone: null }
+}
+
+/** 目前登入的 SSO 帳號；補填聯絡方式、送出會員資料（姓名寫回 SSO）時會更新，重新整理即還原 */
+export const mockSsoAccount: SsoAccount = createMockSsoAccount(readMockLogtoEmail())
+
+// 找到（或新建）的會員資料記住 id，之後在個人資訊頁改了 email、手機也還對得到（真實後端用 SSO 使用者 ID 對應）
+let ssoMemberId: string | undefined
+
+/** 目前 SSO 帳號的會員資料：第一次用 email／手機對應；沒有回 undefined（尚未填會員資料） */
+export function findSsoMember(): MockUser | undefined {
+  if (ssoMemberId) return db.users.find((u) => u.id === ssoMemberId)
+  const { email, phone } = mockSsoAccount
+  const user = db.users.find(
+    (u) => (!!email && u.email.toLowerCase() === normalizeEmail(email)) || (!!phone && u.phone === phone),
+  )
+  ssoMemberId = user?.id
+  return user
+}
+
+/** 會員資料申請送出後，把新建的會員資料連到目前的 SSO 帳號 */
+export function linkSsoMember(user: MockUser) {
+  ssoMemberId = user.id
+}
 
 export const readBearer = (request: Request) => {
   const header = request.headers.get('Authorization') ?? ''
@@ -80,8 +134,14 @@ export const isLogtoToken = (token: string) => token.split('.').length === 3
 /** 依 token 找測試帳號（不看帳號狀態）；找不到回 undefined */
 export function findUserByToken(token: string): MockUser | undefined {
   if (token.startsWith(TOKEN_PREFIX)) return db.users.find((u) => u.id === token.slice(TOKEN_PREFIX.length))
-  if (isLogtoToken(token)) return findUserByEmail(MOCK_LOGTO_EMAIL)
+  if (isLogtoToken(token)) return findSsoMember()
   return undefined
+}
+
+/** Logto 模式：取出目前登入的 SSO 帳號（不需要有會員資料）；不是 Logto 的 token 回 401 */
+export function requireSsoAccount(request: Request): SsoAccount {
+  if (!isLogtoToken(readBearer(request))) throw errorResponse('UNAUTHORIZED')
+  return mockSsoAccount
 }
 
 /** 從 Authorization: Bearer 取出登入者；token 無效回 401，role 不符回 403 */
@@ -126,4 +186,36 @@ export function assertEmailPhone(email: string, phone: string) {
   if (!EMAIL_PATTERN.test(email)) fields.email = '信箱格式錯誤'
   if (!PHONE_PATTERN.test(phone)) fields.phone = '手機格式錯誤'
   if (Object.keys(fields).length > 0) throw errorResponse('VALIDATION_ERROR', undefined, fields)
+}
+
+/* ---------- 會員資料（註冊、會員資料申請共用） ---------- */
+
+function isMinor(birthDate: string) {
+  const birth = new Date(birthDate)
+  if (Number.isNaN(birth.getTime())) return false
+  const adultOn = new Date(birth)
+  adultOn.setFullYear(adultOn.getFullYear() + 18)
+  return adultOn.getTime() > Date.now()
+}
+
+/** 未滿 18 歲要填監護人 */
+export function assertGuardian(birthDate: string, guardianName?: string) {
+  if (isMinor(birthDate) && !guardianName?.trim()) {
+    throw errorResponse('VALIDATION_ERROR', '未滿 18 歲需填寫監護人名稱', { guardianName: '必填' })
+  }
+}
+
+/** 教會／牧區／小組／EKK 要在同一條線上，靈程要是有效選項 */
+export function assertOrgAndJourney(body: { churchId: string; districtId: string; groupId: string; ekkId: string; journey: string }) {
+  const ekk = ekks.find((e) => e.id === body.ekkId)
+  const group = groups.find((g) => g.id === body.groupId)
+  const district = districts.find((d) => d.id === body.districtId)
+  const church = churches.find((c) => c.id === body.churchId)
+  const orgOk = ekk?.groupId === group?.id && group?.districtId === district?.id && district?.churchId === church?.id
+  if (!church || !district || !group || !ekk || !orgOk) {
+    throw errorResponse('VALIDATION_ERROR', '教會／牧區／小組／EKK 不相符', { ekkId: '選項不相符' })
+  }
+  if (!journeys.some((j) => j.id === body.journey)) {
+    throw errorResponse('VALIDATION_ERROR', undefined, { journey: '無此靈程' })
+  }
 }

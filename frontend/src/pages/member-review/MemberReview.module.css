@@ -78,3 +78,9 @@
     --member-review-top-offset: 0px;
   }
 }
+
+/* 退回原因（#48 D10，設計稿未畫）：接在確認文字下方，文字靠左 */
+.rejectReason {
+  margin-top: var(--app-gutter);
+  text-align: left;
+}

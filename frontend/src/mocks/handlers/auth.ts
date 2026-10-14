@@ -6,6 +6,7 @@ import {
   api,
   assertNotRateLimited,
   errorResponse,
+  findSsoMember,
   findUserByToken,
   isLogtoToken,
   makeToken,
@@ -18,11 +19,10 @@ import {
 
 /**
  * 登入錯誤情境的觸發信箱（密碼任意），對照表見 mocks/README.md「登入」：
- * - rejected@test.com：申請被退回（不必先用 leader 帳號退回 apply2@test.com）
  * - error@test.com：500 且沒有錯誤碼，測通用錯誤文案
+ * 申請被退回用種子帳號 rejected@test.com（db.ts）。
  */
 const LOGIN_TRIGGERS: Record<string, () => Response> = {
-  'rejected@test.com': () => errorResponse('ACCOUNT_REJECTED'),
   'error@test.com': () => HttpResponse.json({ message: 'Internal Server Error' }, { status: 500 }),
 }
 
@@ -71,16 +71,19 @@ export const authHandlers = [
     return HttpResponse.json({ token: makeToken(user), role: user.role, status: 'ACTIVE' })
   }),
 
-  // Logto 模式（#44）：以 Logto access token 取得角色與帳號狀態；JWT 對應的測試帳號見 utils.ts 的 MOCK_LOGTO_EMAIL。
-  // 待審核回 200 + PENDING；被退回、鎖定回對應錯誤；JWT 對應不到測試帳號 → 尚未建立會員資料
+  // Logto 模式（#44）：以 Logto access token 取得角色與帳號狀態；JWT 對應的 SSO 帳號見 utils.ts 的 mockSsoAccount。
+  // 已通過 SSO 驗證一律 200（#48）：沒有會員資料 → UNREGISTERED；待審核、被退回照實回；只有鎖定回錯誤
   http.get(api('/auth/session'), async ({ request }) => {
     await mockDelay()
     const token = readBearer(request)
-    const user = findUserByToken(token)
-    if (!user) return isLogtoToken(token) ? errorResponse('MEMBER_NOT_FOUND', '尚未建立會員資料') : errorResponse('UNAUTHORIZED')
-    if (user.status === 'REJECTED') return errorResponse('ACCOUNT_REJECTED')
+    const user = isLogtoToken(token) ? findSsoMember() : findUserByToken(token)
+    if (!user) {
+      return isLogtoToken(token)
+        ? HttpResponse.json({ role: 'member', status: 'UNREGISTERED' })
+        : errorResponse('UNAUTHORIZED')
+    }
     if (user.status === 'LOCKED') return errorResponse('ACCOUNT_LOCKED')
-    return HttpResponse.json({ role: user.role, status: user.status === 'PENDING' ? 'PENDING' : 'ACTIVE' })
+    return HttpResponse.json({ role: user.role, status: user.status })
   }),
 
   // 登出：token 已失效也回 204，前端一律清掉本機 token

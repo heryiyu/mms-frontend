@@ -49,8 +49,8 @@
 | `WRONG_CURRENT_PASSWORD` | 400 | 修改密碼時目前密碼錯誤 |
 | `PASSWORD_SAME_AS_OLD` | 400 | 新密碼與舊密碼相同 |
 | `NO_RECORDS` | 404 | 該年度無奉獻紀錄 |
-| `MEMBER_NOT_FOUND` | 404 | 審核對象不存在；`GET /auth/session`：Logto 帳號尚未建立會員資料 |
-| `ALREADY_PROCESSED` | 409 | 申請已被審核或退回 |
+| `MEMBER_NOT_FOUND` | 404 | 審核對象不存在 |
+| `ALREADY_PROCESSED` | 409 | 申請已被審核或退回；會員資料申請已送出過（`POST /me/registration`） |
 | `VALIDATION_ERROR` | 422 | 欄位缺漏或格式錯誤，帶 `fields` |
 | `FORBIDDEN` | 403 | 已登入但沒有權限（例如一般會員呼叫會員審核） |
 | `UNAUTHORIZED` | 401 | 未登入或 token 無效／過期 |
@@ -80,6 +80,7 @@
 | 登入、註冊、忘記密碼 | 轉址到 Logto 登入頁（`sso.newlife.org.tw`），不經過本後端 | 前端頁面呼叫本後端 `/auth/login`、`/register/*`、`/password/forgot/*` |
 | Bearer token | Logto 發的 access token（JWT），audience 為 `VITE_LOGTO_RESOURCE` | `/auth/login` 回傳的 token |
 | 取得角色與帳號狀態 | 登入完成後呼叫 `GET /auth/session` | `/auth/login` 的回應 |
+| 會員資料（新會員） | 第一次登入後在會員中心填寫：`/me/registration*`（#48） | 註冊流程一併填寫：`/register*` |
 
 Logto 模式下後端要：
 
@@ -95,9 +96,13 @@ Logto 模式下後端要：
 
 Logto 模式：登入完成後，以 Logto access token 取得會員中心的角色與帳號狀態（暫定）。需登入。
 
-- Response 200：`{ "role": "member" | "leader", "status": "ACTIVE" | "PENDING" }`
-  - 待審核帳號也回 200 + `PENDING`（已通過 Logto 驗證），前端導到等待審核頁。
-- 錯誤：`ACCOUNT_REJECTED`（申請被退回）、`ACCOUNT_LOCKED`、`MEMBER_NOT_FOUND`（Logto 帳號尚未建立會員資料，之後接會員資料填寫流程，見 #43）、`UNAUTHORIZED`
+- Response 200：`{ "role": "member" | "leader", "status": "ACTIVE" | "PENDING" | "UNREGISTERED" | "REJECTED" }`
+  - 已通過 SSO 驗證的人一律回 200（#48），前端依 `status` 導頁：
+    - `ACTIVE`：進入會員中心
+    - `PENDING`：等待審核頁
+    - `UNREGISTERED`：這個 SSO 帳號還沒有會員資料 → 會員資料填寫流程（見下方「會員資料申請」）；`role` 回 `member`
+    - `REJECTED`：申請被退回 → 顯示退回原因，可修改後重新送出
+- 錯誤：`ACCOUNT_LOCKED`、`UNAUTHORIZED`
 
 > 以下 `/auth/login`、`/auth/logout`、`/auth/line/*` 為本機模式使用。Logto 上線後，登入與 Line 登入改由 Logto 處理，這幾支可以不實作。
 
@@ -197,6 +202,99 @@ Line 授權完成後，前端以 `code` 換登入結果（目前為 stub）。
 - Response 201：`{ "id": string, "status": "PENDING" }`
 - 錯誤：`TOKEN_INVALID`、`ALREADY_REGISTERED`、`VALIDATION_ERROR`（含教會／牧區／小組／EKK 不屬於同一條線、`agreedToPrivacy` 不是 true）
 - 審核結果（通過／退回）由後端用 Email 或簡訊通知申請者，不經此 API。
+
+## 會員資料申請（Logto 模式，#48）
+
+帳號、密碼在 SSO 註冊（只有名字、email 或手機擇一、密碼）；第一次登入會員中心時再填會員資料，送出後為待審核。
+被退回的人用同一組 API 修改後重新送出。以下都需登入（Logto access token），但**不需要已有會員資料**。
+
+前端流程：出生日期＋補填聯絡方式（選填，填了要驗證）→ 個資保護聲明（`GET /register/privacy-statement`）→ 會員資料 → 送出。
+
+- 以 SSO 使用者 ID（JWT 的 `sub`）對應會員資料。
+- **email、手機以 SSO 為準**。會員中心可補填另一個，驗證通過後由後端用 Logto Management API 寫回 SSO，之後兩個都能登入。需要 IT 在 SSO 後台建一個給後端用的機器對機器（M2M）應用程式並開 Management API 權限。
+- **姓名以會員中心為準**：送出時同步寫回 SSO 的名字。
+- email、手機至少要有一個（用 Line、Google 註冊的人可能兩個都沒有，填寫時至少要補一個）；只有其中一個是允許的。
+
+### GET /me/registration
+
+- Response 200：
+
+  ```json
+  {
+    "status": "UNREGISTERED | REJECTED | PENDING | ACTIVE",
+    "account": { "name": "string | null", "email": "string | null", "phone": "string | null" },
+    "rejectReason": "string（REJECTED 才有）",
+    "previous": {
+      "birthDate": "YYYY-MM-DD",
+      "guardianName": "string",
+      "name": "string",
+      "nickname": "string",
+      "gender": "male | female",
+      "churchId": "string",
+      "districtId": "string",
+      "groupId": "string",
+      "ekkId": "string",
+      "journey": "NF | VIP | XN"
+    }
+  }
+  ```
+
+  - `account`：SSO 帳號的名字與**已驗證**的 email／手機，沒有的欄位為 `null`。前端用來帶入姓名、顯示已驗證的聯絡方式。
+  - `previous`：`REJECTED` 時帶回上次送出的內容（欄位都可省略），**不含身分證字號**（前端要求重新輸入）。
+  - `PENDING`／`ACTIVE` 時前端會改導到等待審核頁／首頁。
+- 錯誤：`ACCOUNT_LOCKED`、`UNAUTHORIZED`
+
+### POST /me/registration/contact/otp
+
+補填 SSO 帳號沒有的聯絡方式：發送驗證碼（簡訊或 email）。重新發送也是呼叫這支。
+
+- Request：`{ "email": string }` 或 `{ "phone": string }`（擇一）
+- Response 200：`{ "expiresIn": 300, "length": 4 }`
+- 錯誤：
+  - `ALREADY_REGISTERED`：已被**其他 SSO 帳號**使用（要在發驗證碼前擋下，否則寫回 SSO 會失敗）
+  - `VALIDATION_ERROR`：格式錯誤、兩個都帶或都沒帶、帳號已經有這個聯絡方式
+  - `TOO_MANY_ATTEMPTS`
+
+### POST /me/registration/contact/verify
+
+- Request：`{ "email": string, "otp": string }` 或 `{ "phone": string, "otp": string }`（與發送時相同）
+- 驗證通過後**立即寫回 SSO**，回傳更新後的帳號資料。
+- Response 200：`{ "name": string | null, "email": string | null, "phone": string | null }`（同 `GET /me/registration` 的 `account`）
+- 錯誤：`OTP_INVALID`、`OTP_EXPIRED`（含沒有對應的發送紀錄）、`ALREADY_REGISTERED`
+
+### POST /me/registration
+
+送出會員資料，成功後帳號為待審核；`REJECTED` 的人重新送出也是這支（改回待審核、清掉退回原因）。
+
+- Request：
+
+  ```json
+  {
+    "birthDate": "YYYY-MM-DD",
+    "guardianName": "string (未滿 18 歲)",
+    "name": "string",
+    "nickname": "string (選填)",
+    "gender": "male | female",
+    "idNumber": "string (明碼)",
+    "churchId": "string",
+    "districtId": "string",
+    "groupId": "string",
+    "ekkId": "string",
+    "journey": "NF | VIP | XN",
+    "agreedToPrivacy": true,
+    "privacyVersion": "string（同意的個資聲明版本）"
+  }
+  ```
+
+  email、手機不在 request 裡，以 SSO 帳號上已驗證的為準。
+
+- Response 201：`{ "status": "PENDING" }`
+- 錯誤：
+  - `ALREADY_REGISTERED`：身分證字號已被使用
+  - `ALREADY_PROCESSED`：已送出過（`PENDING`／`ACTIVE`）
+  - `VALIDATION_ERROR`：欄位缺漏、教會／牧區／小組／EKK 不屬於同一條線、未滿 18 歲沒填監護人、`agreedToPrivacy` 不是 true、SSO 帳號 email 和手機都沒有（`fields.contact`）
+  - `ACCOUNT_LOCKED`
+- 審核結果（通過／退回，退回附原因）由後端用 Email 或簡訊通知申請者：有 email 寄 email，只有手機發簡訊。
 
 ## 下拉選項（註冊用，不需登入）
 
@@ -351,12 +449,12 @@ Line 授權完成後，前端以 `code` 換登入結果（目前為 stub）。
 
 ### POST /members/{id}/reject
 
-單筆退回（目前沒有退回原因欄位；若加則 request 帶 `{ "reason": string }`）。
+單筆退回，附退回原因（#48，架構整理 D10）。
 
-- Request：無
+- Request：`{ "reason": string }`（必填，前端上限 200 字）
 - Response 204
-- 錯誤：`MEMBER_NOT_FOUND`、`ALREADY_PROCESSED`
-- 是否通知申請者、退回後可否重新申請：待確認。
+- 錯誤：`MEMBER_NOT_FOUND`、`ALREADY_PROCESSED`、`VALIDATION_ERROR`（沒填原因）
+- 退回原因會顯示給申請者（`GET /me/registration` 的 `rejectReason`），並附在退回通知；申請者可修改後重新送出（`POST /me/registration`）。
 
 ---
 
@@ -368,5 +466,6 @@ Line 授權完成後，前端以 `code` 換登入結果（目前為 stub）。
 - 進度查詢的查詢條件。
 - Line OAuth 的 callback 處理與「接回一般創建流程」的步驟。
 - 奉獻收據的年度、是否必須與會員資料一致、附件格式與無身分證字號會員的處理。
-- 會員審核的資料範圍（區長只看自己牧區？「區長以上」的角色清單）與退回是否通知申請者。
+- 會員審核的資料範圍（區長只看自己牧區？「區長以上」的角色清單）。
+- 會員資料申請（#48）：被退回重新送出時身分證字號是否要重新輸入（目前前端要求重新輸入）；寫回 SSO 失敗（例如 SSO 暫時無法連線）時的處理。
 - 閒置自動登出（7 分鐘）與 token 逾時時間的對應。

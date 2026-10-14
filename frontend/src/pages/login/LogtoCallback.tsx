@@ -5,13 +5,14 @@ import { isApiError } from '../../api/client'
 import { consumePostLoginFrom } from '../../auth/logto'
 import ContactEmailLink from '../../components/ContactEmailLink'
 import ResultPage from '../../components/ResultPage'
-import { getPostLoginPath, PATHS } from '../../routes/paths'
+import { getPostLoginPath, PATHS, STATUS_PATHS } from '../../routes/paths'
 import LoginLoading from './LoginLoading'
 
 /**
  * Logto 登入完成後的導回頁（Logto 模式，#44）。只顯示 loading 遮罩，完成後：
  * - ACTIVE：回到登入前被擋下的原頁（沒有則首頁）
  * - PENDING：等待審核頁
+ * - UNREGISTERED（還沒填會員資料）、REJECTED（申請被退回）：會員資料填寫流程、退回原因頁（#48）
  * - 失敗：錯誤結果頁（設計稿未畫，沿用結果頁的失敗樣式），「重新登入」會先結束 Logto session，
  *   否則 Logto 直接放行、又回到同樣的錯誤
  */
@@ -23,15 +24,7 @@ function getFailure(error: unknown): { title: string; description: ReactNode } {
       <ContactEmailLink />
     </>
   )
-  if (isApiError(error, 'ACCOUNT_REJECTED')) return { title: '申請未通過審核', description: contact }
   if (isApiError(error, 'ACCOUNT_LOCKED')) return { title: '帳號已鎖定', description: contact }
-  // TODO(#43)：會員資料填寫流程完成後，改導向填寫頁
-  if (isApiError(error, 'MEMBER_NOT_FOUND')) {
-    return {
-      title: '尚未建立會員資料',
-      description: <>此帳號尚未完成會員註冊，{contact}</>,
-    }
-  }
   if (isApiError(error, 'NETWORK_ERROR')) return { title: '登入失敗', description: error.message }
   // Logto 換 token 失敗（使用者取消授權、callback 網址重複使用等）或後端其他錯誤
   return { title: '登入失敗', description: '請重新登入，若持續發生請稍後再試' }
@@ -51,7 +44,7 @@ export default function LogtoCallback() {
     completeLogtoSignIn(window.location.href)
       .then(({ status }) => {
         const from = consumePostLoginFrom()
-        navigate(status === 'ACTIVE' ? getPostLoginPath({ from }) : PATHS.pending, { replace: true })
+        navigate(status === 'ACTIVE' ? getPostLoginPath({ from }) : STATUS_PATHS[status], { replace: true })
       })
       .catch((cause: unknown) => setError(cause ?? new Error('登入失敗')))
   }, [navigate])
