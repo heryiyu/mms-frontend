@@ -18,6 +18,20 @@ const scopes: string[] = String(import.meta.env.VITE_LOGTO_SCOPES ?? '')
 
 const client = endpoint && appId ? new LogtoClient({ endpoint, appId, scopes, resources: resource ? [resource] : [] }) : null
 
+// 開發新的 SSO 登入頁（#47）用：登入／登出改走本機的登入頁 dev server（npm run dev:sso，會 proxy 到真的 SSO），
+// 換 token 等其他呼叫仍直接打 VITE_LOGTO_ENDPOINT。只在 dev 生效，見 src/sso/README.md。
+const devSignInOrigin: string | undefined = import.meta.env.DEV
+  ? import.meta.env.VITE_LOGTO_DEV_SIGN_IN_ORIGIN || undefined
+  : undefined
+if (client && endpoint && devSignInOrigin) {
+  const navigate = client.adapter.navigate
+  const ssoOrigin = new URL(endpoint).origin
+  client.adapter.navigate = (url, params) => {
+    const target = new URL(url)
+    return navigate(target.origin === ssoOrigin ? new URL(target.pathname + target.search, devSignInOrigin).href : url, params)
+  }
+}
+
 export const isLogtoEnabled = client !== null
 
 function requireClient(): LogtoClient {

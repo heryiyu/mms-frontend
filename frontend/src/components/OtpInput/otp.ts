@@ -1,6 +1,6 @@
 // OTP 共用的純函式：輸入整理、Form 驗證規則、API 錯誤 → 提示文案
 import type { Rule } from 'antd/es/form'
-import { isApiError } from '../../api/client'
+import { isApiError } from '../../api/errors'
 import { OTP_DEFAULT_LENGTH } from '../../constants/otp'
 
 /**

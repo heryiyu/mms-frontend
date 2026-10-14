@@ -1,5 +1,5 @@
 import type { FormInstance } from 'antd'
-import { getValidationFields } from '../../api/client'
+import { getValidationFields } from '../../api/errors'
 
 /**
  * 把後端 VALIDATION_ERROR 的欄位錯誤顯示在對應欄位下方（只處理 names 列出的本頁欄位）。
