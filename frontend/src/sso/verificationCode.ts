@@ -1,10 +1,11 @@
-// Logto 驗證碼（email／簡訊）和會員中心 components/OtpInput 之間的轉接（忘記密碼 #57；註冊 #56 也可用）。
+// Logto 驗證碼（email／簡訊）和會員中心 components/OtpInput 之間的轉接（註冊、忘記密碼共用）。
 // OtpInput 的 useOtpForm 需要發送 API 回傳 { length, expiresIn }，Experience API 只回 verificationId，所以用固定值。
 import type { OtpSendResponse } from '../api/types'
 
 /**
- * Logto 驗證碼 6 碼、10 分鐘有效（Logto 原始碼的 passcode 設定，API 不回傳）。
- * TODO(#57)：正式 SSO 不能實測寄碼，收到實際驗證信／簡訊時確認位數與有效時間。
+ * 驗證碼位數與有效時間：Experience API 不回傳，Logto 後台 verificationCodePolicy 目前空白，用 Logto 預設值
+ * （6 碼、10 分鐘）。後台改設定時要一起改。
+ * TODO(#47)：未實測（正式 SSO 不能寄驗證碼），收到實際驗證信／簡訊時確認位數與有效時間。
  */
 export const LOGTO_CODE: OtpSendResponse = { length: 6, expiresIn: 600 }
 

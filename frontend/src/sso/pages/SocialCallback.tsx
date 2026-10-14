@@ -1,12 +1,11 @@
 import { useEffect, useRef, useState } from 'react'
 import { useNavigate, useParams, useSearchParams } from 'react-router'
-import ResultPage, { type ResultPageProps } from '../../components/ResultPage'
 import { LoginLoading } from '../../components/LoginView'
-import { PATHS } from '../../routes/paths'
+import ResultPage, { type ResultPageProps } from '../../components/ResultPage'
 import { isExperienceError } from '../api/client'
 import { getExperienceErrorMessage } from '../api/errors'
 import { goToRedirect } from '../api/experience'
-import { memberCenterUrl, SSO_PATHS } from '../paths'
+import { MEMBER_CENTER_LOGIN_URL, SSO_PATHS } from '../paths'
 import { completeSocialSignIn, getMissingProfile, socialProviderName } from '../social'
 
 interface Failure {
@@ -46,12 +45,12 @@ export default function SocialCallback() {
             title: `${name}登入失敗`,
             description: getExperienceErrorMessage(error),
             backText: '回到會員中心',
-            onBack: () => window.location.assign(memberCenterUrl(PATHS.login)),
+            onBack: () => window.location.assign(MEMBER_CENTER_LOGIN_URL),
           })
           return
         }
         if (isExperienceError(error, 'user.missing_profile')) {
-          // TODO(#58)：社群帳號沒有 email／手機時，要讓使用者補填並驗證（sendVerificationCode → verifyCode →
+          // TODO(#47)：社群帳號沒有 email／手機時，要讓使用者補填並驗證（sendVerificationCode → verifyCode →
           // addProfile({ type: 'email' | 'phone', verificationId }) → identify → submit）；目前只顯示提示
           const missing = getMissingProfile(error)
           const lacksContact = missing.some((field) => field === 'email' || field === 'phone' || field === 'emailOrPhone')

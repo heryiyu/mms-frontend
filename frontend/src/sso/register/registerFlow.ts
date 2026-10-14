@@ -3,7 +3,6 @@
 //   第一步 verifyRegisterCode：verifyCode → identify（檢查帳號是否已註冊；新帳號會回 user.missing_profile）
 //   第二步 completeRegister：addProfile 密碼 → addProfile 姓名（extraProfile）→ identify（建立帳號）→ submitInteraction
 // 教會、牧區等會員資料不在這裡填（第一次登入會員中心時填，#48）。
-import type { OtpSendResponse } from '../../api/types'
 import { isExperienceError } from '../api/client'
 import {
   addProfile,
@@ -15,12 +14,6 @@ import {
   verifyCode,
 } from '../api/experience'
 import { memberCenterUrl } from '../paths'
-
-/**
- * 驗證碼位數與有效時間：Experience API 不回傳，Logto 後台 verificationCodePolicy 目前空白，用 Logto 預設值
- * （6 碼、10 分鐘）。TODO(#56)：未實測（正式 SSO 不能寄驗證碼），後台改設定時要一起改。
- */
-export const REGISTER_CODE: OtpSendResponse = { length: 6, expiresIn: 600 }
 
 /**
  * 帳號條款、隱私權政策：連到會員中心（#47 D7）。Logto 後台的條款網址目前還是 member.newlife.org.tw/terms、/privacy。
@@ -40,7 +33,7 @@ export async function sendRegisterCode(identifier: Identifier): Promise<{ verifi
  * - 已註冊：丟出 user.email_already_in_use／user.phone_already_in_use
  * - 新帳號：Logto 回 user.missing_profile（還沒設密碼、姓名），視為成功，回傳 needsProfile: true
  * - identify 直接成功（Logto 不要求其他資料，目前設定不會發生）：needsProfile: false，可直接 submitInteraction
- * TODO(#56)：未實測「identify 先檢查重複、再檢查缺資料」的順序，依 Logto 原始碼推測。
+ * TODO(#47)：未實測「identify 先檢查重複、再檢查缺資料」的順序，依 Logto 原始碼推測。
  */
 export async function verifyRegisterCode(identifier: Identifier, verificationId: string, code: string) {
   const verified = await verifyCode(identifier, verificationId, code)
@@ -65,7 +58,7 @@ export interface RegisterProfile {
  * Logto 必填自訂欄位 fullname（類型 Fullname，後台開了 givenName「名字」與 familyName「姓氏」，皆必填；
  * sign-in-exp 的 customProfileFields，2026-10-14 查）。
  *
- * TODO(#56)：送出格式未實測（要先驗證過帳號才能走到這一步，正式 SSO 不能測）。推測依據：
+ * TODO(#47)：送出格式未實測（要先驗證過帳號才能走到這一步，正式 SSO 不能測）。推測依據：
  * - OpenAPI 的 extraProfile.values 說明「會拆成標準 profile 屬性與自訂 customData」，Fullname 的各部分正好是
  *   Logto 標準 profile 的 givenName／familyName，所以先送平的 { givenName, familyName }
  * - 若 Logto 要的是以欄位名稱包起來的 { fullname: { givenName, familyName } }：平的格式會被 addProfile 拒絕（4xx），

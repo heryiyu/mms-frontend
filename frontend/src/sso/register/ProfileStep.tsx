@@ -1,7 +1,7 @@
 import { Checkbox, Flex, Form } from 'antd'
 import type { FormProps } from 'antd'
 import type { Rule } from 'antd/es/form'
-import { useState } from 'react'
+import { useCallback, useState } from 'react'
 import { Button } from '../../components/Button'
 import {
   AppForm,
@@ -11,12 +11,12 @@ import {
   requiredRule,
   TextInput,
 } from '../../components/form'
-import { useNotifyModal } from '../../components/NoticeModal'
 import { RegisterBackLink, RegisterCard } from '../../components/RegisterCard'
 import { isExperienceError } from '../api/client'
-import { getExperienceErrorMessage } from '../api/errors'
 import { goToRedirect } from '../api/experience'
 import { formatIdentifier } from '../identifier'
+import { usePageRestored } from '../usePageRestored'
+import { NOTICE_TITLE, useSsoNotice } from '../useSsoNotice'
 import type { VerifiedAccount } from './AccountStep'
 import styles from './Register.module.css'
 import { completeRegister, PRIVACY_URL, TERMS_URL } from './registerFlow'
@@ -36,8 +36,6 @@ interface ProfileValues {
   confirmPassword: string
   agreed: boolean
 }
-
-const NOTICE_TITLE = '通知'
 
 const MESSAGES = {
   mismatch: '兩次輸入的密碼不一致',
@@ -62,7 +60,7 @@ const AGREED_RULES: Rule[] = [
 /** 這些錯誤代表第一步的驗證已不能用，要回第一步 */
 const BACK_TO_ACCOUNT = ['session.verification_session_not_found', 'session.verification_failed']
 
-export interface ProfileStepProps {
+interface ProfileStepProps {
   account: VerifiedAccount
   onBack: () => void
 }
@@ -72,7 +70,9 @@ export default function ProfileStep({ account, onBack }: ProfileStepProps) {
   const password = Form.useWatch('password', form)
   const confirmPassword = Form.useWatch('confirmPassword', form)
   const [submitting, setSubmitting] = useState(false)
-  const { notify, contextHolder } = useNotifyModal()
+  const { notify, notifyError, contextHolder } = useSsoNotice()
+  // 轉址回原網站後按上一頁還原這頁時，收起 loading
+  usePageRestored(useCallback(() => setSubmitting(false), []))
 
   const handleFinish = async (values: ProfileValues) => {
     setSubmitting(true)
@@ -89,7 +89,7 @@ export default function ProfileStep({ account, onBack }: ProfileStepProps) {
         onBack()
         return
       }
-      void notify({ title: NOTICE_TITLE, content: getExperienceErrorMessage(error) })
+      void notifyError(error)
     }
   }
 

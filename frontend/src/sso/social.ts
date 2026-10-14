@@ -88,7 +88,7 @@ export function getMissingProfile(error: unknown): string[] {
 /**
  * 社群平台導回後：比對 state → verifySocial → identify（找不到帳號改成註冊再 identify）→ submit。
  * 成功時回傳要轉去的網址（交給 goToRedirect）；失敗丟 ExperienceError，
- * 前端自訂的錯誤碼為 social_session_invalid、social_cancelled（errors.ts #58）。
+ * 前端自訂的錯誤碼為 social_session_invalid、social_cancelled（api/errors.ts「前端自訂」）。
  */
 export async function completeSocialSignIn(connectorId: string, params: URLSearchParams): Promise<string> {
   const session = takeSession()
