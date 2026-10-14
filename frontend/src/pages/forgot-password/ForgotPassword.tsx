@@ -4,29 +4,18 @@ import { useNavigate } from 'react-router'
 import { getApiErrorMessage, getValidationFields, isApiError } from '../../api/client'
 import { resetPassword, sendForgotPasswordOtp, verifyForgotPasswordOtp } from '../../api/password'
 import type { ForgotPasswordOtpRequest } from '../../api/types'
-import { Button } from '../../components/Button'
-import {
-  AppForm,
-  applyServerFieldErrors,
-  confirmPasswordRules,
-  emailRules,
-  FormCard,
-  FormCardItem,
-  formCardLayout,
-  newPasswordRules,
-  PasswordInput,
-  phoneRules,
-  TextInput,
-} from '../../components/form'
+import { AppForm, applyServerFieldErrors, emailRules, phoneRules, TextInput } from '../../components/form'
 import { type NotifyOptions, useNotifyModal } from '../../components/NoticeModal'
-import { getOtpErrorMessage, OtpField, otpRules, useOtpForm } from '../../components/OtpInput'
+import { getOtpErrorMessage, useOtpForm } from '../../components/OtpInput'
 import { useGuestLayout } from '../../layouts/guestLayoutContext'
 import { PATHS } from '../../routes/paths'
-import typography from '../../styles/typography.module.css'
-import { cx } from '../../utils/cx'
 import styles from './ForgotPassword.module.css'
+import ForgotPasswordCard from './ForgotPasswordCard'
+import NewPasswordForm, { type NewPasswordValues } from './NewPasswordForm'
+import OtpConfirmFields from './OtpConfirmFields'
 
 // 忘記密碼（issue #18，docs/design/forgot-password/README.md）。登入頁「忘記密碼？」進入。
+// 卡片外框、OTP 列＋「確認」、設定新密碼表單、完成頁和 SSO 登入頁的忘記密碼（src/sso/pages/ResetPassword.tsx）共用（#47 D12）。
 // 同一路由內切換步驟（GuestLayout 卡片）：
 //   verify：default（信箱＋手機，兩欄都填才可按「確認」）→ ing → 按「確認」發送 OTP
 //           → otp（出現 OTP 列＋倒數）→ 按「確認」驗證 OTP，取得 resetToken
@@ -72,9 +61,8 @@ export default function ForgotPassword() {
   const { notify, contextHolder } = useNotifyModal()
 
   return (
-    <div className={styles.page}>
+    <ForgotPasswordCard>
       {contextHolder}
-      <h1 className={cx(typography.headline5, styles.title)}>忘記密碼</h1>
       {step.name === 'verify' ? (
         <VerifyStep notify={notify} onVerified={(resetToken) => setStep({ name: 'reset', resetToken })} />
       ) : (
@@ -85,7 +73,7 @@ export default function ForgotPassword() {
           onTokenInvalid={() => setStep({ name: 'verify' })}
         />
       )}
-    </div>
+    </ForgotPasswordCard>
   )
 }
 
@@ -158,31 +146,10 @@ function VerifyStep({ notify, onVerified }: { notify: Notify; onVerified: (reset
       <Form.Item name="phone" className={styles.field} rules={PHONE_RULES}>
         <TextInput type="tel" inputMode="tel" autoComplete="tel" placeholder="請輸入手機號碼" aria-label="手機號碼" maxLength={10} />
       </Form.Item>
-      {otp.sent && (
-        <Form.Item name="otp" className={styles.field} rules={otpRules(otp.length)}>
-          <OtpField length={otp.length} expiresAt={otp.expiresAt} onResend={otp.resend} autoFocus />
-        </Form.Item>
-      )}
-      <Button
-        htmlType="submit"
-        block
-        className={styles.submit}
-        disabled={!canSubmit}
-        loading={otp.sending || verifying}
-      >
-        確認
-      </Button>
+      <OtpConfirmFields otp={otp} canSubmit={canSubmit} loading={otp.sending || verifying} />
     </AppForm>
   )
 }
-
-interface ResetValues {
-  newPassword: string
-  confirmPassword: string
-}
-
-const newPasswordFieldRules = newPasswordRules()
-const confirmPasswordFieldRules = confirmPasswordRules('newPassword')
 
 function ResetStep({
   resetToken,
@@ -195,10 +162,10 @@ function ResetStep({
   onDone: () => void
   onTokenInvalid: () => void
 }) {
-  const [form] = Form.useForm<ResetValues>()
+  const [form] = Form.useForm<NewPasswordValues>()
   const [submitting, setSubmitting] = useState(false)
 
-  const handleFinish = async ({ newPassword }: ResetValues) => {
+  const handleFinish = async ({ newPassword }: NewPasswordValues) => {
     setSubmitting(true)
     try {
       await resetPassword({ resetToken, newPassword })
@@ -220,33 +187,5 @@ function ResetStep({
     }
   }
 
-  return (
-    <AppForm<ResetValues>
-      form={form}
-      requiredMark={false}
-      validateTrigger="onBlur"
-      className={styles.form}
-      {...formCardLayout}
-      onFinish={handleFinish}
-    >
-      <FormCard className={styles.rows}>
-        <FormCardItem name="newPassword" label="新密碼" className={styles.row} rules={newPasswordFieldRules}>
-          <PasswordInput placeholder="請輸入新密碼" autoComplete="new-password" autoFocus />
-        </FormCardItem>
-        <FormCardItem
-          name="confirmPassword"
-          label="確認密碼"
-          className={styles.row}
-          dependencies={['newPassword']}
-          rules={confirmPasswordFieldRules}
-        >
-          <PasswordInput placeholder="請確認新密碼" autoComplete="new-password" />
-        </FormCardItem>
-      </FormCard>
-      {/* 稿上欄位空白時「確認」已是啟用樣式，照稿不停用；未填按下會顯示 inline 必填訊息。TODO(#12)：是否改成填完才啟用 */}
-      <Button htmlType="submit" block className={cx(styles.submit, styles.resetSubmit)} loading={submitting}>
-        確認
-      </Button>
-    </AppForm>
-  )
+  return <NewPasswordForm form={form} onFinish={handleFinish} submitting={submitting} />
 }
