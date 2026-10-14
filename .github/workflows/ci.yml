@@ -9,9 +9,10 @@ on:
 permissions:
   contents: read
 
+# PR 有新推送時取消舊的那次；main 不取消，否則連續合併時最新 commit 的檢查會被較晚到的推送取消、顯示紅叉
 concurrency:
   group: ci-${{ github.ref }}
-  cancel-in-progress: true
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
   frontend:
