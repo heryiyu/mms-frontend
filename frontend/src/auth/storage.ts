@@ -29,7 +29,7 @@ export interface AuthStorage {
 
 const STORAGE_KEY = 'nlc_mms_auth'
 
-const ACCOUNT_STATUSES: AccountStatus[] = ['ACTIVE', 'PENDING']
+const ACCOUNT_STATUSES: AccountStatus[] = ['ACTIVE', 'PENDING', 'UNREGISTERED', 'REJECTED']
 
 function parse(raw: string | null): AuthSession | null {
   if (!raw) return null

@@ -1,4 +1,6 @@
 // 所有路由路徑集中在這裡，頁面導頁請用 PATHS.xxx，不要手寫字串。
+import type { AccountStatus } from '../api/types'
+
 export const PATHS = {
   /* 未登入 */
   login: '/login',
@@ -23,6 +25,13 @@ export const PATHS = {
   pending: '/pending',
   /** Logto 登入完成後的導回頁（Logto 模式，#44）；需在 Logto 登記為 redirect URI */
   signInCallback: '/callback',
+
+  /* 已登入 SSO、還沒有會員資料（Logto 模式，#48）：出生／補填聯絡方式 → 個資聲明 → 會員資料 → 等待核准中 */
+  apply: '/apply',
+  applyPrivacy: '/apply/privacy',
+  applyProfile: '/apply/profile',
+  /** 申請被退回：顯示退回原因，可修改後重新送出 */
+  applyRejected: '/apply/rejected',
 
   /* 已登入 */
   home: '/',
@@ -61,6 +70,10 @@ const GUEST_PATHS: string[] = [
   PATHS.lineCallback,
   PATHS.pending,
   PATHS.signInCallback,
+  PATHS.apply,
+  PATHS.applyPrivacy,
+  PATHS.applyProfile,
+  PATHS.applyRejected,
 ]
 
 /** 登入後要去的頁面：location.state.from（被守衛擋下的原頁），沒有則回首頁 */
@@ -68,4 +81,14 @@ export function getPostLoginPath(state: unknown): string {
   const from = (state as LoginRedirectState | null)?.from
   if (!from || typeof from.pathname !== 'string' || GUEST_PATHS.includes(from.pathname)) return PATHS.home
   return `${from.pathname}${from.search ?? ''}${from.hash ?? ''}`
+}
+
+/**
+ * 帳號狀態不是 ACTIVE 時要去的頁面（路由守衛、Logto 登入完成時共用）：
+ * 待審核 → 等待審核頁；還沒填會員資料 → 會員資料填寫流程；被退回 → 退回原因頁（#48）
+ */
+export const STATUS_PATHS: Record<Exclude<AccountStatus, 'ACTIVE'>, string> = {
+  PENDING: PATHS.pending,
+  UNREGISTERED: PATHS.apply,
+  REJECTED: PATHS.applyRejected,
 }

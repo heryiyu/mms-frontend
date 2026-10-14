@@ -1,6 +1,6 @@
 // 會員審核（區長以上）：待審核數量／清單、批次通過、單筆退回
 import { http, HttpResponse } from 'msw'
-import type { ApproveRequest, ApproveResponse, PendingMember } from '../../api/types'
+import type { ApproveRequest, ApproveResponse, PendingMember, RejectRequest } from '../../api/types'
 import { db, ekks, orgNames, seed } from '../db'
 import type { MockUser } from '../db'
 import { api, errorResponse, mockDelay, noContent, readBody, requireUser } from '../utils'
@@ -118,11 +118,15 @@ export const reviewHandlers = [
   http.post(api('/members/:id/reject'), async ({ request, params }) => {
     await mockDelay()
     requireUser(request, 'leader')
+    // 退回原因必填（#48 D10），會顯示給申請者
+    const { reason } = await readBody<RejectRequest>(request, ['reason'])
+    if (!reason.trim()) return errorResponse('VALIDATION_ERROR', '請輸入退回原因', { reason: '必填' })
     const user = db.users.find((u) => u.id === params.id)
     if (!user) return errorResponse('MEMBER_NOT_FOUND')
     if (user.status !== 'PENDING') return errorResponse('ALREADY_PROCESSED')
     user.status = 'REJECTED'
     user.reviewedAt = new Date().toISOString()
+    user.rejectReason = reason.trim()
     return noContent()
   }),
 ]

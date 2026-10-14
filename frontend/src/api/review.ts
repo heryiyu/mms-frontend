@@ -1,6 +1,6 @@
 // 會員審核（區長以上）；一般會員呼叫會得到 FORBIDDEN
 import { get, post } from './client'
-import type { ApproveRequest, ApproveResponse, PendingCountResponse, PendingMember } from './types'
+import type { ApproveRequest, ApproveResponse, PendingCountResponse, PendingMember, RejectRequest } from './types'
 
 /** 待審核人數（首頁「會員審核」卡片徽章） */
 export function getPendingCount(): Promise<PendingCountResponse> {
@@ -18,7 +18,8 @@ export function approveMembers(ids: string[]): Promise<ApproveResponse> {
   return post<ApproveResponse>('/members/approve', body)
 }
 
-/** 單筆退回（目前無退回原因）。錯誤碼：MEMBER_NOT_FOUND、ALREADY_PROCESSED */
-export function rejectMember(id: string): Promise<void> {
-  return post<void>(`/members/${encodeURIComponent(id)}/reject`)
+/** 單筆退回，附退回原因（#48 D10）。錯誤碼：MEMBER_NOT_FOUND、ALREADY_PROCESSED、VALIDATION_ERROR */
+export function rejectMember(id: string, reason: string): Promise<void> {
+  const body: RejectRequest = { reason }
+  return post<void>(`/members/${encodeURIComponent(id)}/reject`, body)
 }

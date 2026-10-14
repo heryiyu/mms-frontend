@@ -1,0 +1,15 @@
+/* 申請被退回（#48）：設計稿未畫，沿用 ResultPage 整頁版，只補退回原因與兩顆按鈕的排列 */
+
+/* 退回原因：加粗，方便一眼看到要改什麼 */
+.reason {
+  font-weight: 500;
+  word-break: break-word;
+}
+
+/* 「修改資料」（主要）在上、「返回」（文字）在下，手機與桌機都置中直排 */
+.actions {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}

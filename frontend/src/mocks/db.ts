@@ -113,6 +113,11 @@ export interface MockUser {
   /** ISO 8601 */
   submittedAt: string
   reviewedAt?: string
+  /** YYYY-MM-DD；種子資料大多沒有，會員資料申請（#48）送出時寫入 */
+  birthDate?: string
+  guardianName?: string
+  /** 退回原因（#48 D10） */
+  rejectReason?: string
 }
 
 type SeedUser = Omit<MockUser, 'churchId' | 'districtId' | 'groupId'>
@@ -224,6 +229,25 @@ export const db = {
       role: 'member',
       status: 'PENDING',
       submittedAt: AT(22),
+    }),
+    // 申請被退回（附退回原因）：本機登入回 ACCOUNT_REJECTED；Logto 模式（?mockLogto=rejected@test.com）可修改後重新送出
+    seed({
+      id: 'u7',
+      email: 'rejected@test.com',
+      password: 'Rejected@123',
+      phone: '0978901234',
+      name: '吳退回',
+      nickname: '小吳',
+      gender: 'female',
+      idNumber: 'H223456784',
+      ekkId: 'c2-d2-g1-e1',
+      journey: 'NF',
+      role: 'member',
+      status: 'REJECTED',
+      submittedAt: AT(18),
+      reviewedAt: AT(19),
+      birthDate: '1995-03-15',
+      rejectReason: '小組與 EKK 填寫有誤，請確認後重新送出',
     }),
   ] as MockUser[],
   /** 註冊 OTP 驗證通過後發的憑證 → 驗證過的信箱 */

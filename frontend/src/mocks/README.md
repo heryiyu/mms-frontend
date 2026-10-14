@@ -19,7 +19,16 @@
 
 `.env.local` 設定 `VITE_LOGTO_*`（見 `.env.example`）後，登入會轉址到真正的 Logto，API 仍由 MSW 回應：
 
-- Logto 發的 access token（JWT）一律對應到 `VITE_MOCK_LOGTO_EMAIL` 的測試帳號（預設 `member@test.com`）。改成 `leader@test.com`（區長以上）、`pending@test.com`（等待審核頁）、`locked@test.com`（帳號已鎖定）、`notfound@test.com`（尚未建立會員資料）可測各情境，改完要重啟 dev server。
+- Logto 發的 access token（JWT）一律視為同一個 SSO 帳號（`utils.ts` 的 `mockSsoAccount`），再用它的 email／手機對應會員資料。預設信箱是 `.env.local` 的 `VITE_MOCK_LOGTO_EMAIL`（預設 `member@test.com`，改完要重啟 dev server）；也可以在網址加 `?mockLogto=<信箱>`（例如 `http://localhost:5173/?mockLogto=notfound@test.com`），設定存在 `sessionStorage`（`nlc_mms_mock_logto`），經過 SSO 轉址後仍有效，關閉分頁即還原。
+
+  | 信箱 | SSO 帳號 | 登入後 |
+  | --- | --- | --- |
+  | `member@test.com`、`leader@test.com` 等種子帳號 | 該帳號的名字、email、手機 | 依帳號狀態：首頁、等待審核頁（`pending@test.com`）、帳號已鎖定（`locked@test.com`） |
+  | `rejected@test.com` | 有 email、手機 | 申請被退回頁（附退回原因），「修改資料」帶入上次填的內容重新送出 |
+  | `notfound@test.com`（或任何未註冊信箱） | 只有 email（名字「新朋友」） | 會員資料填寫流程，可補填手機 |
+  | `phoneonly@test.com` | 只有手機 `0911000111` | 會員資料填寫流程，可補填 email |
+  | `nocontact@test.com` | email、手機都沒有（Line、Google 註冊） | 會員資料填寫流程，至少要補一個 |
+
 - 這個模式不顯示「切換登入身分」按鈕（token 由 Logto 發，切換不了）。
 - Logto 只接受登記過的 redirect URI，請用 `npm run dev`（`http://localhost:5173`）測試；預覽工具的隨機埠會被 Logto 拒絕。
 
@@ -34,6 +43,7 @@
 | `locked@test.com` | 任意 | 已鎖定 | 登入 → `ACCOUNT_LOCKED` |
 | `pending@test.com` | 任意（核准後用 `Pending@123`） | 待審核（手機 `0945678901`） | 登入 → `ACCOUNT_PENDING`（等待審核頁）；同時出現在審核清單 |
 | `apply1@test.com`、`apply2@test.com` | `Apply1@123`、`Apply2@123` | 待審核 | 審核清單的另外兩筆；核准後可登入，被退回後登入 → `ACCOUNT_REJECTED` |
+| `rejected@test.com` | 任意 | 申請被退回（手機 `0978901234`，附退回原因） | 本機登入 → `ACCOUNT_REJECTED`；Logto 模式測修改後重新送出 |
 
 `member@test.com` 的身分證字號為 `Q123456789`（`/me` 回傳 `Q12*****89`）。
 
@@ -109,6 +119,20 @@ OTP 元件示範：dev 模式開 `/dev/otp`（`PATHS.devOtp`，`OtpDemo.tsx`；�
 - 身分證字號填 `Q123456789` → 通知彈窗「此身份證字號、電子信箱或手機已註冊」；`registerToken` 失效（例如同一 token 送出第二次）→ 通知彈窗後導回 `/register`。
 - 送出成功 → `/register/done`「等待核准中」，「返回」回登入頁。
 
+### 第一次用 SSO 登入填寫會員資料（Logto 模式，#48）
+
+用上方「Logto 模式」的 `?mockLogto=` 切換 SSO 帳號。流程：`/apply`（出生日期＋補填聯絡方式）→ `/apply/privacy`（個資聲明）→ `/apply/profile`（會員資料，不含密碼）→ `/register/done`（等待核准中，「返回」會登出 SSO）。跨步驟資料存在 `sessionStorage` 的 `nlc.applyFlow`。
+
+| 情境 | 結果 |
+| --- | --- |
+| 補填的 email／手機已被其他帳號使用（例如 `member@test.com`、`0912345678`） | 409 `ALREADY_REGISTERED`，通知彈窗「此電子信箱已被其他帳號使用」 |
+| 補填時驗證碼 | 依上方「OTP」規則（`1234` 通過、`0000` 錯誤、`9999` 逾時）；通過後該欄改為唯讀「已驗證」 |
+| `nocontact@test.com` 兩欄都空著按「確認」 | 欄位下方「請至少填寫電子信箱或手機」 |
+| 身分證字號填 `Q123456789`（已存在） | 409 `ALREADY_REGISTERED`，通知彈窗「此身份證字號已被使用」 |
+| 送出成功 | 該帳號變成待審核，出現在 `leader@test.com` 的審核清單（同一個瀏覽器分頁內；重新整理會還原） |
+
+`rejected@test.com` 的申請被退回頁（`/apply/rejected`）顯示退回原因；按「修改資料」從第一步開始，出生日期與會員資料帶入上次填的內容，身分證字號需重新輸入。
+
 ### 進度查詢（`POST /register/progress`）
 
 信箱＋手機都要符合才查得到，否則 404 `ACCOUNT_NOT_FOUND`。
@@ -172,6 +196,7 @@ OTP 元件示範：dev 模式開 `/dev/otp`（`PATHS.devOtp`，`OtpDemo.tsx`；�
 ### 會員審核
 
 - 一般會員呼叫審核 API → 403 `FORBIDDEN`。
+- 退回要帶退回原因（`{ reason }`，#48），沒帶或空白 → 422 `VALIDATION_ERROR`；退回後該申請者的 `GET /me/registration` 會帶回原因。
 - 對已通過／已退回的 id 再退回 → 409 `ALREADY_PROCESSED`；不存在的 id → 404 `MEMBER_NOT_FOUND`。
 - 批次通過時不存在或已處理的 id 會列在回應的 `failedIds`。
 - 清單情境切換：在頁面網址加 `?mockReview=<情境>`（例如 `/member-review?mockReview=empty`），設定存在 `sessionStorage`（`nlc_mms_mock_review`），站內換頁後仍有效，關閉分頁即還原。待審核數量（首頁徽章）也跟著變。
@@ -216,6 +241,7 @@ src/mocks/
     index.ts          彙整所有 handler
     auth.ts           登入、登出、Line（登入成功回 { token, role, status: 'ACTIVE' }）
     register.ts       註冊、個資聲明、進度查詢
+    registration.ts   Logto 模式第一次登入填寫會員資料（#48）
     password.ts       忘記密碼、修改密碼
     member.ts         /me、個人資訊修改
     options.ts        教會／牧區／小組／EKK／靈程

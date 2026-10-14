@@ -29,7 +29,8 @@ export async function login(body: LoginRequest, remember = false): Promise<Login
 /**
  * Logto 導回 callback 頁後呼叫：以 code 換 token，再向後端取得角色與帳號狀態寫入 auth store。
  * Logto 的 refresh token 存在 localStorage（關閉瀏覽器仍有效），登入狀態跟著存 localStorage。
- * 可能的 ApiError.code：ACCOUNT_REJECTED、MEMBER_NOT_FOUND（尚未建立會員資料）；Logto 換 token 失敗則丟 SDK 的錯誤。
+ * 還沒填會員資料、申請被退回也算登入成功（status 為 UNREGISTERED、REJECTED，#48）。
+ * 可能的 ApiError.code：ACCOUNT_LOCKED；Logto 換 token 失敗則丟 SDK 的錯誤。
  */
 export async function completeLogtoSignIn(callbackUrl: string): Promise<AuthSessionResponse> {
   const id = await logto.handleSignInCallback(callbackUrl)

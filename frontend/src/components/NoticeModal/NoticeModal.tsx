@@ -23,6 +23,8 @@ export interface NoticeModalProps {
   cancelText?: ReactNode
   /** 確認按鈕載入中（例：送出退回時） */
   confirmLoading?: boolean
+  /** 確認按鈕停用（例：退回原因還沒填） */
+  confirmDisabled?: boolean
   onOk?: () => void
   /** 按 ✕、Esc、遮罩或「取消」時呼叫 */
   onCancel?: () => void
@@ -37,6 +39,7 @@ export default function NoticeModal({
   okText = '確認',
   cancelText,
   confirmLoading,
+  confirmDisabled,
   onOk,
   onCancel,
   afterClose,
@@ -52,6 +55,7 @@ export default function NoticeModal({
         variant="primary"
         className={styles.button}
         loading={confirmLoading}
+        disabled={confirmDisabled}
         onClick={onOk}
         autoFocus
       >

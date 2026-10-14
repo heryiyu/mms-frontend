@@ -7,11 +7,12 @@
 /** leader = 區長以上（可使用會員審核）；member = 一般會員 */
 export type Role = 'member' | 'leader'
 /**
- * 帳號狀態：ACTIVE = 已核准可使用會員中心；PENDING = 等待審核（不可進入會員中心）。
+ * 帳號狀態：ACTIVE = 已核准可使用會員中心；PENDING = 等待審核（不可進入會員中心）；
+ * UNREGISTERED = 已有 SSO 帳號但還沒填會員資料；REJECTED = 申請被退回（可修改後重新送出）。
  * 本機模式：待審核帳號登入會直接回 ACCOUNT_PENDING，所以登入成功時一律為 ACTIVE。
- * Logto 模式：待審核帳號也能通過 Logto 登入，/auth/session 回 PENDING，由路由守衛導到等待審核頁。
+ * Logto 模式：已通過 SSO 登入的人 /auth/session 一律回 200，由路由守衛依狀態導到等待審核頁或會員資料填寫流程（#48）。
  */
-export type AccountStatus = 'ACTIVE' | 'PENDING'
+export type AccountStatus = 'ACTIVE' | 'PENDING' | 'UNREGISTERED' | 'REJECTED'
 export type Gender = 'male' | 'female'
 /** 靈程 */
 export type Journey = 'NF' | 'VIP' | 'XN'
@@ -61,8 +62,8 @@ export type ErrorCode =
   // 收據
   | 'NO_RECORDS' // 該年度無奉獻紀錄
   // 審核
-  | 'MEMBER_NOT_FOUND' // 查無此申請；/auth/session：Logto 帳號尚未建立會員資料
-  | 'ALREADY_PROCESSED' // 此申請已被審核／退回
+  | 'MEMBER_NOT_FOUND' // 查無此申請
+  | 'ALREADY_PROCESSED' // 此申請已被審核／退回；會員資料申請已送出過（#48）
   // 通用
   | 'VALIDATION_ERROR' // 欄位格式錯誤，body 可帶 fields
   | 'FORBIDDEN' // 已登入但沒有權限（例如一般會員打會員審核）
@@ -82,8 +83,8 @@ export interface ApiErrorBody {
 
 /**
  * GET /auth/session（Logto 模式，#44）：以 Logto access token 取得會員中心的角色與帳號狀態。
- * 待審核回 200 + PENDING（已通過 Logto 驗證，由前端守衛導到等待審核頁）；
- * 被退回回 403 ACCOUNT_REJECTED；Logto 帳號尚未建立會員資料回 404 MEMBER_NOT_FOUND。
+ * 已通過 SSO 驗證的人一律回 200（#48）：待審核 PENDING、被退回 REJECTED、尚未填會員資料 UNREGISTERED，
+ * 由前端守衛導到對應頁面。只有帳號已鎖定回 423 ACCOUNT_LOCKED。
  */
 export interface AuthSessionResponse {
   role: Role
@@ -172,6 +173,65 @@ export interface RegisterRequest {
 
 export interface RegisterResponse {
   id: string
+  status: 'PENDING'
+}
+
+/* ---------- 會員資料申請（register.ts，Logto 模式，#48） ---------- */
+
+/** SSO 帳號上的名字與已驗證的聯絡方式；沒有的欄位為 null（例：用 Line 註冊的人可能兩個都沒有） */
+export interface SsoAccount {
+  name: string | null
+  email: string | null
+  phone: string | null
+}
+
+/** 會員資料申請的內容（不含身分證字號）。被退回時後端帶回上次填的內容 */
+export interface RegistrationDraft {
+  /** YYYY-MM-DD */
+  birthDate: string
+  /** 未滿 18 歲時必填 */
+  guardianName?: string
+  name: string
+  nickname?: string
+  gender: Gender
+  churchId: string
+  districtId: string
+  groupId: string
+  ekkId: string
+  journey: Journey
+}
+
+/** GET /me/registration：填寫會員資料前要知道的事 */
+export interface RegistrationInfo {
+  /** UNREGISTERED、REJECTED 才需要填寫；PENDING、ACTIVE 時前端改導到對應頁面 */
+  status: AccountStatus
+  account: SsoAccount
+  /** 被退回時的退回原因 */
+  rejectReason?: string
+  /** 被退回時帶回上次填的內容（身分證字號不回傳，需重新輸入） */
+  previous?: Partial<RegistrationDraft>
+}
+
+/** 補填聯絡方式：email、phone 擇一 */
+export interface ContactOtpRequest {
+  email?: string
+  phone?: string
+}
+
+export interface ContactVerifyRequest extends ContactOtpRequest {
+  otp: string
+}
+
+export interface RegistrationRequest extends RegistrationDraft {
+  /** 身分證字號（明碼，僅送出時使用） */
+  idNumber: string
+  /** 是否同意個資保護聲明，一律 true */
+  agreedToPrivacy: boolean
+  /** 同意的個資保護聲明版本 */
+  privacyVersion?: string
+}
+
+export interface RegistrationResponse {
   status: 'PENDING'
 }
 
@@ -287,6 +347,11 @@ export interface PendingCountResponse {
 
 export interface ApproveRequest {
   ids: string[]
+}
+
+/** 單筆退回：退回原因（#48 D10，必填，會顯示給申請者並附在退回通知） */
+export interface RejectRequest {
+  reason: string
 }
 
 export interface ApproveResponse {
