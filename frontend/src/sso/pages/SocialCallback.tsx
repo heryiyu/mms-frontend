@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { useNavigate, useParams, useSearchParams } from 'react-router'
 import ResultPage, { type ResultPageProps } from '../../components/ResultPage'
-import LoginLoading from '../../pages/login/LoginLoading'
+import { LoginLoading } from '../../components/LoginView'
 import { PATHS } from '../../routes/paths'
 import { isExperienceError } from '../api/client'
 import { getExperienceErrorMessage } from '../api/errors'

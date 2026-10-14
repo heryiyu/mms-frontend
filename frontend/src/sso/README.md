@@ -48,7 +48,7 @@ Experience API 用 Logto 網域的 cookie 記住「進行到哪一步」（inter
 ## Logto 現況（2026-10-14 從 `/api/.well-known/sign-in-exp` 查）
 
 - 登入：email 或手機＋密碼（`signIn.methods`）
-- 註冊：email 或手機擇一、要驗證、要設密碼（`signUp`）；另有必填的自訂欄位 `fullname`（只開 `givenName`，說明「請填寫您的本名」），註冊時要用 `addProfile({ type: 'extraProfile', values })` 送，格式待實測
+- 註冊：email 或手機擇一、要驗證、要設密碼（`signUp`）；另有必填的自訂欄位 `fullname`（2026-10-14 #56 再查：開了 `givenName`「名字」與 `familyName`「姓氏」，皆必填），註冊時用 `addProfile({ type: 'extraProfile', values })` 送，格式未實測（推測與 fallback 見 `register/registerFlow.ts`，#56）
 - 社群：Line（`f51kym2gm36loxptokqok`）、Google（`uvxuux7ej7b5pc0jx8hcm`），自動連結同 email 帳號；Google One Tap 有開
 - 忘記密碼：email、手機都可以
 - 條款：只在一般註冊時要勾（`agreeToTermsPolicy: ManualRegistrationOnly`）；條款網址目前指向 `member.newlife.org.tw/terms`、`/privacy`
@@ -61,7 +61,7 @@ Experience API 用 Logto 網域的 cookie 記住「進行到哪一步」（inter
 都要先由 `/oidc/auth` 進來（Logto 會設 interaction cookie），否則一律回 `session.not_found`。
 
 - **登入**：`initInteraction('SignIn')` → `verifyPassword` → `identify(verificationId)` → `submitInteraction()` → `goToRedirect(redirectTo)`
-- **註冊**：`initInteraction('Register')` → `sendVerificationCode(identifier, 'Register')` → `verifyCode` → `identify(verificationId)`（回 `user.missing_profile` 時依 `data.missingProfile` 用 `addProfile` 補密碼、姓名，再 `identify()`）→ `submitInteraction()`
+- **註冊**：`initInteraction('Register')` → `sendVerificationCode(identifier, 'Register')` → `verifyCode` → `identify(verificationId)`（回 `user.missing_profile` 時依 `data.missingProfile` 用 `addProfile` 補密碼、姓名，再 `identify()`）→ `submitInteraction()`（#56 的實作：`register/registerFlow.ts`）
 - **忘記密碼**：`initInteraction('ForgotPassword')` → `sendVerificationCode(identifier, 'ForgotPassword')` → `verifyCode` → `identify(verificationId)` → `resetPassword(newPassword)` → `submitInteraction()`
 - **社群登入**：`initInteraction('SignIn')` → `createSocialAuthorizationUri(connectorId, state, socialCallbackUrl(connectorId))` → 轉到 `authorizationUri`；回到 `/callback/:connectorId` 後 `verifySocial(connectorId, 網址參數, verificationId)` → `identify(verificationId)`；找不到帳號（`user.identity_not_exist`）時 `updateInteractionEvent('Register')` 再 `identify(verificationId)`。社群帳號沒有 email／手機時會要求補（`user.missing_profile`）。`verificationId` 和 `state` 要在轉址前存 sessionStorage。`verifySocial` 的 connectorData 除了網址參數還要帶 `redirectUri`（同 Logto 原本登入頁，Google 換 token 時要用）。
 

@@ -40,7 +40,7 @@ const MESSAGES: Record<string, string> = {
   social_session_invalid: '社群登入已失效，請重新登入',
   social_cancelled: '已取消社群登入',
   // 以下依 Logto 原始碼整理，未實測（本機走不完 Line／Google 授權）
-  'connector.not_found': '社群登入暫時無法使用，請改用其他方式登入',
+  'connector.not_found': '服務暫時無法使用，請稍後再試或改用其他方式', // 社群 connector 或寄驗證碼的 email／簡訊服務沒設定（#56、#58 共用）
   'connector.not_enabled': '社群登入暫時無法使用，請改用其他方式登入',
   'connector.general': '社群登入失敗，請稍後再試',
   'connector.invalid_response': '社群登入失敗，請稍後再試',
@@ -56,10 +56,44 @@ const MESSAGES: Record<string, string> = {
   'session.identifier_not_found': '驗證已失效，請重新操作', // 還沒 identify 就設定密碼（PUT /profile/password 的 404）
   'user.password_policy_violation': '密碼不符合規則', // 規格寫的碼；實際可能回 password.rejected
   // #57 end
+
+  // #56 註冊（以下皆未實測：正式 SSO 不能寄驗證碼、建帳號，依 Logto 原始碼與 API 規格整理）
+  // verification_code.not_found、connector.not_found、user.missing_profile 已在上面
+  'verification_code.phone_mismatch': '手機號碼和收到驗證碼的不同，請重新發送',
+  'verification_code.email_mismatch': '電子信箱和收到驗證碼的不同，請重新發送',
+  'guard.invalid_input': '資料格式不正確，請檢查後再試',
+}
+
+// #56 密碼不符 Logto 密碼規則（password.rejected 的 data.result[].code）。
+// Logto 後台密碼規則目前是預設值（passwordPolicy 空白：至少 8 碼、不可為外洩過的常見密碼、不可有連續／重複字元、不可含個人資料），
+// 前端先擋「至少 8 碼且含英文與數字」（constants/password.ts），其餘只有送出後才知道。
+const PASSWORD_REJECTED_MESSAGES: Record<string, string> = {
+  'password_rejected.too_short': '密碼長度不足',
+  'password_rejected.too_long': '密碼太長',
+  'password_rejected.character_types': '密碼需包含更多種類的字元（英文大小寫、數字、符號）',
+  'password_rejected.unsupported_characters': '密碼含有不支援的字元',
+  'password_rejected.pwned': '這個密碼太常見或曾外洩，請換一個',
+  'password_rejected.restricted_found': '密碼不能含有容易被猜到的字詞',
+  'password_rejected.restricted.repetition': '密碼不能有重複的字元（例如 aaa）',
+  'password_rejected.restricted.sequence': '密碼不能有連續的字元（例如 123、abc）',
+  'password_rejected.restricted.user_info': '密碼不能含有姓名、電子信箱或手機號碼',
+  'password_rejected.restricted.words': '密碼不能含有容易被猜到的字詞',
+}
+
+/** password.rejected 的細節（第一條不符合的規則）；不是這個錯誤或沒有對照時回 null */
+function getPasswordRejectedMessage(error: unknown): string | null {
+  if (!isExperienceError(error, 'password.rejected')) return null
+  const result = (error.data as { result?: unknown } | undefined)?.result
+  if (!Array.isArray(result)) return null
+  for (const item of result as { code?: unknown }[]) {
+    const message = typeof item?.code === 'string' ? PASSWORD_REJECTED_MESSAGES[item.code] : undefined
+    if (message) return message
+  }
+  return null
 }
 
 /** 錯誤提示文字；沒有對照的錯誤碼回 fallback（不直接顯示 Logto 的英文訊息） */
 export function getExperienceErrorMessage(error: unknown, fallback = '發生錯誤，請稍後再試'): string {
   if (!isExperienceError(error)) return fallback
-  return MESSAGES[error.code] ?? fallback
+  return getPasswordRejectedMessage(error) ?? MESSAGES[error.code] ?? fallback
 }

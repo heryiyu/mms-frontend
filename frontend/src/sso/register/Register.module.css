@@ -1,0 +1,40 @@
+/*
+ * SSO 註冊第二步（姓名、密碼、同意條款）的頁面專屬樣式。卡片版面在 components/RegisterCard（和會員中心共用，#47 D12）。
+ * TODO(#12)：設計稿沒有這一步，間距沿用 RegisterCard 的欄位間距（12px）。
+ */
+/* 已驗證的帳號：標題下方一行 Body1 gray2，置中 */
+.account {
+  --sso-register-account-gap: 12px;
+
+  margin: 0 0 var(--sso-register-account-gap);
+  text-align: center;
+  color: var(--color-gray-2);
+  font-size: var(--font-size-body-1);
+  line-height: var(--line-height-body-1);
+  letter-spacing: var(--letter-spacing-body-1);
+  overflow-wrap: anywhere;
+}
+
+.accountValue {
+  color: var(--color-gray-1);
+}
+
+/* 姓氏＋名字並排等寬（同 OTP 列，間距 AntD Flex gap="middle"） */
+.nameRow > * {
+  flex: 1 1 0;
+  min-width: 0;
+}
+
+/* 同意條款：Body1，連結主色 */
+.agree {
+  font-size: var(--font-size-body-1);
+  line-height: var(--line-height-body-1);
+  letter-spacing: var(--letter-spacing-body-1);
+}
+
+.agreeLink {
+  margin-inline: 2px;
+  color: var(--color-primary);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
