@@ -12,6 +12,8 @@
 | `src/sso/api/client.ts` | 呼叫 Experience API 的共用入口（取代會員中心的 `src/api/client.ts`） |
 | `src/sso/api/experience.ts` | Experience API 各端點 |
 | `src/sso/api/errors.ts` | 錯誤碼 → 中文提示 |
+| `src/sso/identifier.ts` | 「電子信箱或手機」欄位 → identifier（手機轉 Logto 的 886 格式）、驗證規則 |
+| `src/sso/pages/SignIn.tsx` 等 | 各頁（#55 登入、#56 註冊、#57 忘記密碼、#58 社群登入）；頁內步驟在同一路徑切換 |
 
 ## 指令（在 `frontend/` 下）
 
