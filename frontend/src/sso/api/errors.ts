@@ -34,6 +34,12 @@ const MESSAGES: Record<string, string> = {
 
   // 社群登入
   'session.connector_session_not_found': '社群登入逾時，請重新操作',
+
+  // #57 忘記密碼（依 Experience API 規格與 Logto 原始碼；正式 SSO 不能實測寄碼、改密碼，都還沒實測）
+  'verification_code.not_found': '驗證碼已失效，請重新發送', // 沒有發送紀錄或已用過
+  'session.identifier_not_found': '驗證已失效，請重新操作', // 還沒 identify 就設定密碼（PUT /profile/password 的 404）
+  'user.password_policy_violation': '密碼不符合規則', // 規格寫的碼；實際可能回 password.rejected
+  // #57 end
 }
 
 /** 錯誤提示文字；沒有對照的錯誤碼回 fallback（不直接顯示 Logto 的英文訊息） */
