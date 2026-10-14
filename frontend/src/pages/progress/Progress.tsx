@@ -8,13 +8,11 @@ import type { ProgressOtpRequest } from '../../api/types'
 import { Button } from '../../components/Button'
 import { AppForm, TextInput } from '../../components/form'
 import { useNotifyModal } from '../../components/NoticeModal'
-import { getOtpErrorMessage, OtpField, otpRules, useOtpForm } from '../../components/OtpInput'
+import { ForgotPasswordCard } from '../../components/ForgotPasswordCard'
+import { getOtpErrorMessage, OtpFormItem, useOtpForm } from '../../components/OtpInput'
 import { PHONE_PATTERN } from '../../constants/validation'
 import { useGuestLayout } from '../../layouts/guestLayoutContext'
 import { PATHS } from '../../routes/paths'
-import typography from '../../styles/typography.module.css'
-import { cx } from '../../utils/cx'
-import forgotStyles from '../forgot-password/ForgotPassword.module.css'
 import type { ProgressResultState } from './ProgressResult'
 import styles from './Progress.module.css'
 
@@ -114,20 +112,19 @@ export default function Progress() {
   }
 
   return (
-    <div className={forgotStyles.page}>
+    <ForgotPasswordCard title="進度查詢">
       {contextHolder}
-      <h1 className={cx(typography.headline5, forgotStyles.title)}>進度查詢</h1>
       <p className={styles.intro}>請輸入申請時填寫的電子信箱或手機號碼，驗證後即可查看審核進度。</p>
       <AppForm<ProgressValues>
         form={form}
         requiredMark={false}
         validateTrigger="onBlur"
-        className={forgotStyles.form}
+        className={ForgotPasswordCard.formClassName}
         onFinish={handleFinish}
         // 已發送後改了信箱／手機：原本的驗證碼作廢，回到「尚未發送」
         onValuesChange={otp.handleValuesChange}
       >
-        <Form.Item name="account" className={forgotStyles.field} rules={ACCOUNT_RULES}>
+        <Form.Item name="account" className={ForgotPasswordCard.fieldClassName} rules={ACCOUNT_RULES}>
           <TextInput
             inputMode="email"
             autoComplete="username"
@@ -139,28 +136,20 @@ export default function Progress() {
         </Form.Item>
         {otp.sent && (
           <>
-            <Form.Item name="otp" className={forgotStyles.field} rules={otpRules(otp.length)}>
-              <OtpField
-                length={otp.length}
-                expiresAt={otp.expiresAt}
-                onResend={otp.resend}
-                disabled={verifying}
-                autoFocus
-              />
-            </Form.Item>
+            <OtpFormItem otp={otp} disabled={verifying} className={ForgotPasswordCard.fieldClassName} />
             {contact && <p className={styles.hint}>{MESSAGES.sentHint['email' in contact ? 'email' : 'phone']}</p>}
           </>
         )}
         <Button
           htmlType="submit"
           block
-          className={forgotStyles.submit}
+          className={ForgotPasswordCard.submitClassName}
           disabled={!canSubmit}
           loading={otp.sending || verifying}
         >
           確認
         </Button>
       </AppForm>
-    </div>
+    </ForgotPasswordCard>
   )
 }

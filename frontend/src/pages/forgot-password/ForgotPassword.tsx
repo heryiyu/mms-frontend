@@ -4,18 +4,16 @@ import { useNavigate } from 'react-router'
 import { getApiErrorMessage, getValidationFields, isApiError } from '../../api/client'
 import { resetPassword, sendForgotPasswordOtp, verifyForgotPasswordOtp } from '../../api/password'
 import type { ForgotPasswordOtpRequest } from '../../api/types'
+import { Button } from '../../components/Button'
+import { ForgotPasswordCard, NewPasswordForm, type NewPasswordValues } from '../../components/ForgotPasswordCard'
 import { AppForm, applyServerFieldErrors, emailRules, phoneRules, TextInput } from '../../components/form'
 import { type NotifyOptions, useNotifyModal } from '../../components/NoticeModal'
-import { getOtpErrorMessage, useOtpForm } from '../../components/OtpInput'
+import { getOtpErrorMessage, OtpFormItem, useOtpForm } from '../../components/OtpInput'
 import { useGuestLayout } from '../../layouts/guestLayoutContext'
 import { PATHS } from '../../routes/paths'
-import styles from './ForgotPassword.module.css'
-import ForgotPasswordCard from './ForgotPasswordCard'
-import NewPasswordForm, { type NewPasswordValues } from './NewPasswordForm'
-import OtpConfirmFields from './OtpConfirmFields'
 
 // 忘記密碼（issue #18，docs/design/forgot-password/README.md）。登入頁「忘記密碼？」進入。
-// 卡片外框、OTP 列＋「確認」、設定新密碼表單、完成頁和 SSO 登入頁的忘記密碼（src/sso/pages/ResetPassword.tsx）共用（#47 D12）。
+// 卡片版面、設定新密碼表單、完成頁在 components/ForgotPasswordCard，和 SSO 登入頁的忘記密碼（src/sso/pages/ResetPassword.tsx）共用（#47 D12）。
 // 同一路由內切換步驟（GuestLayout 卡片）：
 //   verify：default（信箱＋手機，兩欄都填才可按「確認」）→ ing → 按「確認」發送 OTP
 //           → otp（出現 OTP 列＋倒數）→ 按「確認」驗證 OTP，取得 resetToken
@@ -128,12 +126,12 @@ function VerifyStep({ notify, onVerified }: { notify: Notify; onVerified: (reset
       form={form}
       requiredMark={false}
       validateTrigger="onBlur"
-      className={styles.form}
+      className={ForgotPasswordCard.formClassName}
       onFinish={(values) => (otp.sent ? verify(values) : send(values))}
       // 已發送後改了信箱或手機：原本的驗證碼作廢，回到「尚未發送」，按「確認」重新發送。TODO(#12)：設計未畫
       onValuesChange={otp.handleValuesChange}
     >
-      <Form.Item name="email" className={styles.field} rules={EMAIL_RULES}>
+      <Form.Item name="email" className={ForgotPasswordCard.fieldClassName} rules={EMAIL_RULES}>
         <TextInput
           type="email"
           inputMode="email"
@@ -143,10 +141,19 @@ function VerifyStep({ notify, onVerified }: { notify: Notify; onVerified: (reset
           maxLength={254}
         />
       </Form.Item>
-      <Form.Item name="phone" className={styles.field} rules={PHONE_RULES}>
+      <Form.Item name="phone" className={ForgotPasswordCard.fieldClassName} rules={PHONE_RULES}>
         <TextInput type="tel" inputMode="tel" autoComplete="tel" placeholder="請輸入手機號碼" aria-label="手機號碼" maxLength={10} />
       </Form.Item>
-      <OtpConfirmFields otp={otp} canSubmit={canSubmit} loading={otp.sending || verifying} />
+      {otp.sent && <OtpFormItem otp={otp} disabled={verifying} className={ForgotPasswordCard.fieldClassName} />}
+      <Button
+        htmlType="submit"
+        block
+        className={ForgotPasswordCard.submitClassName}
+        disabled={!canSubmit}
+        loading={otp.sending || verifying}
+      >
+        確認
+      </Button>
     </AppForm>
   )
 }

@@ -1,5 +1,5 @@
 import type { FormInstance } from 'antd'
-import { Button } from '../../components/Button'
+import { Button } from '../Button'
 import {
   AppForm,
   confirmPasswordRules,
@@ -8,12 +8,12 @@ import {
   formCardLayout,
   newPasswordRules,
   PasswordInput,
-} from '../../components/form'
+} from '../form'
 import { cx } from '../../utils/cx'
-import styles from './ForgotPassword.module.css'
+import styles from './ForgotPasswordCard.module.css'
 
 // 忘記密碼「設定新密碼」表單（docs/design/forgot-password/README.md re／re-ing）。
-// 會員中心（ForgotPassword.tsx）與 SSO 登入頁（src/sso/pages/ResetPassword.tsx）共用（#47 D12）：
+// 放在 ForgotPasswordCard 內，會員中心與 SSO 登入頁共用（#47 D12）：
 // 只負責畫面與前端驗證，呼叫哪個 API、錯誤怎麼顯示由各頁處理。不可 import src/api/client.ts（SSO build 會擋）。
 
 export interface NewPasswordValues {
