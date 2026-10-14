@@ -1,45 +1,7 @@
 /*
- * 註冊第一步（出生／信箱／手機＋OTP）。mobile-first，web（≥ md 卡片 420px）與 mob 內容一致，只有 GuestLayout 卡片寬度不同。
- * 間距量自 docs/design/register/{web,mob}/創建帳號/Default.png、ing.png、otp.png、未成年判斷/ing.png（@2x 換算 1x，目測），兩版相同。
+ * 註冊第一步（出生／信箱／手機＋OTP）頁面專屬樣式。卡片版面（標題、欄位間距、「or」、「返回」）在
+ * components/RegisterCard（和 SSO 登入頁註冊共用，#47 D12）。
  */
-.page {
-  /* 標題行頂距卡片頂端（兩版皆約 36px）、標題 → 第一個欄位、最後一個欄位 → 確認鈕 */
-  --register-title-top: 36px;
-  --register-title-gap: 20px;
-  --register-submit-gap: 20px;
-  /* 欄位之間（含 OTP 列） */
-  --register-field-gap: 12px;
-  /* 確認鈕 → or、or → Line 按鈕（量到「or」文字中線約 28px，扣掉半行高） */
-  --register-divider-gap: 16px;
-  /* 「返回」文字行底距卡片底緣 */
-  --register-back-bottom: 36px;
-
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-}
-
-/* GuestLayout 卡片上內距為 --page-padding（手機 20px、md 起 40px），以 margin 補足／抵銷到 36px */
-.title {
-  margin: calc(var(--register-title-top) - var(--page-padding)) 0 var(--register-title-gap);
-  text-align: center;
-}
-
-/* ---- 表單 ---- */
-.form {
-  display: flex;
-  flex-direction: column;
-}
-
-.form :global(.ant-form-item) {
-  margin-bottom: var(--register-field-gap);
-}
-
-/* 最後一個欄位 → 確認鈕：補足到 20px */
-.form .submit {
-  margin-top: calc(var(--register-submit-gap) - var(--register-field-gap));
-}
-
 .picker {
   width: 100%;
 }
@@ -48,32 +10,4 @@
 .calendarIcon {
   color: var(--color-gray-2);
   font-size: var(--font-size-body-l);
-}
-
-/* ---- 「or」分隔線：線為 gray5、文字 Body1 gray1（同登入頁） ---- */
-.divider.divider {
-  margin: var(--register-divider-gap) 0;
-  color: var(--color-gray-1);
-  font-size: var(--font-size-body-1);
-}
-
-/* ---- 卡片底部「返回」：黑字底線、貼卡片底部 ---- */
-.footer {
-  margin: auto 0 calc(var(--register-back-bottom) - var(--page-padding));
-  padding-top: var(--app-gutter);
-  text-align: center;
-  font-size: var(--font-size-body-1);
-  line-height: var(--line-height-body-1);
-  letter-spacing: var(--letter-spacing-body-1);
-}
-
-.back,
-.back:visited {
-  color: var(--color-gray-1);
-  text-decoration: underline;
-  text-underline-offset: 2px;
-}
-
-.back:hover {
-  color: var(--color-primary);
 }

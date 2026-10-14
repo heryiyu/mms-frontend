@@ -1,6 +1,8 @@
 // OTP 驗證碼（issue #5）：註冊、忘記密碼、個資修改、奉獻收據共用
 export { default as OtpField } from './OtpField'
 export type { OtpFieldProps } from './OtpField'
+export { default as OtpFormItem } from './OtpFormItem'
+export type { OtpFormItemProps } from './OtpFormItem'
 export { default as OtpInput } from './OtpInput'
 export type { OtpInputProps } from './OtpInput'
 export { default as OtpCountdown } from './OtpCountdown'

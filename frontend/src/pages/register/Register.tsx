@@ -1,7 +1,7 @@
-import { DatePicker, Divider, Form, Grid } from 'antd'
+import { DatePicker, Form, Grid } from 'antd'
 import type { DatePickerProps, FormProps } from 'antd'
 import { useState } from 'react'
-import { Link, useNavigate } from 'react-router'
+import { useNavigate } from 'react-router'
 import { getLineAuthUrl } from '../../api/auth'
 import { getApiErrorMessage, isApiError } from '../../api/client'
 import { sendRegisterOtp, verifyRegisterOtp } from '../../api/register'
@@ -9,13 +9,12 @@ import { Button } from '../../components/Button'
 import { AppForm, applyServerFieldErrors, emailRules, phoneRules, TextInput } from '../../components/form'
 import Icon from '../../components/Icon'
 import { useNotifyModal } from '../../components/NoticeModal'
-import { getOtpErrorMessage, OtpField, otpRules, useOtpForm } from '../../components/OtpInput'
+import { getOtpErrorMessage, OtpFormItem, useOtpForm } from '../../components/OtpInput'
+import { RegisterBackLink, RegisterCard, RegisterDivider } from '../../components/RegisterCard'
 import { useGuestLayout } from '../../layouts/guestLayoutContext'
 import { PATHS } from '../../routes/paths'
-import typography from '../../styles/typography.module.css'
 import { brandColors } from '../../theme/tokens'
 import { isMinor } from '../../utils/age'
-import { cx } from '../../utils/cx'
 import GuardianNameField from './GuardianNameField'
 import styles from './Register.module.css'
 import { getRegisterFlow, updateRegisterFlow } from './registerFlow'
@@ -171,9 +170,8 @@ export default function Register() {
   const busy = otp.sending || verifying
 
   return (
-    <div className={styles.page}>
+    <RegisterCard footer={<RegisterBackLink to={PATHS.login} />}>
       {contextHolder}
-      <h1 className={cx(typography.headline5, styles.title)}>創建帳號</h1>
 
       <AppForm<RegisterValues>
         form={form}
@@ -182,7 +180,7 @@ export default function Register() {
         onFinish={handleFinish}
         onFinishFailed={handleFinishFailed}
         onValuesChange={otp.handleValuesChange}
-        className={styles.form}
+        className={RegisterCard.formClassName}
       >
         <Form.Item name="birthDate" rules={[{ required: true, message: MESSAGES.birthDateRequired }]}>
           <DatePicker
@@ -223,24 +221,14 @@ export default function Register() {
           />
         </Form.Item>
 
-        {otp.sent && (
-          <Form.Item name="otp" rules={otpRules(otp.length)}>
-            <OtpField
-              length={otp.length}
-              expiresAt={otp.expiresAt}
-              onResend={otp.resend}
-              disabled={verifying}
-              autoFocus
-            />
-          </Form.Item>
-        )}
+        {otp.sent && <OtpFormItem otp={otp} disabled={verifying} />}
 
         <Button
           htmlType="submit"
           block
           loading={busy}
           disabled={otp.sent && !otp.otpFilled}
-          className={styles.submit}
+          className={RegisterCard.submitClassName}
         >
           確認
         </Button>
@@ -249,9 +237,7 @@ export default function Register() {
       {/* ing／otp 稿上「or」與 Line 按鈕消失；Line 授權完成後接回此頁時也不再顯示 */}
       {!otp.sent && !hasLineToken && (
         <>
-          <Divider plain className={styles.divider}>
-            or
-          </Divider>
+          <RegisterDivider />
           <Button
             variant="secondary"
             block
@@ -264,12 +250,6 @@ export default function Register() {
           </Button>
         </>
       )}
-
-      <p className={styles.footer}>
-        <Link to={PATHS.login} className={styles.back}>
-          返回
-        </Link>
-      </p>
-    </div>
+    </RegisterCard>
   )
 }
