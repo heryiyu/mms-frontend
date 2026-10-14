@@ -1,12 +1,10 @@
 import { useEffect, useState } from 'react'
-import { Link, useLocation } from 'react-router'
+import { useLocation } from 'react-router'
 import { type LogtoFirstScreen, startSignIn } from '../../auth/logto'
 import { Button } from '../../components/Button'
+import { LoginLink, LoginLoading, LoginShell } from '../../components/LoginView'
 import { useNotifyModal } from '../../components/NoticeModal'
-import GuestBrandHeader from '../../layouts/GuestBrandHeader'
 import { type LoginRedirectState, PATHS } from '../../routes/paths'
-import LoginLoading from './LoginLoading'
-import loginStyles from './Login.module.css'
 import styles from './LogtoSignIn.module.css'
 
 /**
@@ -64,9 +62,8 @@ export default function LogtoSignIn({ firstScreen }: { firstScreen?: FirstScreen
   }
 
   return (
-    <div className={loginStyles.page}>
+    <LoginShell>
       {contextHolder}
-      <GuestBrandHeader />
       {manual && (
         <>
           <p className={styles.hint}>會員中心使用新生命 SSO 帳號登入</p>
@@ -74,13 +71,11 @@ export default function LogtoSignIn({ firstScreen }: { firstScreen?: FirstScreen
             {BUTTON_TEXT[firstScreen ?? 'signIn']}
           </Button>
           <p className={styles.links}>
-            <Link to={PATHS.progress} className={loginStyles.link}>
-              進度查詢
-            </Link>
+            <LoginLink to={PATHS.progress}>進度查詢</LoginLink>
           </p>
         </>
       )}
       <LoginLoading spinning={!manual} />
-    </div>
+    </LoginShell>
   )
 }

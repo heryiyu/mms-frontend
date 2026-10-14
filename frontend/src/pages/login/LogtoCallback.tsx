@@ -6,7 +6,7 @@ import { consumePostLoginFrom } from '../../auth/logto'
 import ContactEmailLink from '../../components/ContactEmailLink'
 import ResultPage from '../../components/ResultPage'
 import { getPostLoginPath, PATHS, STATUS_PATHS } from '../../routes/paths'
-import LoginLoading from './LoginLoading'
+import { LoginLoading } from '../../components/LoginView'
 
 /**
  * Logto 登入完成後的導回頁（Logto 模式，#44）。只顯示 loading 遮罩，完成後：
