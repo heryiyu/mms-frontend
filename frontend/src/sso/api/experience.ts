@@ -19,10 +19,6 @@ export const initInteraction = (interactionEvent: InteractionEvent) =>
 export const updateInteractionEvent = (interactionEvent: Exclude<InteractionEvent, 'ForgotPassword'>) =>
   request<void>('PUT', '/api/experience/interaction-event', { interactionEvent })
 
-/** 目前 interaction 的公開資料（除錯或判斷流程進度用） */
-export const getInteraction = () =>
-  request<{ interactionEvent: InteractionEvent; profile: Record<string, unknown> }>('GET', '/api/experience/interaction')
-
 /* ---------- 驗證 ---------- */
 
 /** 帳號＋密碼驗證；帳號不存在與密碼錯誤都回 session.invalid_credentials */

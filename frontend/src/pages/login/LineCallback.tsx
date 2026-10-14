@@ -5,7 +5,7 @@ import { ApiError, isApiError } from '../../api/client'
 import { PATHS } from '../../routes/paths'
 import { updateRegisterFlow } from '../register/registerFlow'
 import type { LoginPageState } from './Login'
-import LoginLoading from './LoginLoading'
+import { LoginLoading } from '../../components/LoginView'
 
 /**
  * Line OAuth 授權完成後的導回頁（設計未畫，只顯示 loading 遮罩）。

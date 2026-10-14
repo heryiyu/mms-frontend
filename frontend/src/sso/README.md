@@ -11,9 +11,28 @@
 | `src/sso/routes.tsx`、`paths.ts` | 路由；路徑要和 Logto 原本登入頁一致（Logto 會導到這些路徑） |
 | `src/sso/api/client.ts` | 呼叫 Experience API 的共用入口（取代會員中心的 `src/api/client.ts`） |
 | `src/sso/api/experience.ts` | Experience API 各端點 |
-| `src/sso/api/errors.ts` | 錯誤碼 → 中文提示 |
+| `src/sso/api/errors.ts` | 錯誤碼 → 中文提示（依主題分組，註明哪些實測過） |
 | `src/sso/identifier.ts` | 「電子信箱或手機」欄位 → identifier（手機轉 Logto 的 886 格式）、驗證規則 |
-| `src/sso/pages/SignIn.tsx` 等 | 各頁（#55 登入、#56 註冊、#57 忘記密碼、#58 社群登入）；頁內步驟在同一路徑切換 |
+| `src/sso/verificationCode.ts` | 驗證碼位數與時效（給 `useOtpForm`）、驗證碼錯誤分類（要清空重填／要重新發送）；註冊、忘記密碼共用 |
+| `src/sso/useSsoNotice.ts` | 各頁的「通知」彈窗；`notifyError` 顯示錯誤提示，`session.not_found` 關閉後回會員中心登入頁 |
+| `src/sso/usePageRestored.ts` | 轉址離開後按上一頁、bfcache 還原時收起 loading |
+| `src/sso/social.ts` | 社群登入：connector ID、轉址前後的 sessionStorage 暫存、導回後的呼叫順序 |
+| `src/sso/components/SocialButtons.tsx` | Line、Google 按鈕（登入頁「快速登入」、註冊頁「創建帳號」） |
+| `src/sso/register/` | 註冊兩個步驟（`AccountStep` 帳號＋驗證碼、`ProfileStep` 姓名＋密碼＋條款）與呼叫順序（`registerFlow.ts`） |
+| `src/sso/pages/` | `SignIn` 登入、`Register` 註冊、`ResetPassword` 忘記密碼、`SocialCallback` 社群導回、`ToMemberCenter`（沒有進行中的登入）、`SsoNotFound`；頁內步驟在同一路徑切換 |
+
+和會員中心共用的畫面元件（#47 D12，改設計時兩邊一起變）：
+
+| 元件 | SSO 用在 | 會員中心用在 |
+|---|---|---|
+| `components/LoginView`（`LoginView`、`useLoginSubmit`、`LoginLoading`） | 登入頁、社群導回頁的 loading | 登入頁 |
+| `components/RegisterCard`（`RegisterCard`、`RegisterBackLink`、`RegisterDivider`） | 註冊兩個步驟 | 註冊第一步 |
+| `components/ForgotPasswordCard`（`ForgotPasswordCard`、`NewPasswordForm`、`PasswordChangedResult`） | 忘記密碼 | 忘記密碼、進度查詢（只用卡片版面） |
+| `components/OtpInput` 的 `OtpFormItem` | 註冊、忘記密碼的驗證碼列 | 註冊、忘記密碼、進度查詢 |
+| `components/SocialLoginButton` | `SocialButtons` 的按鈕樣式 | 登入、註冊的 Line 按鈕 |
+| `layouts/GuestLayout` | 全部頁面（忘記密碼完成頁用 `none` 變體） | 登入、註冊、忘記密碼等 |
+
+`GuestLayout` 的三種變體（`card`／`full`／`none`）輸出同一組元素、只換 class，切換變體時頁面不會重新掛載，同一路徑內換步驟用一般的 state 即可。
 
 ## 指令（在 `frontend/` 下）
 
@@ -47,7 +66,7 @@ Experience API 用 Logto 網域的 cookie 記住「進行到哪一步」（inter
 ## Logto 現況（2026-10-14 從 `/api/.well-known/sign-in-exp` 查）
 
 - 登入：email 或手機＋密碼（`signIn.methods`）
-- 註冊：email 或手機擇一、要驗證、要設密碼（`signUp`）；另有必填的自訂欄位 `fullname`（只開 `givenName`，說明「請填寫您的本名」），註冊時要用 `addProfile({ type: 'extraProfile', values })` 送，格式待實測
+- 註冊：email 或手機擇一、要驗證、要設密碼（`signUp`）；另有必填的自訂欄位 `fullname`（2026-10-14 #56 再查：開了 `givenName`「名字」與 `familyName`「姓氏」，皆必填），註冊時用 `addProfile({ type: 'extraProfile', values })` 送，格式未實測（推測與 fallback 見 `register/registerFlow.ts`，#56）
 - 社群：Line（`f51kym2gm36loxptokqok`）、Google（`uvxuux7ej7b5pc0jx8hcm`），自動連結同 email 帳號；Google One Tap 有開
 - 忘記密碼：email、手機都可以
 - 條款：只在一般註冊時要勾（`agreeToTermsPolicy: ManualRegistrationOnly`）；條款網址目前指向 `member.newlife.org.tw/terms`、`/privacy`
@@ -55,16 +74,37 @@ Experience API 用 Logto 網域的 cookie 記住「進行到哪一步」（inter
 - 版本：Logto 不對外公開版本號（API 規格寫 `Cloud`），錯誤碼以實測為準
 - 沒有進行中的登入就開登入頁時，Logto 會轉到 `unknownSessionRedirectUrl`（`https://member.newlife.org.tw/login`），這包的 `/`、`/unknown-session` 也照做（轉到 `VITE_SSO_MEMBER_CENTER_URL` 的登入頁）
 
-## 常見呼叫順序
+## 各流程的做法
 
-都要先由 `/oidc/auth` 進來（Logto 會設 interaction cookie），否則一律回 `session.not_found`。
+都要先由 `/oidc/auth` 進來（Logto 會設 interaction cookie），否則一律回 `session.not_found`。`initInteraction` 會清掉先前的驗證紀錄，同一個流程只在開始時呼叫一次。
 
-- **登入**：`initInteraction('SignIn')` → `verifyPassword` → `identify(verificationId)` → `submitInteraction()` → `goToRedirect(redirectTo)`
-- **註冊**：`initInteraction('Register')` → `sendVerificationCode(identifier, 'Register')` → `verifyCode` → `identify(verificationId)`（回 `user.missing_profile` 時依 `data.missingProfile` 用 `addProfile` 補密碼、姓名，再 `identify()`）→ `submitInteraction()`
-- **忘記密碼**：`initInteraction('ForgotPassword')` → `sendVerificationCode(identifier, 'ForgotPassword')` → `verifyCode` → `identify(verificationId)` → `resetPassword(newPassword)` → `submitInteraction()`
-- **社群登入**：`initInteraction('SignIn')` → `createSocialAuthorizationUri(connectorId, state, socialCallbackUrl(connectorId))` → 轉到 `authorizationUri`；回到 `/callback/:connectorId` 後 `verifySocial(connectorId, 網址參數, verificationId)` → `identify(verificationId)`；找不到帳號（`user.identity_not_exist`）時 `updateInteractionEvent('Register')` 再 `identify(verificationId)`。社群帳號沒有 email／手機時會要求補（`user.missing_profile`）。`verificationId` 和 `state` 要在轉址前存 sessionStorage。
+共通做法：
 
-`initInteraction` 會清掉先前的驗證紀錄，同一個流程只在開始時呼叫一次。
+- 伺服器回的錯誤一律跳「通知」彈窗（`useSsoNotice().notifyError`，文字來自 `api/errors.ts`）；`session.not_found`（直接開網址、逾時）關閉彈窗後回會員中心登入頁重新發起登入。欄位格式、兩次密碼不一致、`password.rejected` 才用欄位下方的訊息。
+- 送出中按鈕 loading、不重複送出；成功後轉址期間維持 loading，按上一頁由 bfcache 還原時收起（`usePageRestored`）。
+- 驗證碼列用會員中心的 `useOtpForm`＋`OtpFormItem`，位數與時效用 `verificationCode.ts` 的固定值；驗證碼錯誤清空重填，過期／錯太多次／找不到發送紀錄回到「尚未發送」重新寄。
+- 成功後 `goToRedirect(redirectTo)`：Logto 回的若是 SSO 完整網址，改成本機路徑。
+
+各流程：
+
+- **登入**（`pages/SignIn.tsx`，畫面用 `LoginView`）：`initInteraction('SignIn')` → `verifyPassword` → `identify(verificationId)` → `submitInteraction()` → `goToRedirect`。收到 `session.verification_blocked_too_many_attempts` 後前端 5 分鐘內直接擋（`useLoginSubmit`）；`user.suspended` 顯示聯繫教會信箱。「or」下方放 `SocialButtons`（同會員中心 Line 按鈕的位置）。
+- **註冊**（`pages/Register.tsx`，兩步都在 `/register`）：
+  1. `AccountStep`：email 或手機擇一 →「確認」寄碼（`initInteraction('Register')` → `sendVerificationCode`）→ 填碼 →「確認」`verifyCode` → `identify`（新帳號回 `user.missing_profile` 視為通過；已註冊回 `user.*_already_in_use`）。寄碼前下方有「or」＋`SocialButtons action="register"`，寄出後收起（同會員中心）。
+  2. `ProfileStep`：姓氏、名字、密碼、確認密碼、同意條款 → `addProfile` 密碼 → `addProfile` 姓名（`extraProfile`，格式見下方待實測）→ `identify` → `submitInteraction()` → `goToRedirect`。驗證已失效時回第一步。
+- **忘記密碼**（`pages/ResetPassword.tsx`，畫面同會員中心忘記密碼頁，帳號改成 email 或手機擇一）：`initInteraction('ForgotPassword')` → `sendVerificationCode` → `verifyCode` → `identify` → 設定新密碼 `resetPassword` → `submitInteraction()` → 整頁「變更完成！」（GuestLayout `none` 變體）→「返回」回登入頁。不直接 `goToRedirect`：ForgotPassword 的 submit 只改密碼不登入，使用者要用新密碼再登入一次。
+- **社群登入**（`components/SocialButtons.tsx` → `pages/SocialCallback.tsx`，流程在 `social.ts`）：`initInteraction('SignIn')` → `createSocialAuthorizationUri(connectorId, state, socialCallbackUrl(connectorId))` → 轉到 `authorizationUri`；回到 `/callback/:connectorId` 後 `verifySocial(connectorId, 網址參數＋redirectUri, verificationId)` → `identify(verificationId)`；找不到帳號（`user.identity_not_exist`）時 `updateInteractionEvent('Register')` 再 `identify`。`verificationId` 和 `state` 在轉址前存 sessionStorage。登入頁「快速登入」和註冊頁「創建帳號」流程相同，只差按鈕文字。社群帳號沒有 email／手機（`user.missing_profile`）時目前只顯示提示、引導改用 email／手機註冊。
+
+## 還沒實測的事（正式 SSO 不能寄驗證碼、建帳號、試密碼，本機也走不完 Line／Google 授權）
+
+第一次在正式環境走過時確認，並更新程式裡的 `TODO(#47)` 與 `api/errors.ts` 的「實測」註記：
+
+- **姓名（fullname）送出格式**：先送平的 `{ givenName, familyName }`，被拒或 identify 仍缺資料時改送 `{ fullname: { … } }`（`register/registerFlow.ts`）。成功註冊後到後台確認 profile 有姓名，刪掉用不到的格式。
+- **註冊時 identify 的檢查順序**：推測先檢查帳號重複、再回缺資料（`registerFlow.ts` 的 `verifyRegisterCode`）。
+- **驗證碼位數與時效**：用 Logto 預設 6 碼、10 分鐘（`verificationCode.ts`），收到實際驗證信／簡訊時確認；後台改設定時要一起改。
+- **密碼錯誤碼**：密碼不符規則可能是 `password.rejected`（含 `data.result` 細項）或規格寫的 `user.password_policy_violation`；`user.same_password` 也未實測。
+- **鎖定錯誤碼**：錯太多次是否回 `session.verification_blocked_too_many_attempts`（要等 IT 把 `sentinelPolicy` 設成錯 3 次停 5 分鐘後再測）。
+- **社群帳號缺 email／手機**：不做「補填並驗證」，因為 Google 帳號一定有 email、Line 帳號一定有手機（2026-10-14 決定）。萬一 Logto 仍回 `user.missing_profile`，`pages/SocialCallback.tsx` 只提示改用 email／手機註冊；第一次實際用 Line 註冊時確認 Logto 有拿到手機。
+- 其他沒標「實測」的錯誤碼見 `api/errors.ts`。
 
 ## Cloudflare 分流（上線時，細節待和 IT 確認，#43）
 

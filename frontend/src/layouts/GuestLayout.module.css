@@ -76,3 +76,11 @@
 .brandSubtitle {
   font-size: var(--font-size-body-1);
 }
+
+/* ---- 不需要的外框層（full 的卡片、none 的整個外框）：不產生方框，子元素照常排版 ---- */
+/* 重複 class 提高權重，蓋過 AntD Card 的樣式；文字樣式改回繼承 body，和沒有外框時一樣 */
+.passThrough.passThrough {
+  display: contents;
+  color: inherit;
+  font: inherit;
+}

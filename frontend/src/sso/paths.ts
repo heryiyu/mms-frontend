@@ -1,3 +1,5 @@
+import { PATHS } from '../routes/paths'
+
 // SSO 登入頁的路徑。Logto 會依 /oidc/auth 的參數把使用者導到這些路徑（例如 first_screen=register → /register），
 // 所以要和 Logto 原本登入頁的路徑一致，不能自己改名。
 export const SSO_PATHS = {
@@ -26,8 +28,14 @@ export const socialCallbackUrl = (connectorId: string) =>
  * 會員中心網址：註冊同意條款、個資聲明、進度查詢等連結，以及登入逾時要回去的地方。
  * TODO(#43)：上線網域待確認（Logto 目前設定的條款網址是 member.newlife.org.tw）。
  */
-export const MEMBER_CENTER_URL: string =
+const MEMBER_CENTER_URL: string =
   import.meta.env.VITE_SSO_MEMBER_CENTER_URL || (import.meta.env.DEV ? 'http://localhost:5173' : 'https://member.newlife.org.tw')
 
 /** 會員中心頁面的完整網址，path 用會員中心 src/routes/paths.ts 的 PATHS */
 export const memberCenterUrl = (path: string) => new URL(path, MEMBER_CENTER_URL).href
+
+/**
+ * 會員中心登入頁：沒有進行中的登入（session.not_found、直接開 SSO 網址）時回這裡，由會員中心重新發起登入
+ * （同 Logto 的 unknownSessionRedirectUrl）
+ */
+export const MEMBER_CENTER_LOGIN_URL = memberCenterUrl(PATHS.login)
