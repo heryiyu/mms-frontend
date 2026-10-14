@@ -34,6 +34,22 @@ const MESSAGES: Record<string, string> = {
 
   // 社群登入
   'session.connector_session_not_found': '社群登入逾時，請重新操作',
+
+  // #58 社群登入（Line、Google）
+  // 前端自訂（src/sso/social.ts）：導回時 state 對不上或沒有轉址前存的紀錄、使用者在 Line／Google 取消授權
+  social_session_invalid: '社群登入已失效，請重新登入',
+  social_cancelled: '已取消社群登入',
+  // 以下依 Logto 原始碼整理，未實測（本機走不完 Line／Google 授權）
+  'connector.not_found': '社群登入暫時無法使用，請改用其他方式登入',
+  'connector.not_enabled': '社群登入暫時無法使用，請改用其他方式登入',
+  'connector.general': '社群登入失敗，請稍後再試',
+  'connector.invalid_response': '社群登入失敗，請稍後再試',
+  'connector.authorization_failed': '社群帳號授權失敗，請重新操作',
+  'connector.invalid_auth_code': '社群帳號授權已失效，請重新操作',
+  'user.identity_not_exist': '此社群帳號尚未註冊',
+  'user.missing_profile': '需要補填帳號資料才能繼續',
+  'user.identity_already_in_use': '此社群帳號已綁定其他帳號',
+  // #58 end
 }
 
 /** 錯誤提示文字；沒有對照的錯誤碼回 fallback（不直接顯示 Logto 的英文訊息） */

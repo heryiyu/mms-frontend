@@ -3,13 +3,11 @@ import { useLocation, useNavigate } from 'react-router'
 import { getLineAuthUrl, login } from '../../api/auth'
 import { ApiError, isApiError } from '../../api/client'
 import type { ErrorCode } from '../../api/types'
-import { Button } from '../../components/Button'
 import { emailRules } from '../../components/form'
-import Icon from '../../components/Icon'
 import { type LoginAccountField, type LoginValues, LoginView, useLoginSubmit } from '../../components/LoginView'
 import { useNotifyModal } from '../../components/NoticeModal'
+import SocialLoginButton from '../../components/SocialLoginButton'
 import { PATHS } from '../../routes/paths'
-import { brandColors } from '../../theme/tokens'
 import { getLoginErrorNotice, TOO_MANY_ATTEMPTS_NOTICE } from './loginErrors'
 
 // 登入頁（issue #14，docs/design/login/README.md）。畫面在共用的 LoginView（與 SSO 登入頁共用，#47 D12）。
@@ -92,17 +90,7 @@ export default function Login() {
         submitting={submitting}
         onFinish={handleFinish}
         links={LINKS}
-        social={
-          <Button
-            variant="secondary"
-            block
-            icon={<Icon name="line" color={brandColors.line} />}
-            loading={lineLoading}
-            onClick={handleLineLogin}
-          >
-            使用Line快速登入
-          </Button>
-        }
+        social={<SocialLoginButton provider="line" loading={lineLoading} onClick={handleLineLogin} />}
       />
     </>
   )

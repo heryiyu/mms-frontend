@@ -13,6 +13,7 @@
 | `src/sso/api/experience.ts` | Experience API 各端點 |
 | `src/sso/api/errors.ts` | 錯誤碼 → 中文提示 |
 | `src/sso/identifier.ts` | 「電子信箱或手機」欄位 → identifier（手機轉 Logto 的 886 格式）、驗證規則 |
+| `src/sso/social.ts` | 社群登入（#58）：connector ID、轉址前後的 sessionStorage 暫存、導回後的呼叫順序 |
 | `src/sso/pages/SignIn.tsx` 等 | 各頁（#55 登入、#56 註冊、#57 忘記密碼、#58 社群登入）；頁內步驟在同一路徑切換 |
 
 ## 指令（在 `frontend/` 下）
@@ -62,7 +63,7 @@ Experience API 用 Logto 網域的 cookie 記住「進行到哪一步」（inter
 - **登入**：`initInteraction('SignIn')` → `verifyPassword` → `identify(verificationId)` → `submitInteraction()` → `goToRedirect(redirectTo)`
 - **註冊**：`initInteraction('Register')` → `sendVerificationCode(identifier, 'Register')` → `verifyCode` → `identify(verificationId)`（回 `user.missing_profile` 時依 `data.missingProfile` 用 `addProfile` 補密碼、姓名，再 `identify()`）→ `submitInteraction()`
 - **忘記密碼**：`initInteraction('ForgotPassword')` → `sendVerificationCode(identifier, 'ForgotPassword')` → `verifyCode` → `identify(verificationId)` → `resetPassword(newPassword)` → `submitInteraction()`
-- **社群登入**：`initInteraction('SignIn')` → `createSocialAuthorizationUri(connectorId, state, socialCallbackUrl(connectorId))` → 轉到 `authorizationUri`；回到 `/callback/:connectorId` 後 `verifySocial(connectorId, 網址參數, verificationId)` → `identify(verificationId)`；找不到帳號（`user.identity_not_exist`）時 `updateInteractionEvent('Register')` 再 `identify(verificationId)`。社群帳號沒有 email／手機時會要求補（`user.missing_profile`）。`verificationId` 和 `state` 要在轉址前存 sessionStorage。
+- **社群登入**：`initInteraction('SignIn')` → `createSocialAuthorizationUri(connectorId, state, socialCallbackUrl(connectorId))` → 轉到 `authorizationUri`；回到 `/callback/:connectorId` 後 `verifySocial(connectorId, 網址參數, verificationId)` → `identify(verificationId)`；找不到帳號（`user.identity_not_exist`）時 `updateInteractionEvent('Register')` 再 `identify(verificationId)`。社群帳號沒有 email／手機時會要求補（`user.missing_profile`）。`verificationId` 和 `state` 要在轉址前存 sessionStorage。`verifySocial` 的 connectorData 除了網址參數還要帶 `redirectUri`（同 Logto 原本登入頁，Google 換 token 時要用）。
 
 `initInteraction` 會清掉先前的驗證紀錄，同一個流程只在開始時呼叫一次。
 
