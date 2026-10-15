@@ -19,7 +19,7 @@ const MESSAGES: Record<string, string> = {
 
   // ---- 登入 ----
   'session.invalid_credentials': '帳號或密碼錯誤', // 實測：帳號不存在也是這個碼
-  'session.verification_blocked_too_many_attempts': '嘗試過於頻繁，請稍後再試', // 錯 3 次暫停 5 分鐘（#47、#46）
+  'session.verification_blocked_too_many_attempts': '嘗試過於頻繁，請稍後再試', // 實測：錯 3 次暫停 5 分鐘，第 3 次就回這個碼（400）（#47、#46）
   'user.suspended': '帳號已停用，請聯繫管理員',
   'password.expired': '密碼已過期，請使用忘記密碼重新設定',
 
