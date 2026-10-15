@@ -14,7 +14,9 @@ import {
 import { RegisterBackLink, RegisterCard } from '../../components/RegisterCard'
 import { isExperienceError } from '../api/client'
 import { goToRedirect } from '../api/experience'
+import PasskeySetup from '../components/PasskeySetup'
 import { formatIdentifier } from '../identifier'
+import { isPasskeyPreferred } from '../passkey'
 import { usePageRestored } from '../usePageRestored'
 import { NOTICE_TITLE, useSsoNotice } from '../useSsoNotice'
 import type { VerifiedAccount } from './AccountStep'
@@ -25,6 +27,8 @@ import { completeRegister, PRIVACY_URL, TERMS_URL } from './registerFlow'
 // 姓名是 Logto 的必填自訂欄位 fullname（姓氏＋名字，後台說明「請填寫您的本名／本姓」）。
 // 同意條款：Logto 設定一般註冊要勾（agreeToTermsPolicy: ManualRegistrationOnly）；Experience API 沒有「同意條款」的參數
 // （OpenAPI 查無 terms／agree），和 Logto 原本登入頁一樣只在前端擋。
+// 建立帳號（identify）後 submit 若回 user.passkey_preferred，改顯示「要建立通行密鑰嗎？」（PasskeySetup，#63），
+// 這時帳號已建立，建立通行密鑰失敗或略過都會完成註冊。
 //
 // TODO(#12)：設計稿沒畫這一步（會員中心是在「會員資料輸入」全寬表單填姓名、密碼），先沿用「創建帳號」卡片版面：
 // 欄位 placeholder、條款文案、錯誤文案皆為推測；錯誤一律跳通知彈窗（設計註記「輸入錯誤需跳pop提醒」）
@@ -70,6 +74,7 @@ export default function ProfileStep({ account, onBack }: ProfileStepProps) {
   const password = Form.useWatch('password', form)
   const confirmPassword = Form.useWatch('confirmPassword', form)
   const [submitting, setSubmitting] = useState(false)
+  const [askPasskey, setAskPasskey] = useState(false)
   const { notify, notifyError, contextHolder } = useSsoNotice()
   // 轉址回原網站後按上一頁還原這頁時，收起 loading
   usePageRestored(useCallback(() => setSubmitting(false), []))
@@ -84,6 +89,10 @@ export default function ProfileStep({ account, onBack }: ProfileStepProps) {
       goToRedirect(redirectTo)
     } catch (error) {
       setSubmitting(false)
+      if (isPasskeyPreferred(error)) {
+        setAskPasskey(true)
+        return
+      }
       if (isExperienceError(error, ...BACK_TO_ACCOUNT)) {
         await notify({ title: NOTICE_TITLE, content: MESSAGES.expired })
         onBack()
@@ -97,6 +106,8 @@ export default function ProfileStep({ account, onBack }: ProfileStepProps) {
     const first = errorFields[0]?.errors[0]
     if (first) void notify({ title: NOTICE_TITLE, content: first })
   }
+
+  if (askPasskey) return <PasskeySetup />
 
   return (
     <RegisterCard footer={<RegisterBackLink onClick={onBack} disabled={submitting} />}>

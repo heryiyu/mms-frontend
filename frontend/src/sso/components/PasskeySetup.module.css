@@ -1,0 +1,14 @@
+/*
+ * 「要建立通行密鑰嗎？」詢問畫面（#63）。卡片版面沿用 components/RegisterCard。
+ * TODO(#12)：設計稿沒有這個畫面，說明文字沿用 SSO 註冊第二步「帳號：…」那行的樣式（Body1 gray2、置中），間距同 RegisterCard 欄位間距。
+ */
+.description {
+  --sso-passkey-description-gap: 20px;
+
+  margin: 0 0 var(--sso-passkey-description-gap);
+  text-align: center;
+  color: var(--color-gray-2);
+  font-size: var(--font-size-body-1);
+  line-height: var(--line-height-body-1);
+  letter-spacing: var(--letter-spacing-body-1);
+}

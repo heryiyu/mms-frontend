@@ -5,6 +5,8 @@ import ResultPage, { type ResultPageProps } from '../../components/ResultPage'
 import { isExperienceError } from '../api/client'
 import { getExperienceErrorMessage } from '../api/errors'
 import { goToRedirect } from '../api/experience'
+import PasskeySetup from '../components/PasskeySetup'
+import { isPasskeyPreferred } from '../passkey'
 import { MEMBER_CENTER_LOGIN_URL, SSO_PATHS } from '../paths'
 import { completeSocialSignIn, getMissingProfile, socialProviderName } from '../social'
 
@@ -19,12 +21,14 @@ interface Failure {
 /**
  * 社群平台授權完成的導回頁（/callback/:connectorId，#58）。設計稿未畫：處理中沿用會員中心 Line 導回頁的 Logo 遮罩，
  * 失敗沿用結果頁（失敗／警告樣式）。流程在 src/sso/social.ts 的 completeSocialSignIn。
+ * submit 回 user.passkey_preferred（帳號還沒有通行密鑰）時改顯示「要建立通行密鑰嗎？」（PasskeySetup，#63）。
  */
 export default function SocialCallback() {
   const { connectorId = '' } = useParams()
   const [params] = useSearchParams()
   const navigate = useNavigate()
   const [failure, setFailure] = useState<Failure | null>(null)
+  const [askPasskey, setAskPasskey] = useState(false)
   // StrictMode 會執行兩次 effect；授權碼只能換一次
   const startedRef = useRef(false)
 
@@ -38,6 +42,10 @@ export default function SocialCallback() {
     completeSocialSignIn(connectorId, params)
       .then(goToRedirect)
       .catch((error: unknown) => {
+        if (isPasskeyPreferred(error)) {
+          setAskPasskey(true)
+          return
+        }
         if (isExperienceError(error, 'session.not_found')) {
           // 登入逾時（沒有進行中的 interaction）：要從原網站重新發起登入
           setFailure({
@@ -75,6 +83,7 @@ export default function SocialCallback() {
       })
   }, [connectorId, navigate, params])
 
+  if (askPasskey) return <PasskeySetup />
   if (!failure) return <LoginLoading spinning />
 
   return (

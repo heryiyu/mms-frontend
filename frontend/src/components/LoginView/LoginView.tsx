@@ -32,6 +32,8 @@ export interface LoginAccountField {
   label: string
   /** email 會帶出手機的信箱鍵盤；可輸入手機時用 text */
   type?: 'email' | 'text'
+  /** 預設 username；SSO 開了通行密鑰自動填入時用 username webauthn（#63） */
+  autoComplete?: string
 }
 
 export interface LoginViewProps {
@@ -71,7 +73,7 @@ export default function LoginView({ account, showRemember = true, submitting, on
           <TextInput
             type={account.type ?? 'text'}
             inputMode={account.type === 'email' ? 'email' : undefined}
-            autoComplete="username"
+            autoComplete={account.autoComplete ?? 'username'}
             placeholder={account.placeholder}
             aria-label={account.label}
             maxLength={254}

@@ -54,6 +54,19 @@ const MESSAGES: Record<string, string> = {
   'user.identity_not_exist': '此社群帳號尚未註冊',
   'user.identity_already_in_use': '此社群帳號已綁定其他帳號',
   'user.missing_profile': '需要補填帳號資料才能繼續', // 註冊缺密碼、姓名，或社群帳號缺 email／手機
+
+  // ---- 通行密鑰（#63）；全部未實測：本機 localhost 用不了 sso.newlife.org.tw 的通行密鑰 ----
+  // 使用者取消（瀏覽器的 NotAllowedError）不提示；「找不到可用的通行密鑰」瀏覽器通常也回 NotAllowedError，無法分辨
+  passkey_failed: '無法使用通行密鑰，請改用其他方式登入', // usePasskeySignIn：瀏覽器端其他錯誤（例如網域不符的 SecurityError）
+  passkey_not_found: '找不到這個通行密鑰對應的帳號，請改用其他方式登入', // passkey.ts：verify 回 session.identifier_not_found（通行密鑰已從帳號移除）
+  passkey_create_failed: '建立通行密鑰失敗，請再試一次或略過', // PasskeySetup：navigator.credentials.create 的其他錯誤
+  passkey_already_registered: '這台裝置已經有這個帳號的通行密鑰，可以直接略過', // PasskeySetup：InvalidStateError
+  'session.mfa.webauthn_verification_failed': '通行密鑰驗證失敗，請再試一次',
+  'session.mfa.pending_info_not_found': '通行密鑰驗證已失效，請再試一次', // 找不到 challenge（建立時）
+  'session.passkey_sign_in.pending_info_not_found': '通行密鑰驗證已失效，請再試一次', // 找不到 preflight 的 challenge
+  'session.passkey_sign_in.conflict_rp_id': '無法在這個網址使用通行密鑰，請改用其他方式登入',
+  'session.identity_conflict': '通行密鑰和目前登入的帳號不符，請重新登入',
+  'user.passkey_preferred': '請建立通行密鑰或略過後繼續', // 正常會改顯示 PasskeySetup，只在沒接到時當提示
 }
 
 // 密碼不符 Logto 密碼規則（password.rejected 的 data.result[].code）。
