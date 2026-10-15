@@ -63,6 +63,8 @@ export type ErrorCode =
   | 'PASSWORD_NOT_SET' // 帳號沒有密碼（只用 Line／Google 登入），不能修改密碼（#49）
   // 收據
   | 'NO_RECORDS' // 該年度無奉獻紀錄
+  | 'LINK_EXPIRED' // 收據下載頁網址已過期（寄出後 1 小時，#50）
+  | 'RECEIPT_NOT_FOUND' // 查無此收據下載連結（#50）
   // 審核
   | 'MEMBER_NOT_FOUND' // 查無此申請
   | 'ALREADY_PROCESSED' // 此申請已被審核／退回；會員資料申請已送出過（#48）
@@ -288,7 +290,7 @@ export interface Me {
   name: string
   nickname: string
   gender: Gender
-  /** 後端遮罩後回傳，例如 Q12*****89 */
+  /** 後端遮罩後回傳，例如 Q12*****89；沒有身分證字號（外籍）為空字串（#50） */
   idNumber: string
   /** email、手機以 SSO 為準（#49），可能只有其中一個；沒有的為 null（至少會有一個，D5） */
   email: string | null
@@ -321,15 +323,58 @@ export interface ProfileChangeVerifyRequest {
 
 /* ---------- 奉獻收據（receipt.ts） ---------- */
 
+/**
+ * 收據寄到哪裡（#50，2026-10-15 決定）：用會員已有的聯絡方式，不再輸入。
+ * email → 寄加密 PDF 附件；phone → 簡訊寄會員中心下載頁網址（1 小時內有效）
+ */
+export type ReceiptChannel = 'email' | 'phone'
+
+/** 寄送目的地：destination 為後端遮罩後的值，例如 a***@gmail.com、0912***678（格式同 #49 個人資訊修改） */
+export interface ReceiptSentTo {
+  channel: ReceiptChannel
+  destination: string
+}
+
+/** PDF 密碼規則：身分證字號；沒有身分證字號的會員改用出生年月日 8 碼（YYYYMMDD）。前端只說明規則，不顯示密碼 */
+export type ReceiptPasswordRule = 'ID_NUMBER' | 'BIRTH_DATE'
+
 export interface ReceiptOtpRequest {
-  email: string
-  phone: string
+  channel: ReceiptChannel
   /** 設計未決定年度怎麼選，留空由後端決定 */
   year?: number
 }
 
+/** POST /receipts/otp：驗證碼寄到選定的那一個 */
+export interface ReceiptOtpResponse extends OtpSendResponse {
+  sentTo: ReceiptSentTo
+}
+
 export interface ReceiptSendRequest extends ReceiptOtpRequest {
   otp: string
+}
+
+/** POST /receipts/send：寄出結果，完成頁依 channel 與 passwordRule 顯示文案 */
+export interface ReceiptSendResponse {
+  sentTo: ReceiptSentTo
+  passwordRule: ReceiptPasswordRule
+  /** 只有 phone：簡訊裡下載頁網址的到期時間（ISO 8601，寄出後 1 小時） */
+  linkExpiresAt?: string
+}
+
+/** GET /receipts/downloads/{id}：下載頁（簡訊連結）的狀態；過期、不是本人、找不到回錯誤碼 */
+export interface ReceiptDownloadInfo {
+  year: number
+  /** 連結到期時間（ISO 8601） */
+  expiresAt: string
+  passwordRule: ReceiptPasswordRule
+}
+
+/** POST /receipts/downloads/{id}/file：即時產生的檔案網址（5 分鐘內有效） */
+export interface ReceiptFileResponse {
+  url: string
+  /** 有效秒數（300） */
+  expiresIn: number
+  fileName: string
 }
 
 /* ---------- 會員審核（review.ts，區長以上） ---------- */

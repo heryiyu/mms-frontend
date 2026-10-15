@@ -13,7 +13,7 @@
 
 ## 開發用切換登入身分
 
-啟用 MSW 時，畫面左下角會出現切換按鈕（`DevRoleSwitcher.tsx`），可直接切成「未登入／一般會員／區長以上／只用 Google 登入（沒有密碼、沒有手機，#49）／等待審核」，不用經過登入頁；切換後 API 也會以該測試帳號身分回應。正式 build 不會包含。
+啟用 MSW 時，畫面左下角會出現切換按鈕（`DevRoleSwitcher.tsx`），可直接切成「未登入／一般會員／區長以上／只用 Google 登入（沒有密碼、沒有手機，#49）／只有手機（#50）／沒有身分證字號（#50）／等待審核」，不用經過登入頁；切換後 API 也會以該測試帳號身分回應。正式 build 不會包含。
 
 ## Logto 模式（#44）
 
@@ -45,7 +45,9 @@
 | `pending@test.com` | 任意（核准後用 `Pending@123`） | 待審核（手機 `0945678901`） | 登入 → `ACCOUNT_PENDING`（等待審核頁）；同時出現在審核清單 |
 | `apply1@test.com`、`apply2@test.com` | `Apply1@123`、`Apply2@123` | 待審核 | 審核清單的另外兩筆；核准後可登入，被退回後登入 → `ACCOUNT_REJECTED` |
 | `rejected@test.com` | 任意 | 申請被退回（手機 `0978901234`，附退回原因） | 本機登入 → `ACCOUNT_REJECTED`；Logto 模式測修改後重新送出 |
-| `google@test.com` | 沒有密碼（不能用密碼登入，用左下角切換鈕） | 一般會員，只用 Google 登入：沒有密碼、沒有手機 | #49：`/me` 的 `hasPassword: false`、`phone: null`；選單沒有「修改密碼」；個人資訊新增手機 |
+| `google@test.com` | 沒有密碼（不能用密碼登入，用左下角切換鈕） | 一般會員，只用 Google 登入：沒有密碼、沒有手機 | #49：`/me` 的 `hasPassword: false`、`phone: null`；選單沒有「修改密碼」；個人資訊新增手機。#50：奉獻收據只能寄 email |
+| （沒有 email，id `u9`） | 用左下角切換鈕「只有手機」 | 一般會員，只有手機 `0911333444` | #50：`/me` 的 `email: null`；奉獻收據只能寄手機（簡訊下載連結） |
+| `noid@test.com` | `Noid@1234` | 一般會員，沒有身分證字號（外籍，生日 1990-05-20），email、手機都有 | #50：奉獻收據 PDF 密碼說明改為出生年月日 8 碼；`/me` 的 `idNumber` 為空字串 |
 
 `member@test.com` 的身分證字號為 `Q123456789`（`/me` 回傳 `Q12*****89`）。
 
@@ -88,7 +90,7 @@
 | OTP 填 `0000`（或不是 4 碼數字） | 400 `OTP_INVALID` |
 | OTP 填 `9999` | 410 `OTP_EXPIRED` |
 | 其他 4 碼數字（例如 `1234`、`7414`） | 通過 |
-| 發送 OTP 時信箱填 `frequent@test.com` | 429 `TOO_MANY_ATTEMPTS`（註冊、忘記密碼、個資修改、收據都適用） |
+| 發送 OTP 時信箱填 `frequent@test.com` | 429 `TOO_MANY_ATTEMPTS`（註冊、忘記密碼、個資修改都適用；奉獻收據 #50 起不輸入信箱，mock 觸發不了） |
 
 OTP 元件示範：dev 模式開 `/dev/otp`（`PATHS.devOtp`，`OtpDemo.tsx`；正式 build 不會註冊這個路由）。
 - 「單獨使用」不打 API：可切換位數（4／5／6）、倒數（10 秒／1 分／5 分）、錯誤與停用狀態，測輸入、貼上整串簡訊（含全形數字）、倒數歸零後「重新發送」。
@@ -187,22 +189,30 @@ OTP 元件示範：dev 模式開 `/dev/otp`（`PATHS.devOtp`，`OtpDemo.tsx`；�
 - Logto 模式驗證通過後，姓名、email、手機也會寫回 mock 的 SSO 帳號（`mockSsoAccount`）
 - 沒先送出修改內容就驗證 OTP → 410 `OTP_EXPIRED`
 
-### 奉獻收據
+### 奉獻收據（#50）
 
-- 信箱與手機必須等於登入會員自己的資料，否則 400 `EMAIL_PHONE_MISMATCH`（用 `member@test.com` + `0912345678` 測成功）。
-- `year` 填 2020 以前（例如 `2019`）→ 404 `NO_RECORDS`；不帶 `year` 視為去年。
+不再輸入信箱、手機：頁面顯示會員已有的（遮罩），驗證碼寄到選定的那一個（`POST /receipts/otp` 帶 `{ channel }`，回 `sentTo`）。用左下角切換鈕換會員：
 
-奉獻收據頁（`pages/receipt/ReceiptDownload.tsx`，`/receipt`）對應的畫面（頁面目前不帶 `year`）：
+| 會員 | 收據頁（`/receipt`） | 完成頁 |
+| --- | --- | --- |
+| 一般會員 `member@test.com`（兩個都有） | 兩個選項「電子信箱 m\*\*\*@test.com」「手機簡訊 0912\*\*\*678」，預設 email | email：「奉獻收據已送出，請至信箱查收！」；手機：「下載連結已傳送到手機 0912\*\*\*678，1 小時內有效」；密碼為身分證字號 |
+| 只用 Google 登入 `google@test.com`（只有 email） | 沒有選項，直接顯示 g\*\*\*@test.com | email 完成頁 |
+| 只有手機（`u9`） | 沒有選項，直接顯示 0911\*\*\*444 | 手機完成頁 |
+| 沒有身分證字號 `noid@test.com` | 兩個選項 | 密碼說明改為「出生年月日 8 碼」 |
 
-| 情境 | 畫面 |
+- 驗證碼依上方「OTP」規則（`1234` 通過、`0000` 錯誤、`9999` 逾時）；發送後改選另一個寄送方式，驗證碼列收起，要重新按「確認」。
+- 要求寄到會員沒有的聯絡方式（直接打 API，例如 `google@test.com` 帶 `channel: 'phone'`）→ 422 `VALIDATION_ERROR`（`fields.channel`）。
+- `year` 填 2020 以前（例如 `2019`）→ 404 `NO_RECORDS`；不帶 `year` 視為去年（頁面目前不帶）。
+- 選手機寄出後，簡訊裡的下載頁網址印在 DevTools Console（`[MSW] 奉獻收據簡訊下載頁：/receipt/download/r-…`），存在 `sessionStorage`（`nlc_mms_mock_receipt_links`），同一個分頁重新整理、貼網址都有效，1 小時後過期。
+
+下載頁（`/receipt/download/:id`，需登入；未登入會先到登入頁，登入後回到這頁）。固定 id 測各種狀態（`handlers/receipt.ts`）：
+
+| id | 結果 |
 | --- | --- |
-| 信箱／手機格式錯誤（例如 `abc`、`0812`） | 欄位下方 inline 錯誤，不會呼叫 API |
-| 信箱或手機與登入會員不符 | 通知彈窗「電子信箱或手機與會員資料不符」 |
-| 信箱填 `frequent@test.com` | 通知彈窗「發送過於頻繁，請稍後再試」 |
-| `member@test.com` + `0912345678` | 出現驗證碼列與「有效時間」倒數；倒數結束可「重新發送」 |
-| 驗證碼 `0000`／`9999` | 通知彈窗「驗證碼錯誤，請重新輸入」／「驗證碼已逾時，請重新發送」 |
-| 其他 4 碼（例如 `7414`） | 完成頁「奉獻收據已送出，請至信箱查收！」 |
-| OTP 發送後修改信箱或手機 | 驗證碼列收起，需重新按「確認」發送 |
+| `demo-valid` | 有效（擁有者 = 目前登入的人，到期時間 = 頁面載入後 1 小時）：顯示年度、到期時間、密碼規則；按「下載」→ `POST /receipts/downloads/:id/file` 取得 5 分鐘有效的檔案網址（mock 回 blob 假 PDF，檔名 `奉獻收據-<年度>.pdf`） |
+| `demo-expired` | 410 `LINK_EXPIRED`：「連結已過期，請重新申請」＋「回奉獻收據」 |
+| `demo-other` | 403 `FORBIDDEN`（擁有者是 `locked@test.com`）：「無法下載這份收據」 |
+| 其他 | 404 `RECEIPT_NOT_FOUND`：「找不到這份收據」 |
 
 ### 會員審核
 
@@ -256,7 +266,7 @@ src/mocks/
     password.ts       忘記密碼、修改密碼
     member.ts         /me、個人資訊修改
     options.ts        教會／牧區／小組／EKK／靈程
-    receipt.ts        奉獻收據
+    receipt.ts        奉獻收據、簡訊下載頁（#50）
     review.ts         會員審核
 ```
 

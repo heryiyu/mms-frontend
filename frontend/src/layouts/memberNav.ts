@@ -56,6 +56,8 @@ export const memberRouteTitles: Record<string, string> = {
   [PATHS.changePassword]: '修改密碼',
   [PATHS.memberReview]: '會員審核',
   [PATHS.receipt]: '奉獻收據下載',
+  // 下載頁 /receipt/download/:id（#50）：麵包屑只到這一層，id 不顯示
+  [`${PATHS.receipt}/download`]: '下載收據',
   [PATHS.settings]: '系統設定', // TODO(#12) 同上
   [PATHS.forbidden]: '沒有權限',
 }

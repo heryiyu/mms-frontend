@@ -126,6 +126,8 @@ export const router = createBrowserRouter([
               { path: PATHS.profileEdit, lazy: page(() => import('../pages/profile/ProfileEdit')) },
               { path: PATHS.changePassword, lazy: page(() => import('../pages/ChangePassword')) },
               { path: PATHS.receipt, lazy: page(() => import('../pages/receipt/ReceiptDownload')) },
+              // 簡訊下載連結（#50）：未登入會先導到登入頁，登入後回到這頁
+              { path: PATHS.receiptDownload, lazy: page(() => import('../pages/receipt/ReceiptLinkDownload')) },
               // 區長以上；權限不足 → 403
               {
                 element: <RequireRole minRole="leader" />,
