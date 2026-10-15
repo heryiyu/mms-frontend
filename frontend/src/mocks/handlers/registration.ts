@@ -42,7 +42,10 @@ function assertContactAvailable(account: SsoAccount, contact: Contact) {
   if (account[contact.type]) {
     throw errorResponse('VALIDATION_ERROR', '此帳號已有這個聯絡方式', { [contact.type]: '已有' })
   }
-  if (isContactUsed(contact, findSsoMember())) throw errorResponse('ALREADY_REGISTERED')
+  if (isContactUsed(contact, findSsoMember())) {
+    const label = contact.type === 'email' ? '此電子信箱' : '此手機'
+    throw errorResponse('CONTACT_IN_USE', undefined, { [contact.type]: `${label}已被其他帳號使用` })
+  }
 }
 
 /** 已發送驗證碼、等待驗證的聯絡方式 */

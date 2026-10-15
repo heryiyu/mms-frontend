@@ -4,7 +4,7 @@ import { useState } from 'react'
 import { useLocation, useNavigate } from 'react-router'
 import { getApiErrorMessage, isApiError } from '../../api/client'
 import { sendProfileChangeOtp } from '../../api/member'
-import type { Me, ProfileChangeRequest } from '../../api/types'
+import type { Me, OtpSentTo, ProfileChangeOtpResponse, ProfileChangeRequest } from '../../api/types'
 import { useMe } from '../../auth/useMe'
 import ActionBar from '../../components/ActionBar'
 import { Button } from '../../components/Button'
@@ -33,7 +33,8 @@ import styles from './Profile.module.css'
 // 首頁暱稱、檢視頁資料每次進頁都重新 GET /me（auth/useMe.ts，首頁與個人資訊共用），沒有前端快取需要同步。
 //
 // TODO(#12)：以下皆為設計未定、先依稿／推測實作——
-// - OTP 寄送對象（簡訊／信箱？改了手機或信箱時寄新的還是舊的？）未定；前端只送修改內容，由後端決定寄送對象
+// - OTP 寄送對象（#49 已決定，2026-10-15）：前端只送修改內容，由後端決定並在回應帶回遮罩後的目的地（sentTo），
+//   驗證頁顯示「驗證碼已寄到…」。新增／更換 email 或手機寄到新的；移除其中一個寄到留下的那個（重新驗證身分）
 // - 「確認」依稿在未修改任何欄位時即可點；是否改成有變更才可點待確認
 // - mob menberedited 底部只剩「返回」，推測為稿件遺漏，與 menberedit 一致用「返回＋確認」
 // - 「取消／返回」直接回檢視頁並捨棄修改，不跳「確定放棄修改？」
@@ -43,7 +44,10 @@ import styles from './Profile.module.css'
 // #49（架構整理 D2～D5）：email、手機、姓名驗證通過後由後端寫回 SSO，之後新的 email／手機可以用來登入。
 // - email、手機都不是必填，但至少要留一個（D5）；原本沒有的那個（例如只有 email 的人）可以在這裡新增
 // - 新的 email／手機已被其他 SSO 帳號使用：發驗證碼前後端回 CONTACT_IN_USE，錯誤顯示在該欄位下方
-// TODO(#12)：設計稿只畫了 email、手機都有的情況。沒有的那欄的提示文字、欄位下方的說明文案為推測
+// - email、手機一次只能改一個（新增、更換或移除），驗證碼才有明確的寄送對象（參考 Google、Apple 帳號中心）
+// - 更換或移除後，後端寄安全通知到原本的 email／手機；前端只在卡片下方說明提到
+// TODO(#12)：設計稿只畫了 email、手機都有的情況。沒有的那欄的提示文字、欄位下方的說明文案為推測；
+//   「變更完成！」結果頁依稿沒有說明文字，所以沒加「已通知原本的信箱／手機」
 
 type Step = 'edit' | 'otp' | 'done'
 type FieldName = keyof ProfileChangeRequest
@@ -58,11 +62,13 @@ const MESSAGES = {
   contactRequired: '信箱和手機至少要留一個',
   emailInUse: '此信箱已被其他帳號使用',
   phoneInUse: '此手機已被其他帳號使用',
-  alreadyRegistered: '此信箱或手機已被其他帳號使用',
+  contactInUse: '此信箱或手機已被其他帳號使用',
+  oneContactAtATime: '信箱和手機一次只能修改一個',
   // TODO(#12)：以下文案設計未定
   addEmail: '新增信箱',
   addPhone: '新增手機',
-  contactHint: '信箱和手機至少要留一個。新增或修改後需要收驗證碼，完成後也可以用來登入。',
+  contactHint:
+    '信箱和手機至少要留一個，一次只能修改其中一個。新增或更換時，驗證碼會寄到新的信箱／手機；移除時寄到留下的那一個。更換或移除後，我們會通知原本的信箱／手機。',
   failedTitle: '變更失敗',
   failedContent: '發生錯誤，請稍後再試',
   loadFailedTitle: '資料載入失敗',
@@ -90,7 +96,9 @@ const RULES: Record<FieldName, Rule[]> = {
 }
 
 /** 已被其他 SSO 帳號使用時，後端 fields 沒帶文案就用這裡的 */
-const IN_USE_MESSAGES: Record<'email' | 'phone', string> = { email: MESSAGES.emailInUse, phone: MESSAGES.phoneInUse }
+const CONTACT_FIELDS = ['email', 'phone'] as const
+
+const IN_USE_MESSAGES: Record<(typeof CONTACT_FIELDS)[number], string> = { email: MESSAGES.emailInUse, phone: MESSAGES.phoneInUse }
 
 const toDraft = (me: Me): ProfileChangeRequest => ({
   name: me.name,
@@ -108,12 +116,12 @@ const trimValues = (values: ProfileChangeRequest): ProfileChangeRequest => ({
 
 /**
  * CONTACT_IN_USE（#49）：把「已被其他帳號使用」顯示在對應欄位下方，回傳是否已處理。
- * 沒有 fields 時回 false，由呼叫端跳通知彈窗（舊的 ALREADY_REGISTERED 也走彈窗）
+ * 沒有 fields 時回 false，由呼叫端跳通知彈窗
  */
 function applyContactInUse(form: FormInstance<ProfileChangeRequest>, error: unknown): boolean {
   if (!isApiError(error, 'CONTACT_IN_USE')) return false
   const fields = (error.data as { fields?: Partial<Record<string, string>> } | undefined)?.fields ?? {}
-  const names = (['email', 'phone'] as const).filter((name) => name in fields)
+  const names = CONTACT_FIELDS.filter((name) => name in fields)
   if (names.length === 0) return false
   form.setFields(names.map((name) => ({ name, errors: [fields[name] || IN_USE_MESSAGES[name]] })))
   return true
@@ -121,35 +129,39 @@ function applyContactInUse(form: FormInstance<ProfileChangeRequest>, error: unkn
 
 interface EditStepProps {
   initialValues: ProfileChangeRequest
-  /** 原本沒有的聯絡方式（顯示「新增」提示文字） */
-  missing: { email: boolean; phone: boolean }
-  otp: OtpSender<ProfileChangeRequest>
+  /** 目前的資料（GET /me）：判斷改了哪個聯絡方式、原本沒有的顯示「新增」提示文字 */
+  original: ProfileChangeRequest
+  otp: OtpSender<ProfileChangeRequest, ProfileChangeOtpResponse>
   notify: (options: NotifyOptions) => Promise<boolean>
   onCancel: () => void
-  /** OTP 發送成功，帶回本次送出的修改內容 */
-  onSent: (values: ProfileChangeRequest) => void
+  /** OTP 發送成功，帶回本次送出的修改內容與驗證碼寄送對象 */
+  onSent: (values: ProfileChangeRequest, sentTo: OtpSentTo) => void
 }
 
 /** 資料修改（menberedit／menberedited）：卡片式表單，label gray1、右側輸入框帶入現值 */
-function EditStep({ initialValues, missing, otp, notify, onCancel, onSent }: EditStepProps) {
+function EditStep({ initialValues, original, otp, notify, onCancel, onSent }: EditStepProps) {
   const [form] = Form.useForm<ProfileChangeRequest>()
   const isDesktop = !!Grid.useBreakpoint().lg
 
   const handleFinish = async (values: ProfileChangeRequest) => {
     const body = trimValues(values)
+    // email、手機一次只能改一個，驗證碼才有明確的寄送對象
+    if (body.email !== original.email && body.phone !== original.phone) {
+      form.setFields(CONTACT_FIELDS.map((name) => ({ name, errors: [MESSAGES.oneContactAtATime] })))
+      return
+    }
     try {
-      await otp.send(body)
-      onSent(body)
+      const res = await otp.send(body)
+      onSent(body, res.sentTo)
     } catch (error) {
       if (isApiError(error, 'UNAUTHORIZED')) return // client 已統一導回登入頁
       if (applyServerFieldErrors(form, error, FIELD_NAMES).length > 0) return
       if (applyContactInUse(form, error)) return
       void notify({
         title: MESSAGES.failedTitle,
-        content:
-          isApiError(error, 'ALREADY_REGISTERED') || isApiError(error, 'CONTACT_IN_USE')
-            ? MESSAGES.alreadyRegistered
-            : (getOtpErrorMessage(error) ?? getApiErrorMessage(error, MESSAGES.failedContent)),
+        content: isApiError(error, 'CONTACT_IN_USE')
+          ? MESSAGES.contactInUse
+          : (getOtpErrorMessage(error) ?? getApiErrorMessage(error, MESSAGES.failedContent)),
       })
     }
   }
@@ -178,7 +190,7 @@ function EditStep({ initialValues, missing, otp, notify, onCancel, onSent }: Edi
             type="email"
             inputMode="email"
             autoComplete="email"
-            placeholder={missing.email ? MESSAGES.addEmail : undefined}
+            placeholder={original.email ? undefined : MESSAGES.addEmail}
           />
         </FormCardItem>
         <FormCardItem name="phone" label="手機" rules={RULES.phone} dependencies={['email']}>
@@ -187,7 +199,7 @@ function EditStep({ initialValues, missing, otp, notify, onCancel, onSent }: Edi
             inputMode="numeric"
             autoComplete="tel-national"
             maxLength={10}
-            placeholder={missing.phone ? MESSAGES.addPhone : undefined}
+            placeholder={original.phone ? undefined : MESSAGES.addPhone}
           />
         </FormCardItem>
       </FormCard>
@@ -204,6 +216,7 @@ export default function ProfileEdit() {
   const { me, loadState, reload } = useMe()
   const [step, setStep] = useState<Step>('edit')
   const [draft, setDraft] = useState<ProfileChangeRequest | null>(null)
+  const [sentTo, setSentTo] = useState<OtpSentTo | null>(null)
   const { notify, contextHolder } = useNotifyModal()
 
   const otp = useOtpSender(sendProfileChangeOtp, {
@@ -219,8 +232,9 @@ export default function ProfileEdit() {
     else navigate(PATHS.profile, { replace: true })
   }
 
-  const handleSent = (values: ProfileChangeRequest) => {
+  const handleSent = (values: ProfileChangeRequest, target: OtpSentTo) => {
     setDraft(values)
+    setSentTo(target)
     setStep('otp')
   }
 
@@ -229,16 +243,25 @@ export default function ProfileEdit() {
     setStep('edit')
   }
 
+  // TODO(#12)：結果頁依稿沒有說明文字；更換／移除聯絡方式後「已通知原本的信箱／手機」只寫在修改頁的說明
   if (step === 'done') return <ResultPage title="變更完成！" onBack={backToProfile} />
 
   let content
   if (step === 'otp') {
-    content = <ProfileOtpStep otp={otp} notify={notify} onCancel={handleOtpCancel} onVerified={() => setStep('done')} />
+    content = (
+      <ProfileOtpStep
+        otp={otp}
+        sentTo={sentTo}
+        notify={notify}
+        onCancel={handleOtpCancel}
+        onVerified={() => setStep('done')}
+      />
+    )
   } else if (loadState === 'ready' && me) {
     content = (
       <EditStep
         initialValues={draft ?? toDraft(me)}
-        missing={{ email: !me.email, phone: !me.phone }}
+        original={toDraft(me)}
         otp={otp}
         notify={notify}
         onCancel={backToProfile}

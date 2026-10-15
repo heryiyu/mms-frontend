@@ -127,7 +127,7 @@ OTP 元件示範：dev 模式開 `/dev/otp`（`PATHS.devOtp`，`OtpDemo.tsx`；�
 
 | 情境 | 結果 |
 | --- | --- |
-| 補填的 email／手機已被其他帳號使用（例如 `member@test.com`、`0912345678`） | 409 `ALREADY_REGISTERED`，通知彈窗「此電子信箱已被其他帳號使用」 |
+| 補填的 email／手機已被其他帳號使用（例如 `member@test.com`、`0912345678`） | 409 `CONTACT_IN_USE`（`fields` 指出 email 或 phone），通知彈窗「此電子信箱已被其他帳號使用」 |
 | 補填時驗證碼 | 依上方「OTP」規則（`1234` 通過、`0000` 錯誤、`9999` 逾時）；通過後該欄改為唯讀「已驗證」 |
 | `nocontact@test.com` 兩欄都空著按「確認」 | 欄位下方「請至少填寫電子信箱或手機」 |
 | 身分證字號填 `Q123456789`（已存在） | 409 `ALREADY_REGISTERED`，通知彈窗「此身份證字號已被使用」 |
@@ -184,6 +184,8 @@ OTP 元件示範：dev 模式開 `/dev/otp`（`PATHS.devOtp`，`OtpDemo.tsx`；�
   - 其他會員的信箱／手機（例如 `leader@test.com`、`0923456789`）
 - 信箱、手機都清空 → 422 `VALIDATION_ERROR`（至少要留一個，D5）；前端會先擋在欄位下方「信箱和手機至少要留一個」
 - 新增手機：切成 `google@test.com`（沒有手機），手機欄填例如 `0911222333` → OTP → 完成；只清空其中一個是允許的
+- email、手機一次只能改一個（新增、更換或移除）；兩個都改 → 422 `VALIDATION_ERROR`（前端先擋在欄位下方「信箱和手機一次只能修改一個」）
+- 發送 OTP 回應多帶 `sentTo`（遮罩後的寄送對象），驗證頁顯示「驗證碼已寄到…」：新增／更換寄到新的（例如 `0911***333`）；移除其中一個寄到留下的那個（`member@test.com` 清空手機 → `m***@test.com`）；都沒改寄到現有的 email
 - Logto 模式驗證通過後，姓名、email、手機也會寫回 mock 的 SSO 帳號（`mockSsoAccount`）
 - 沒先送出修改內容就驗證 OTP → 410 `OTP_EXPIRED`
 
