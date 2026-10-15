@@ -9,9 +9,9 @@ export interface UseOtpSenderOptions {
   expiresInOverride?: number
 }
 
-export interface OtpSender<TBody> {
+export interface OtpSender<TBody, TResponse extends OtpSendResponse = OtpSendResponse> {
   /** 呼叫發送 API；成功後開始倒數。失敗會丟出 ApiError，由呼叫端顯示錯誤 */
-  send: (body: TBody) => Promise<OtpSendResponse>
+  send: (body: TBody) => Promise<TResponse>
   /** 用上一次 send 的內容重新發送（給 OtpField 的 onResend）；成功回 true，失敗且有 onResendError 時回 false */
   resend: () => Promise<boolean>
   /** 回到尚未發送的狀態（例如使用者改了信箱／手機） */
@@ -34,10 +34,10 @@ export interface OtpSender<TBody> {
  *   await otp.send({ email, phone })
  *   <OtpField length={otp.length} expiresAt={otp.expiresAt} onResend={otp.resend} />
  */
-export function useOtpSender<TBody>(
-  sendFn: (body: TBody) => Promise<OtpSendResponse>,
+export function useOtpSender<TBody, TResponse extends OtpSendResponse = OtpSendResponse>(
+  sendFn: (body: TBody) => Promise<TResponse>,
   options: UseOtpSenderOptions = {},
-): OtpSender<TBody> {
+): OtpSender<TBody, TResponse> {
   const [expiresAt, setExpiresAt] = useState<number | null>(null)
   const [length, setLength] = useState(OTP_DEFAULT_LENGTH)
   const [sending, setSending] = useState(false)

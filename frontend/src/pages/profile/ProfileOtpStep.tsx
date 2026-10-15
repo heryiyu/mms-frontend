@@ -2,7 +2,7 @@ import { Form } from 'antd'
 import { useState } from 'react'
 import { getApiErrorMessage, isApiError } from '../../api/client'
 import { verifyProfileChange } from '../../api/member'
-import type { Me, ProfileChangeRequest } from '../../api/types'
+import type { Me, OtpSentTo, ProfileChangeOtpResponse, ProfileChangeRequest } from '../../api/types'
 import ActionBar from '../../components/ActionBar'
 import { AppForm, FormCard } from '../../components/form'
 import type { NotifyOptions } from '../../components/NoticeModal'
@@ -16,6 +16,7 @@ import styles from './Profile.module.css'
 // 主要按鈕「確認」（#12 C4），驗證碼未輸入完整前停用
 //
 // TODO(#12)：驗證碼錯誤／逾時的提示樣式未出圖，先用通知彈窗（同 OTP 元件建議）
+// TODO(#12)：「驗證碼已寄到…」（#49，後端回傳的遮罩目的地）稿上沒有，接在說明文字後面
 
 interface OtpValues {
   otp: string
@@ -25,17 +26,21 @@ const MESSAGES = {
   hint: '為保障您的帳號安全，送出會員資料修改前，請先完成 OTP 驗證。',
   failedTitle: '驗證失敗',
   failedContent: '發生錯誤，請稍後再試',
+  sentTo: ({ channel, destination }: OtpSentTo) =>
+    channel === 'email' ? `驗證碼已寄到信箱 ${destination}。` : `驗證碼已用簡訊傳送到 ${destination}。`,
 } as const
 
 export interface ProfileOtpStepProps {
-  otp: OtpSender<ProfileChangeRequest>
+  otp: OtpSender<ProfileChangeRequest, ProfileChangeOtpResponse>
+  /** 驗證碼寄到哪裡（發送 API 回傳）；沒有時不顯示 */
+  sentTo: OtpSentTo | null
   notify: (options: NotifyOptions) => Promise<boolean>
   /** 取消／返回：回資料修改（保留已修改內容） */
   onCancel: () => void
   onVerified: (me: Me) => void
 }
 
-export default function ProfileOtpStep({ otp, notify, onCancel, onVerified }: ProfileOtpStepProps) {
+export default function ProfileOtpStep({ otp, sentTo, notify, onCancel, onVerified }: ProfileOtpStepProps) {
   const [form] = Form.useForm<OtpValues>()
   const code = Form.useWatch('otp', form) ?? ''
   const [verifying, setVerifying] = useState(false)
@@ -60,7 +65,15 @@ export default function ProfileOtpStep({ otp, notify, onCancel, onVerified }: Pr
       <div className={styles.otpBody}>
         <h1 className={cx(typography.pageTitle, styles.title, styles.otpTitle)}>資料變更驗證</h1>
         <FormCard className={styles.otpCard}>
-          <p className={styles.otpHint}>{MESSAGES.hint}</p>
+          <p className={styles.otpHint}>
+            {MESSAGES.hint}
+            {sentTo && (
+              <>
+                <br />
+                {MESSAGES.sentTo(sentTo)}
+              </>
+            )}
+          </p>
           <Form.Item name="otp" rules={otpRules(otp.length)} className={styles.otpItem}>
             <OtpField length={otp.length} expiresAt={otp.expiresAt} onResend={otp.resend} autoFocus />
           </Form.Item>

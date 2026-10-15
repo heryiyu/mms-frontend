@@ -46,7 +46,7 @@
 | `TOKEN_INVALID` | 400 | `registerToken`／`resetToken` 無效、過期或已使用 |
 | `EMAIL_PHONE_MISMATCH` | 400 | 信箱與手機不屬於同一帳號（忘記密碼）。奉獻收據 #50 起不再使用 |
 | `ALREADY_REGISTERED` | 409 | 信箱、手機或身分證字號已被使用 |
-| `CONTACT_IN_USE` | 409 | 個人資訊修改：新的 email／手機已被**其他 SSO 帳號**使用（#49），帶 `fields` 指出哪一欄 |
+| `CONTACT_IN_USE` | 409 | 新的 email／手機已被**其他 SSO 帳號**使用，帶 `fields` 指出哪一欄（#48 補填聯絡方式、#49 個人資訊修改；註冊與身分證字號重複仍用 `ALREADY_REGISTERED`） |
 | `WRONG_CURRENT_PASSWORD` | 400 | 修改密碼時目前密碼錯誤 |
 | `PASSWORD_SAME_AS_OLD` | 400 | 新密碼與舊密碼相同 |
 | `PASSWORD_NOT_SET` | 400 | 帳號沒有密碼（只用 Line／Google 登入），不能修改密碼（#49） |
@@ -69,7 +69,9 @@
 { "expiresIn": 300, "length": 4 }
 ```
 
-`expiresIn` 為有效秒數（前端倒數用，暫定 5 分鐘）、`length` 為驗證碼位數（暫定 4）。**重新發送 = 再呼叫一次同一支發送 API**，沒有另外的 resend 端點。OTP 送達方式（簡訊／信箱）與修改信箱時寄到舊或新位置，設計待確認。
+`expiresIn` 為有效秒數（前端倒數用，暫定 5 分鐘）、`length` 為驗證碼位數（暫定 4）。**重新發送 = 再呼叫一次同一支發送 API**，沒有另外的 resend 端點。OTP 送達方式：email 寄信、手機發簡訊；個人資訊修改（新增／更換／移除 email 或手機）寄到哪裡見 `POST /me/profile-change/otp`（#49，2026-10-15 已決定）。
+
+所有發送 OTP 的 API 都要做頻率限制，超過回 `TOO_MANY_ATTEMPTS`（門檻待確認），包含個人資訊修改、補填聯絡方式。
 
 ### 密碼規則（暫定）
 
@@ -274,7 +276,7 @@ Line 授權完成後，前端以 `code` 換登入結果（目前為 stub）。
 - Request：`{ "email": string }` 或 `{ "phone": string }`（擇一）
 - Response 200：`{ "expiresIn": 300, "length": 4 }`
 - 錯誤：
-  - `ALREADY_REGISTERED`：已被**其他 SSO 帳號**使用（要在發驗證碼前擋下，否則寫回 SSO 會失敗）
+  - `CONTACT_IN_USE`：已被**其他 SSO 帳號**使用（要在發驗證碼前擋下，否則寫回 SSO 會失敗），`fields` 指出哪一欄，例：`{ "phone": "此手機已被其他帳號使用" }`
   - `VALIDATION_ERROR`：格式錯誤、兩個都帶或都沒帶、帳號已經有這個聯絡方式
   - `TOO_MANY_ATTEMPTS`
 
@@ -283,7 +285,7 @@ Line 授權完成後，前端以 `code` 換登入結果（目前為 stub）。
 - Request：`{ "email": string, "otp": string }` 或 `{ "phone": string, "otp": string }`（與發送時相同）
 - 驗證通過後**立即寫回 SSO**，回傳更新後的帳號資料。
 - Response 200：`{ "name": string | null, "email": string | null, "phone": string | null }`（同 `GET /me/registration` 的 `account`）
-- 錯誤：`OTP_INVALID`、`OTP_EXPIRED`（含沒有對應的發送紀錄）、`ALREADY_REGISTERED`
+- 錯誤：`OTP_INVALID`、`OTP_EXPIRED`（含沒有對應的發送紀錄）、`CONTACT_IN_USE`（發送後到驗證前被別人搶先用掉）
 
 ### POST /me/registration
 
@@ -411,12 +413,28 @@ Line 授權完成後，前端以 `code` 換登入結果（目前為 stub）。
 - Request：`{ "name": string, "nickname": string, "email": string, "phone": string }`
   - `email`、`phone` 送**空字串 = 沒有**：原本沒有就維持沒有；原本有就是刪除（#49）。
   - 原本沒有的那個（例如只有 email 的人填了手機）= **新增**，同樣走這個「發送 OTP → 驗證」流程。
-- Response 200：`{ "expiresIn": 300, "length": 4 }`
+  - **email、手機一次只能改一個**（新增、更換或移除其中一個），驗證碼才有明確的寄送對象；姓名、暱稱可以同時改。
+- **驗證碼寄送對象**（#49，2026-10-15 決定，參考 Google、Apple、Microsoft 帳號中心）：
+
+  | 這次的修改 | 驗證碼寄到 | 驗證通過後另外寄安全通知到 |
+  | --- | --- | --- |
+  | 新增 email 或手機 | 新的那個（確認是本人的） | － |
+  | 更換 email 或手機 | **新的**那個 | **舊的**那個：「您的帳號已將信箱／手機改為 …，如非本人操作請聯繫教會」 |
+  | 移除 email 或手機（敏感操作） | **留下的**那個（等同重新驗證身分；沒有密碼的人也能用） | **被移除的**那個：「您的帳號已移除此信箱／手機，如非本人操作請聯繫教會」 |
+  | email、手機都沒改（只改姓名、暱稱） | 現有的 email（沒有 email 就寄手機） | － |
+
+  安全通知在驗證通過、寫回 SSO 成功後才寄；寄送失敗不影響修改結果。前端在修改頁說明「更換或移除後會通知原本的信箱／手機」。
+- Response 200：
+
+  ```json
+  { "expiresIn": 300, "length": 4, "sentTo": { "channel": "email | phone", "destination": "a***@gmail.com" } }
+  ```
+
+  `sentTo.destination` 為後端遮罩後的寄送對象（例 `a***@gmail.com`、`0912***678`），前端在驗證頁顯示「驗證碼已寄到…」。
 - 錯誤：
-  - `VALIDATION_ERROR`：格式錯誤；`email`、`phone` 都是空字串（至少要留一個，D5），`fields` 兩欄都帶，例：`{ "email": "信箱和手機至少要留一個", "phone": "信箱和手機至少要留一個" }`
+  - `VALIDATION_ERROR`：格式錯誤；`email`、`phone` 都是空字串（至少要留一個，D5），`fields` 兩欄都帶，例：`{ "email": "信箱和手機至少要留一個", "phone": "信箱和手機至少要留一個" }`；email、手機同時改（`fields` 兩欄都帶「信箱和手機一次只能修改一個」）
   - `CONTACT_IN_USE`：新的 email／手機已被**其他 SSO 帳號**使用（#49）。**要在發驗證碼前擋下**，否則驗證通過後寫回 SSO 會失敗。要查的是 SSO 的所有使用者（含還沒填會員資料的 SSO 帳號），不只會員中心的會員。`fields` 指出哪一欄，例：`{ "phone": "此手機已被其他帳號使用" }`（前端顯示在該欄位下方）。和自己目前的值相同不算。
-  - `TOO_MANY_ATTEMPTS`
-  - 舊版的 `ALREADY_REGISTERED` 前端仍會顯示通用提示，但請改回 `CONTACT_IN_USE`。
+  - `TOO_MANY_ATTEMPTS`：發送頻率限制（新增、更換、移除聯絡方式的驗證碼都適用）
 
 ### POST /me/profile-change/verify
 
@@ -427,7 +445,7 @@ Line 授權完成後，前端以 `code` 換登入結果（目前為 stub）。
 - 錯誤：`OTP_INVALID`、`OTP_EXPIRED`（含沒有待驗證的修改）、`CONTACT_IN_USE`（發送後到驗證前被別人搶先用掉，前端顯示後端的 `message`）
 - **Logto 模式（#49，架構整理 D2、D3）**：驗證通過後由後端寫回 SSO（見下方「寫回 SSO」），之後新的 email／手機可以用來登入：
   - 姓名以會員中心為準：改了姓名就同步寫回 SSO 的名字
-  - email、手機有變（新增、修改、刪除）就寫回 SSO 的主要 email／手機
+  - email、手機有變（新增、更換、移除）就寫回 SSO 的主要 email／手機，然後依上表寄安全通知到原本的那個
   - 寫回 SSO 失敗時，會員中心的資料也不要改（避免兩邊不一致），回 5xx 或對應錯誤碼讓使用者重試
 
 ### 寫回 SSO（Logto Management API，#48、#49 共用）
@@ -580,10 +598,10 @@ email、手機、密碼存在 SSO（架構整理 D2～D4），會員中心改這
 ## 設計尚未決定、後端需要一起確認的事項
 
 - 登入過度頻繁／帳號鎖定的門檻與時間；鎖定後教會解鎖並寄信的後台流程。
-- OTP 送達方式、長度、有效時間，以及修改信箱／手機時寄到舊或新位置。
+- OTP 長度、有效時間、發送頻率限制的門檻。
 - 密碼規則；Line 建立的帳號沒有密碼時能否走忘記密碼流程。
 - Line OAuth 的 callback 處理與「接回一般創建流程」的步驟。
 - 奉獻收據的年度（目前前端不帶 `year`，由後端決定；稿中沒有年度選擇）。
 - 會員審核的資料範圍（區長只看自己牧區？「區長以上」的角色清單）。
-- 會員資料申請（#48）：被退回重新送出時身分證字號是否要重新輸入（目前前端要求重新輸入）；寫回 SSO 失敗（例如 SSO 暫時無法連線）時的處理。
-- 個人資訊修改寫回 SSO（#49）：刪除 email／手機時驗證碼寄到哪裡（留下的那一個？）；寫回 SSO 失敗時的處理；#48 補填聯絡方式的「已被使用」目前回 `ALREADY_REGISTERED`，是否也改成 `CONTACT_IN_USE`。
+- 會員資料申請（#48）：被退回重新送出時身分證字號是否要重新輸入（目前前端要求重新輸入）。
+- 寫回 SSO 失敗（例如 SSO 暫時無法連線）時的處理（#48、#49；目前建議會員中心資料也不改、回錯誤讓使用者重試）。
