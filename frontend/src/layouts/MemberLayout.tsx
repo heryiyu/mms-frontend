@@ -4,6 +4,7 @@ import { Link, Outlet, useLocation, useNavigate } from 'react-router'
 import { logout } from '../api/auth'
 import IdleLogoutNotice from '../auth/IdleLogoutNotice'
 import { useAuth } from '../auth/useAuth'
+import { useMe } from '../auth/useMe'
 import Icon from '../components/Icon'
 import { BRAND_LOGO_SRC } from '../constants/brand'
 import { PATHS } from '../routes/paths'
@@ -33,7 +34,10 @@ export default function MemberLayout() {
   const navigate = useNavigate()
   const [drawerOpen, setDrawerOpen] = useState(false)
 
-  const navItems = getMemberMenuItems(role)
+  // 「修改密碼」只給有密碼的人（#49）；/me 載入失敗時照常顯示，由修改密碼頁與後端擋
+  const { me, loadState } = useMe()
+  const hasPassword = loadState === 'error' ? true : me?.hasPassword
+  const navItems = getMemberMenuItems(role, hasPassword)
   const selectedKey = getSelectedMenuKey(pathname)
   const selectedKeys = selectedKey ? [selectedKey] : []
 

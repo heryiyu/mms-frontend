@@ -95,8 +95,11 @@ export type UserStatus = 'ACTIVE' | 'PENDING' | 'LOCKED' | 'REJECTED'
 
 export interface MockUser {
   id: string
+  /** 空字串 = 沒有（email、手機至少有一個，D5） */
   email: string
+  /** 空字串 = 沒有密碼（只用 Line／Google 登入，#49 不顯示修改密碼） */
   password: string
+  /** 空字串 = 沒有 */
   phone: string
   name: string
   nickname: string
@@ -249,6 +252,23 @@ export const db = {
       birthDate: '1995-03-15',
       rejectReason: '小組與 EKK 填寫有誤，請確認後重新送出',
     }),
+    // 只用 Google 登入（#49）：沒有密碼、沒有手機。看不到「修改密碼」，可在個人資訊新增手機
+    seed({
+      id: 'u8',
+      email: 'google@test.com',
+      password: '',
+      phone: '',
+      name: '周恩典',
+      nickname: '恩典',
+      gender: 'female',
+      idNumber: 'E223456785',
+      ekkId: 'c1-d2-g2-e2',
+      journey: 'VIP',
+      role: 'member',
+      status: 'ACTIVE',
+      submittedAt: AT(3),
+      reviewedAt: AT(4),
+    }),
   ] as MockUser[],
   /** 註冊 OTP 驗證通過後發的憑證 → 驗證過的信箱 */
   registerTokens: new Map<string, string>(),
@@ -262,7 +282,13 @@ export const db = {
 export const normalizeEmail = (email: string) => email.trim().toLowerCase()
 
 export const findUserByEmail = (email: string) =>
-  db.users.find((user) => user.email.toLowerCase() === normalizeEmail(email))
+  normalizeEmail(email) ? db.users.find((user) => user.email.toLowerCase() === normalizeEmail(email)) : undefined
+
+/**
+ * 已經被某個 SSO 帳號使用、但沒有會員資料的 email／手機（#49）：個人資訊改成這兩個會回 CONTACT_IN_USE。
+ * 其他會員的 email／手機（例如 leader@test.com）也一樣會被擋。
+ */
+export const SSO_TAKEN_CONTACTS = { email: 'taken@test.com', phone: '0900111222' } as const
 
 /** 由 /me 與審核清單使用，把 ekk/group/district/church id 轉成顯示名稱 */
 export function orgNames(user: MockUser) {

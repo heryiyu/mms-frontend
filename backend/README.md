@@ -28,7 +28,7 @@
   { "code": "WRONG_PASSWORD", "message": "密碼輸入錯誤", "fields": { "password": "..." } }
   ```
 
-  `code` 為下表字串（前端依 `code` 決定顯示哪個 popup）；`message` 為可直接顯示的繁體中文；`fields` 只在 `VALIDATION_ERROR` 時帶，為「欄位名稱 → 錯誤訊息」。
+  `code` 為下表字串（前端依 `code` 決定顯示哪個 popup）；`message` 為可直接顯示的繁體中文；`fields` 只在 `VALIDATION_ERROR`、`CONTACT_IN_USE` 時帶，為「欄位名稱 → 錯誤訊息」。
 - 角色：`member`（一般會員）、`leader`（區長以上）。前端路由與選單依角色顯示（`frontend/src/auth/`），但權限仍須由後端驗證。
 
 ### 錯誤碼
@@ -46,8 +46,10 @@
 | `TOKEN_INVALID` | 400 | `registerToken`／`resetToken` 無效、過期或已使用 |
 | `EMAIL_PHONE_MISMATCH` | 400 | 信箱與手機不屬於同一帳號，或與登入會員資料不符 |
 | `ALREADY_REGISTERED` | 409 | 信箱、手機或身分證字號已被使用 |
+| `CONTACT_IN_USE` | 409 | 個人資訊修改：新的 email／手機已被**其他 SSO 帳號**使用（#49），帶 `fields` 指出哪一欄 |
 | `WRONG_CURRENT_PASSWORD` | 400 | 修改密碼時目前密碼錯誤 |
 | `PASSWORD_SAME_AS_OLD` | 400 | 新密碼與舊密碼相同 |
+| `PASSWORD_NOT_SET` | 400 | 帳號沒有密碼（只用 Line／Google 登入），不能修改密碼（#49） |
 | `NO_RECORDS` | 404 | 該年度無奉獻紀錄 |
 | `MEMBER_NOT_FOUND` | 404 | 審核對象不存在 |
 | `ALREADY_PROCESSED` | 409 | 申請已被審核或退回；會員資料申請已送出過（`POST /me/registration`） |
@@ -357,8 +359,14 @@ Line 授權完成後，前端以 `code` 換登入結果（目前為 stub）。
 
 - Request：`{ "currentPassword": string, "newPassword": string }`
 - Response 204
-- 錯誤：`WRONG_CURRENT_PASSWORD`、`PASSWORD_SAME_AS_OLD`、`VALIDATION_ERROR`、`UNAUTHORIZED`
-- 修改後是否作廢其他裝置 session、是否強制重新登入：待確認。
+- 錯誤：`WRONG_CURRENT_PASSWORD`、`PASSWORD_SAME_AS_OLD`、`PASSWORD_NOT_SET`、`VALIDATION_ERROR`、`UNAUTHORIZED`
+- 修改後是否作廢其他裝置 session、是否強制重新登入：待確認（前端目前修改成功後一律登出、請使用者重新登入）。
+- **Logto 模式（#49，架構整理 D4）**：密碼存在 SSO，後端改用 Logto Management API（見下方「寫回 SSO」）：
+  1. 沒有密碼（只用 Line／Google 登入）→ `PASSWORD_NOT_SET`。前端依 `GET /me` 的 `hasPassword` 隱藏入口，這裡是直接打 API 時的防線
+  2. 到 SSO 檢查目前密碼，錯了回 `WRONG_CURRENT_PASSWORD`（不要回 401）
+  3. 新密碼與目前密碼相同 → `PASSWORD_SAME_AS_OLD`；不符 SSO 的密碼規則 → `VALIDATION_ERROR`（`fields.newPassword`）
+  4. 到 SSO 設定新密碼
+- 沒有密碼的人想設定密碼：到 SSO 登入頁用「忘記密碼」設定（不經會員中心）。
 
 ## 會員資料
 
@@ -382,19 +390,31 @@ Line 授權完成後，前端以 `code` 換登入結果（目前為 stub）。
     "group": "Jessus",
     "ekk": "Hooo",
     "journey": "NF | VIP | XN",
-    "role": "member | leader"
+    "role": "member | leader",
+    "hasPassword": true
   }
   ```
 
   `idNumber` 由後端遮罩（前 3 碼＋`*****`＋後 2 碼）；`church`／`district`／`group`／`ekk` 為顯示名稱。手機目前回完整號碼（編輯頁需要帶入），是否遮罩待確認。前端用 `role` 決定是否顯示「會員審核」。
+
+  #49（Logto 模式）：
+
+  - `email`、`phone` 以 SSO 帳號為準，**可能只有其中一個，沒有的回 `null`**（至少會有一個，D5）。
+  - `hasPassword`：SSO 帳號有沒有密碼。只用 Line／Google 登入的人為 `false`，前端不顯示「修改密碼」選單，直接開 `/change-password` 時顯示「沒有設定密碼，可到 SSO 登入頁用『忘記密碼』設定」。本機模式依會員中心有沒有存密碼。
 
 ### POST /me/profile-change/otp
 
 個人資訊修改：送出要修改的內容並發送 OTP。後端先暫存修改內容，OTP 驗證通過才正式寫入。只有姓名、暱稱、信箱、手機可修改。需登入。
 
 - Request：`{ "name": string, "nickname": string, "email": string, "phone": string }`
+  - `email`、`phone` 送**空字串 = 沒有**：原本沒有就維持沒有；原本有就是刪除（#49）。
+  - 原本沒有的那個（例如只有 email 的人填了手機）= **新增**，同樣走這個「發送 OTP → 驗證」流程。
 - Response 200：`{ "expiresIn": 300, "length": 4 }`
-- 錯誤：`ALREADY_REGISTERED`（新信箱／手機已被其他帳號使用）、`TOO_MANY_ATTEMPTS`、`VALIDATION_ERROR`
+- 錯誤：
+  - `VALIDATION_ERROR`：格式錯誤；`email`、`phone` 都是空字串（至少要留一個，D5），`fields` 兩欄都帶，例：`{ "email": "信箱和手機至少要留一個", "phone": "信箱和手機至少要留一個" }`
+  - `CONTACT_IN_USE`：新的 email／手機已被**其他 SSO 帳號**使用（#49）。**要在發驗證碼前擋下**，否則驗證通過後寫回 SSO 會失敗。要查的是 SSO 的所有使用者（含還沒填會員資料的 SSO 帳號），不只會員中心的會員。`fields` 指出哪一欄，例：`{ "phone": "此手機已被其他帳號使用" }`（前端顯示在該欄位下方）。和自己目前的值相同不算。
+  - `TOO_MANY_ATTEMPTS`
+  - 舊版的 `ALREADY_REGISTERED` 前端仍會顯示通用提示，但請改回 `CONTACT_IN_USE`。
 
 ### POST /me/profile-change/verify
 
@@ -402,7 +422,29 @@ Line 授權完成後，前端以 `code` 換登入結果（目前為 stub）。
 
 - Request：`{ "otp": string }`
 - Response 200：更新後的 `Me`（格式同 `GET /me`）
-- 錯誤：`OTP_INVALID`、`OTP_EXPIRED`（含沒有待驗證的修改）
+- 錯誤：`OTP_INVALID`、`OTP_EXPIRED`（含沒有待驗證的修改）、`CONTACT_IN_USE`（發送後到驗證前被別人搶先用掉，前端顯示後端的 `message`）
+- **Logto 模式（#49，架構整理 D2、D3）**：驗證通過後由後端寫回 SSO（見下方「寫回 SSO」），之後新的 email／手機可以用來登入：
+  - 姓名以會員中心為準：改了姓名就同步寫回 SSO 的名字
+  - email、手機有變（新增、修改、刪除）就寫回 SSO 的主要 email／手機
+  - 寫回 SSO 失敗時，會員中心的資料也不要改（避免兩邊不一致），回 5xx 或對應錯誤碼讓使用者重試
+
+### 寫回 SSO（Logto Management API，#48、#49 共用）
+
+email、手機、密碼存在 SSO（架構整理 D2～D4），會員中心改這些資料時由後端呼叫 Logto Management API：
+
+- **IT 要在 SSO 後台建一個給後端用的機器對機器（M2M）應用程式**，指派 Management API 權限（`all`），把 App ID／Secret 給後端。#48 補填聯絡方式也用同一個。
+- 以 JWT 的 `sub` 當 Logto 使用者 ID。以下端點名稱供參考，請以 Logto 官方文件與自架版版本為準：
+
+  | 用途 | Logto Management API |
+  | --- | --- |
+  | `GET /me` 的 `hasPassword` | `GET /api/users/{userId}/has-password` |
+  | 檢查 email／手機是否已被其他帳號使用 | `GET /api/users?search=...`（或寫入時的 422 錯誤，但要在發驗證碼前先查） |
+  | 寫回姓名、email、手機 | `PATCH /api/users/{userId}`（`name`、`primaryEmail`、`primaryPhone`；刪除送 `null`） |
+  | 修改密碼：檢查目前密碼 | `POST /api/users/{userId}/password/verify` |
+  | 修改密碼：設定新密碼 | `PATCH /api/users/{userId}/password` |
+
+- 手機格式：會員中心用台灣手機 `09xxxxxxxx`，Logto 存的是國碼格式（例如 `886912345678`），寫入與查詢時要轉換。
+- `POST /me/registration/contact/*`（#48）、`POST /me/profile-change/*`、`PUT /me/password` 都經過這裡。
 
 ## 奉獻收據
 
@@ -486,3 +528,5 @@ Line 授權完成後，前端以 `code` 換登入結果（目前為 stub）。
 - 奉獻收據的年度、是否必須與會員資料一致、附件格式與無身分證字號會員的處理。
 - 會員審核的資料範圍（區長只看自己牧區？「區長以上」的角色清單）。
 - 會員資料申請（#48）：被退回重新送出時身分證字號是否要重新輸入（目前前端要求重新輸入）；寫回 SSO 失敗（例如 SSO 暫時無法連線）時的處理。
+- 個人資訊修改寫回 SSO（#49）：刪除 email／手機時驗證碼寄到哪裡（留下的那一個？）；寫回 SSO 失敗時的處理；#48 補填聯絡方式的「已被使用」目前回 `ALREADY_REGISTERED`，是否也改成 `CONTACT_IN_USE`。
+- 奉獻收據目前要求 email、手機兩個都填且與會員資料一致；#49 之後會員可能只有其中一個，規則待確認。

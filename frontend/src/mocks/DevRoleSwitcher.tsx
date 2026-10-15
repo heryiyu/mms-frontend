@@ -19,6 +19,8 @@ const IDENTITIES: Identity[] = [
   { key: 'guest', label: '未登入' },
   { key: 'member', label: '一般會員（member@test.com）', email: 'member@test.com', status: 'ACTIVE' },
   { key: 'leader', label: '區長以上（leader@test.com）', email: 'leader@test.com', status: 'ACTIVE' },
+  // #49：沒有密碼（看不到修改密碼）、沒有手機（可在個人資訊新增）
+  { key: 'google', label: '只用 Google 登入（google@test.com）', email: 'google@test.com', status: 'ACTIVE' },
   { key: 'pending', label: '等待審核（pending@test.com）', email: 'pending@test.com', status: 'PENDING' },
 ]
 

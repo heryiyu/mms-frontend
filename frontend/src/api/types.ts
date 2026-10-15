@@ -56,9 +56,11 @@ export type ErrorCode =
   | 'EMAIL_PHONE_MISMATCH' // 信箱與手機不屬於同一帳號／與會員資料不符
   // 註冊／會員
   | 'ALREADY_REGISTERED' // 信箱、手機或身分證字號已被註冊
+  | 'CONTACT_IN_USE' // 個人資訊修改：新的 email／手機已被其他 SSO 帳號使用，fields 指出哪一欄（#49）
   // 密碼
   | 'WRONG_CURRENT_PASSWORD' // 目前密碼錯誤
   | 'PASSWORD_SAME_AS_OLD' // 新密碼不可與舊密碼相同
+  | 'PASSWORD_NOT_SET' // 帳號沒有密碼（只用 Line／Google 登入），不能修改密碼（#49）
   // 收據
   | 'NO_RECORDS' // 該年度無奉獻紀錄
   // 審核
@@ -288,8 +290,9 @@ export interface Me {
   gender: Gender
   /** 後端遮罩後回傳，例如 Q12*****89 */
   idNumber: string
-  email: string
-  phone: string
+  /** email、手機以 SSO 為準（#49），可能只有其中一個；沒有的為 null（至少會有一個，D5） */
+  email: string | null
+  phone: string | null
   /** 以下為顯示名稱 */
   church: string
   district: string
@@ -297,9 +300,14 @@ export interface Me {
   ekk: string
   journey: Journey
   role: Role
+  /** SSO 帳號有沒有密碼（#49）：只用 Line／Google 登入的人為 false，不顯示「修改密碼」 */
+  hasPassword: boolean
 }
 
-/** 個人資訊只有這四欄可修改 */
+/**
+ * 個人資訊只有這四欄可修改。驗證通過後由後端寫回 SSO（#49）。
+ * email、phone 空字串 = 沒有（原本沒有就維持沒有、原本有就刪除）；兩個不能同時為空（D5）
+ */
 export interface ProfileChangeRequest {
   name: string
   nickname: string

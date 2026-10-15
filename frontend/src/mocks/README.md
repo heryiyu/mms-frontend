@@ -13,7 +13,7 @@
 
 ## 開發用切換登入身分
 
-啟用 MSW 時，畫面左下角會出現切換按鈕（`DevRoleSwitcher.tsx`），可直接切成「未登入／一般會員／區長以上／等待審核」，不用經過登入頁；切換後 API 也會以該測試帳號身分回應。正式 build 不會包含。
+啟用 MSW 時，畫面左下角會出現切換按鈕（`DevRoleSwitcher.tsx`），可直接切成「未登入／一般會員／區長以上／只用 Google 登入（沒有密碼、沒有手機，#49）／等待審核」，不用經過登入頁；切換後 API 也會以該測試帳號身分回應。正式 build 不會包含。
 
 ## Logto 模式（#44）
 
@@ -24,10 +24,11 @@
   | 信箱 | SSO 帳號 | 登入後 |
   | --- | --- | --- |
   | `member@test.com`、`leader@test.com` 等種子帳號 | 該帳號的名字、email、手機 | 依帳號狀態：首頁、等待審核頁（`pending@test.com`）、帳號已鎖定（`locked@test.com`） |
+  | `google@test.com` | 只有 email、沒有密碼（Google 登入） | 首頁；選單沒有「修改密碼」，個人資訊可新增手機（#49） |
   | `rejected@test.com` | 有 email、手機 | 申請被退回頁（附退回原因），「修改資料」帶入上次填的內容重新送出 |
   | `notfound@test.com`（或任何未註冊信箱） | 只有 email（名字「新朋友」） | 會員資料填寫流程，可補填手機 |
   | `phoneonly@test.com` | 只有手機 `0911000111` | 會員資料填寫流程，可補填 email |
-  | `nocontact@test.com` | email、手機都沒有（Line、Google 註冊） | 會員資料填寫流程，至少要補一個 |
+  | `nocontact@test.com` | email、手機都沒有（Line、Google 註冊），沒有密碼 | 會員資料填寫流程，至少要補一個；審核通過後看不到「修改密碼」 |
 
 - 這個模式不顯示「切換登入身分」按鈕（token 由 Logto 發，切換不了）。
 - Logto 只接受登記過的 redirect URI，請用 `npm run dev`（`http://localhost:5173`）測試；預覽工具的隨機埠會被 Logto 拒絕。
@@ -44,6 +45,7 @@
 | `pending@test.com` | 任意（核准後用 `Pending@123`） | 待審核（手機 `0945678901`） | 登入 → `ACCOUNT_PENDING`（等待審核頁）；同時出現在審核清單 |
 | `apply1@test.com`、`apply2@test.com` | `Apply1@123`、`Apply2@123` | 待審核 | 審核清單的另外兩筆；核准後可登入，被退回後登入 → `ACCOUNT_REJECTED` |
 | `rejected@test.com` | 任意 | 申請被退回（手機 `0978901234`，附退回原因） | 本機登入 → `ACCOUNT_REJECTED`；Logto 模式測修改後重新送出 |
+| `google@test.com` | 沒有密碼（不能用密碼登入，用左下角切換鈕） | 一般會員，只用 Google 登入：沒有密碼、沒有手機 | #49：`/me` 的 `hasPassword: false`、`phone: null`；選單沒有「修改密碼」；個人資訊新增手機 |
 
 `member@test.com` 的身分證字號為 `Q123456789`（`/me` 回傳 `Q12*****89`）。
 
@@ -169,6 +171,7 @@ OTP 元件示範：dev 模式開 `/dev/otp`（`PATHS.devOtp`，`OtpDemo.tsx`；�
 
 ### 修改密碼（`PUT /me/password`）
 
+- 沒有密碼的帳號（`google@test.com`）→ 400 `PASSWORD_NOT_SET`；頁面本身依 `/me` 的 `hasPassword` 直接顯示「您的帳號沒有設定密碼」說明，選單也不顯示「修改密碼」（#49）
 - 目前密碼錯誤 → 400 `WRONG_CURRENT_PASSWORD`
 - 新密碼與目前密碼相同 → 400 `PASSWORD_SAME_AS_OLD`
 - 新密碼不符規則 → 422 `VALIDATION_ERROR`
@@ -176,7 +179,12 @@ OTP 元件示範：dev 模式開 `/dev/otp`（`PATHS.devOtp`，`OtpDemo.tsx`；�
 ### 個人資訊修改
 
 - 流程：`/profile` 點「編輯資料」→ `/profile/edit` 修改後「確認」（`POST /me/profile-change/otp`）→ 輸入 OTP（上表規則，例如 `1234`）→ 變更完成；回檢視頁、首頁橫幅暱稱會顯示新資料（重新整理後還原）。
-- 新信箱／手機已被其他帳號使用（例如改成 `leader@test.com`）→ 409 `ALREADY_REGISTERED`
+- 新信箱／手機已被其他 SSO 帳號使用 → 409 `CONTACT_IN_USE`（`fields` 指出哪一欄，畫面顯示在該欄位下方）：
+  - 固定值 `taken@test.com`、`0900111222`（模擬「有 SSO 帳號、但沒有會員資料」的人，`db.ts` 的 `SSO_TAKEN_CONTACTS`）
+  - 其他會員的信箱／手機（例如 `leader@test.com`、`0923456789`）
+- 信箱、手機都清空 → 422 `VALIDATION_ERROR`（至少要留一個，D5）；前端會先擋在欄位下方「信箱和手機至少要留一個」
+- 新增手機：切成 `google@test.com`（沒有手機），手機欄填例如 `0911222333` → OTP → 完成；只清空其中一個是允許的
+- Logto 模式驗證通過後，姓名、email、手機也會寫回 mock 的 SSO 帳號（`mockSsoAccount`）
 - 沒先送出修改內容就驗證 OTP → 410 `OTP_EXPIRED`
 
 ### 奉獻收據
