@@ -78,7 +78,7 @@
 - `GET /me`（或 `/members/me`）：取得目前會員基本資料，至少需要暱稱（橫幅「Hi {暱稱}」）。
 - `GET /me/permissions`（或併入 `/me`）：判斷是否顯示「會員審核」「奉獻收據下載」卡片、「系統設定」選單（若為角色權限控制）。
 - `POST /auth/logout`：手動登出。
-- 閒置自動登出：前端計時 7 分鐘無操作 → 清除 token 並呼叫 `POST /auth/logout`；後端 token／session 逾時時間需與 7 分鐘一致（待後端確認）。
+- 閒置自動登出：前端計時 7 分鐘無操作 → 清除 token 並呼叫 `POST /auth/logout`。後端不需要自己的閒置逾時（2026-10-15 確認，見 `backend/README.md`「通用規則」）。
 
 ## 待確認
 

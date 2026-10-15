@@ -14,8 +14,9 @@ import { useIdleTimeout } from './useIdleTimeout'
  * 若在彈窗出現前就清掉登入狀態，守衛會立刻導頁、版型卸載，彈窗就看不到了。
  * 彈窗期間遮罩擋住操作；重新整理或關閉後再開時，共用的最後操作時間已逾時，會立刻再跳出彈窗。
  *
- * TODO(#12)：後端是否也有閒置失效、逾時當下是否要先呼叫 /auth/logout 讓 token 失效，待後端確認。
- * 目前在使用者按確認時才呼叫；若後端先讓 token 失效，彈窗期間的請求收到 401 會直接導回登入頁（不顯示此彈窗）。
+ * 後端沒有自己的閒置逾時（2026-10-15 確認，backend/README.md「通用規則」）：Logto access token 由 SDK 自動換新，
+ * 所以彈窗出現前不會先收到 401；使用者按確認時才登出（Logto 模式結束 Logto session）。
+ * 若後端改成會提早讓 token 失效，彈窗期間的請求收到 401 會直接導回登入頁（不顯示此彈窗）。
  */
 export default function IdleLogoutNotice() {
   const expired = useIdleTimeout()
