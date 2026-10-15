@@ -33,6 +33,8 @@ const ERRORS: Record<ServerErrorCode, { status: number; message: string }> = {
   PASSWORD_SAME_AS_OLD: { status: 400, message: '新密碼不可與舊密碼相同' },
   PASSWORD_NOT_SET: { status: 400, message: '此帳號沒有設定密碼' },
   NO_RECORDS: { status: 404, message: '該年度無奉獻紀錄' },
+  LINK_EXPIRED: { status: 410, message: '連結已過期，請重新申請' },
+  RECEIPT_NOT_FOUND: { status: 404, message: '查無此收據' },
   MEMBER_NOT_FOUND: { status: 404, message: '查無此申請' },
   ALREADY_PROCESSED: { status: 409, message: '此申請已處理' },
   VALIDATION_ERROR: { status: 422, message: '欄位格式錯誤' },

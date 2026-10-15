@@ -5,29 +5,36 @@ import type { AccountStatus } from '../api/types'
 import { authStore } from '../auth/store'
 import { useAuth } from '../auth/useAuth'
 import Icon from '../components/Icon'
-import { findUserByEmail } from './db'
+import { db } from './db'
 import { makeToken } from './utils'
 
 interface Identity {
   key: string
   label: string
-  email?: string
+  /** db.ts 的使用者 id（只有手機的會員沒有 email，用 id 對應） */
+  userId?: string
   status?: AccountStatus
 }
 
 const IDENTITIES: Identity[] = [
   { key: 'guest', label: '未登入' },
-  { key: 'member', label: '一般會員（member@test.com）', email: 'member@test.com', status: 'ACTIVE' },
-  { key: 'leader', label: '區長以上（leader@test.com）', email: 'leader@test.com', status: 'ACTIVE' },
+  { key: 'member', label: '一般會員（member@test.com）', userId: 'u1', status: 'ACTIVE' },
+  { key: 'leader', label: '區長以上（leader@test.com）', userId: 'u2', status: 'ACTIVE' },
   // #49：沒有密碼（看不到修改密碼）、沒有手機（可在個人資訊新增）
-  { key: 'google', label: '只用 Google 登入（google@test.com）', email: 'google@test.com', status: 'ACTIVE' },
-  { key: 'pending', label: '等待審核（pending@test.com）', email: 'pending@test.com', status: 'PENDING' },
+  { key: 'google', label: '只用 Google 登入（google@test.com）', userId: 'u8', status: 'ACTIVE' },
+  // #50：只有手機（奉獻收據寄簡訊下載連結）、沒有身分證字號（收據密碼改用出生年月日）
+  { key: 'phoneonly', label: '只有手機（0911333444）', userId: 'u9', status: 'ACTIVE' },
+  { key: 'noid', label: '沒有身分證字號（noid@test.com）', userId: 'u10', status: 'ACTIVE' },
+  { key: 'pending', label: '等待審核（pending@test.com）', userId: 'u4', status: 'PENDING' },
 ]
+
+const findUser = (identity?: Identity) =>
+  identity?.userId ? db.users.find((user) => user.id === identity.userId) : undefined
 
 function currentKey(token: string | null, status: AccountStatus | undefined): string {
   if (!token) return 'guest'
   const match = IDENTITIES.find((item) => {
-    const user = item.email ? findUserByEmail(item.email) : undefined
+    const user = findUser(item)
     return user && makeToken(user) === token && item.status === status
   })
   return match?.key ?? ''
@@ -38,7 +45,7 @@ export default function DevRoleSwitcher() {
 
   const handleClick: MenuProps['onClick'] = ({ key }) => {
     const identity = IDENTITIES.find((item) => item.key === key)
-    const user = identity?.email ? findUserByEmail(identity.email) : undefined
+    const user = findUser(identity)
     if (!identity || !user || !identity.status) {
       authStore.clear()
       return

@@ -1,6 +1,6 @@
 // MSW 假資料：全部存在記憶體，審核／退回／個人資料修改會即時反映，重新整理頁面後還原。
 // 這裡的帳號、密碼都是測試用假資料，說明見 src/mocks/README.md。
-import type { Gender, Journey, Option, ProfileChangeRequest, Role } from '../api/types'
+import type { Gender, Journey, Option, ProfileChangeRequest, ReceiptChannel, Role } from '../api/types'
 
 /* ---------- 教會組織：教會 → 牧區 → 小組 → EKK ---------- */
 
@@ -104,7 +104,7 @@ export interface MockUser {
   name: string
   nickname: string
   gender: Gender
-  /** 明碼，只在 db 內；對外一律遮罩 */
+  /** 明碼，只在 db 內；對外一律遮罩。空字串 = 沒有（外籍，#50 收據密碼改用出生年月日） */
   idNumber: string
   churchId: string
   districtId: string
@@ -269,6 +269,41 @@ export const db = {
       submittedAt: AT(3),
       reviewedAt: AT(4),
     }),
+    // 只有手機（#50 奉獻收據：直接寄到手機，簡訊下載連結）。沒有 email 不能用本機登入表單，用左下角切換鈕
+    seed({
+      id: 'u9',
+      email: '',
+      password: 'Phone@1234',
+      phone: '0911333444',
+      name: '許簡訊',
+      nickname: '小許',
+      gender: 'male',
+      idNumber: 'G123456786',
+      ekkId: 'c1-d1-g2-e2',
+      journey: 'NF',
+      role: 'member',
+      status: 'ACTIVE',
+      submittedAt: AT(5),
+      reviewedAt: AT(6),
+    }),
+    // 沒有身分證字號（外籍，#50 奉獻收據 PDF 密碼改用出生年月日 8 碼）；email、手機都有
+    seed({
+      id: 'u10',
+      email: 'noid@test.com',
+      password: 'Noid@1234',
+      phone: '0922333444',
+      name: 'Grace Lee',
+      nickname: 'Grace',
+      gender: 'female',
+      idNumber: '',
+      ekkId: 'c1-d2-g1-e2',
+      journey: 'VIP',
+      role: 'member',
+      status: 'ACTIVE',
+      submittedAt: AT(7),
+      reviewedAt: AT(8),
+      birthDate: '1990-05-20',
+    }),
   ] as MockUser[],
   /** 註冊 OTP 驗證通過後發的憑證 → 驗證過的信箱 */
   registerTokens: new Map<string, string>(),
@@ -276,6 +311,8 @@ export const db = {
   resetTokens: new Map<string, string>(),
   /** 個人資料修改：已送出、等待 OTP 驗證的內容（使用者 id → 內容） */
   profileChanges: new Map<string, ProfileChangeRequest>(),
+  /** 奉獻收據：已發送驗證碼的寄送方式（使用者 id → channel），驗證時要一致 */
+  receiptOtps: new Map<string, ReceiptChannel>(),
   nextUserId: 100,
 }
 
@@ -302,6 +339,7 @@ export function orgNames(user: MockUser) {
 
 /** Q123456789 → Q12*****89 */
 export function maskIdNumber(idNumber: string) {
+  if (!idNumber) return ''
   return `${idNumber.slice(0, 3)}${'*'.repeat(Math.max(idNumber.length - 5, 0))}${idNumber.slice(-2)}`
 }
 

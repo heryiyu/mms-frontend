@@ -42,6 +42,8 @@ export const PATHS = {
   profileEdit: '/profile/edit',
   changePassword: '/change-password',
   receipt: '/receipt',
+  /** 奉獻收據下載頁（#50）：簡訊寄的網址，要登入、只有本人、1 小時內有效。實際網址用 receiptDownloadPath(id) */
+  receiptDownload: '/receipt/download/:id',
   /** 區長以上 */
   memberReview: '/member-review',
   /** 區長以上（暫定，TODO(#12) 見 layouts/memberNav.ts） */
@@ -53,6 +55,9 @@ export const PATHS = {
   /** OTP 元件示範（issue #5） */
   devOtp: '/dev/otp',
 } as const
+
+/** 奉獻收據下載頁網址（#50）：/receipt/download/<id> */
+export const receiptDownloadPath = (id: string) => `/receipt/download/${encodeURIComponent(id)}`
 
 /** 路由守衛導向登入頁時放在 location.state，登入後導回原頁 */
 export interface LoginRedirectState {

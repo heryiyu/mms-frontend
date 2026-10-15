@@ -1,6 +1,7 @@
 // OTP 共用的純函式：輸入整理、Form 驗證規則、API 錯誤 → 提示文案
 import type { Rule } from 'antd/es/form'
 import { isApiError } from '../../api/errors'
+import type { OtpSentTo } from '../../api/types'
 import { OTP_DEFAULT_LENGTH } from '../../constants/otp'
 
 /**
@@ -21,6 +22,9 @@ export const OTP_MESSAGES = {
   /** 倒數結束、沒有提供 onResend 時倒數框的文字 */
   timerExpired: '驗證碼已逾時',
   resend: '重新發送',
+  /** 驗證碼寄到哪裡（後端回的遮罩目的地 sentTo；#49 個人資訊修改、#50 奉獻收據共用） */
+  sentTo: ({ channel, destination }: OtpSentTo) =>
+    channel === 'email' ? `驗證碼已寄到信箱 ${destination}。` : `驗證碼已用簡訊傳送到 ${destination}。`,
 } as const
 
 /** 全形數字轉半形、去掉非數字、截到 length 位 */

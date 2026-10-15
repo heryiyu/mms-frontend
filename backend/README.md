@@ -44,17 +44,19 @@
 | `OTP_INVALID` | 400 | 驗證碼錯誤 |
 | `OTP_EXPIRED` | 410 | 驗證碼逾時 |
 | `TOKEN_INVALID` | 400 | `registerToken`／`resetToken` 無效、過期或已使用 |
-| `EMAIL_PHONE_MISMATCH` | 400 | 信箱與手機不屬於同一帳號，或與登入會員資料不符 |
+| `EMAIL_PHONE_MISMATCH` | 400 | 信箱與手機不屬於同一帳號（忘記密碼）。奉獻收據 #50 起不再使用 |
 | `ALREADY_REGISTERED` | 409 | 信箱、手機或身分證字號已被使用 |
 | `CONTACT_IN_USE` | 409 | 新的 email／手機已被**其他 SSO 帳號**使用，帶 `fields` 指出哪一欄（#48 補填聯絡方式、#49 個人資訊修改；註冊與身分證字號重複仍用 `ALREADY_REGISTERED`） |
 | `WRONG_CURRENT_PASSWORD` | 400 | 修改密碼時目前密碼錯誤 |
 | `PASSWORD_SAME_AS_OLD` | 400 | 新密碼與舊密碼相同 |
 | `PASSWORD_NOT_SET` | 400 | 帳號沒有密碼（只用 Line／Google 登入），不能修改密碼（#49） |
 | `NO_RECORDS` | 404 | 該年度無奉獻紀錄 |
+| `LINK_EXPIRED` | 410 | 奉獻收據簡訊下載連結已過期（寄出後 1 小時，#50） |
+| `RECEIPT_NOT_FOUND` | 404 | 查無此奉獻收據下載連結（#50） |
 | `MEMBER_NOT_FOUND` | 404 | 審核對象不存在 |
 | `ALREADY_PROCESSED` | 409 | 申請已被審核或退回；會員資料申請已送出過（`POST /me/registration`） |
 | `VALIDATION_ERROR` | 422 | 欄位缺漏或格式錯誤，帶 `fields` |
-| `FORBIDDEN` | 403 | 已登入但沒有權限（例如一般會員呼叫會員審核） |
+| `FORBIDDEN` | 403 | 已登入但沒有權限（例如一般會員呼叫會員審核、開別人的奉獻收據下載連結） |
 | `UNAUTHORIZED` | 401 | 未登入或 token 無效／過期 |
 
 `NETWORK_ERROR`（連不到後端）與 `UNKNOWN` 由前端產生，後端不需回傳。
@@ -67,9 +69,17 @@
 { "expiresIn": 300, "length": 4 }
 ```
 
-`expiresIn` 為有效秒數（前端倒數用，暫定 5 分鐘）、`length` 為驗證碼位數（暫定 4）。**重新發送 = 再呼叫一次同一支發送 API**，沒有另外的 resend 端點。OTP 送達方式：email 寄信、手機發簡訊；個人資訊修改（新增／更換／移除 email 或手機）寄到哪裡見 `POST /me/profile-change/otp`（#49，2026-10-15 已決定）。
+`expiresIn` 為有效秒數（前端倒數用，暫定 5 分鐘）、`length` 為驗證碼位數（暫定 4）。**重新發送 = 再呼叫一次同一支發送 API**，沒有另外的 resend 端點。OTP 送達方式：email 寄信、手機發簡訊；個人資訊修改（新增／更換／移除 email 或手機）寄到哪裡見 `POST /me/profile-change/otp`（#49，2026-10-15 已決定）；奉獻收據寄到會員選定的那一個，見 `POST /receipts/otp`（#50）。
 
-所有發送 OTP 的 API 都要做頻率限制，超過回 `TOO_MANY_ATTEMPTS`（門檻待確認），包含個人資訊修改、補填聯絡方式。
+**寄送對象 `sentTo`**（#49 個人資訊修改、#50 奉獻收據共用）：寄送對象由後端決定的發送 API，回應另外帶
+
+```json
+{ "sentTo": { "channel": "email | phone", "destination": "a***@gmail.com" } }
+```
+
+`destination` 為後端遮罩後的值，規則：email 留第一個字元＋`***@`＋網域（`a.b@gmail.com` → `a***@gmail.com`）；手機留前 4 碼＋`***`＋後 3 碼（`0912345678` → `0912***678`）。前端顯示「驗證碼已寄到信箱 …」／「驗證碼已用簡訊傳送到 …」；奉獻收據頁顯示會員已有的聯絡方式時也由前端用同一規則遮罩（`frontend/src/utils/maskContact.ts`）。
+
+所有發送 OTP 的 API 都要做頻率限制，超過回 `TOO_MANY_ATTEMPTS`（門檻待確認），包含個人資訊修改、補填聯絡方式、奉獻收據。
 
 ### 密碼規則（暫定）
 
@@ -397,7 +407,7 @@ Line 授權完成後，前端以 `code` 換登入結果（目前為 stub）。
   }
   ```
 
-  `idNumber` 由後端遮罩（前 3 碼＋`*****`＋後 2 碼）；`church`／`district`／`group`／`ekk` 為顯示名稱。手機目前回完整號碼（編輯頁需要帶入），是否遮罩待確認。前端用 `role` 決定是否顯示「會員審核」。
+  `idNumber` 由後端遮罩（前 3 碼＋`*****`＋後 2 碼），沒有身分證字號（外籍）的會員回空字串（#50）；`church`／`district`／`group`／`ekk` 為顯示名稱。手機目前回完整號碼（編輯頁需要帶入），是否遮罩待確認。前端用 `role` 決定是否顯示「會員審核」。
 
   #49（Logto 模式）：
 
@@ -428,7 +438,7 @@ Line 授權完成後，前端以 `code` 換登入結果（目前為 stub）。
   { "expiresIn": 300, "length": 4, "sentTo": { "channel": "email | phone", "destination": "a***@gmail.com" } }
   ```
 
-  `sentTo.destination` 為後端遮罩後的寄送對象（例 `a***@gmail.com`、`0912***678`），前端在驗證頁顯示「驗證碼已寄到…」。
+  `sentTo` 格式與遮罩規則見「OTP 通用規則」，前端在驗證頁顯示「驗證碼已寄到…」。
 - 錯誤：
   - `VALIDATION_ERROR`：格式錯誤；`email`、`phone` 都是空字串（至少要留一個，D5），`fields` 兩欄都帶，例：`{ "email": "信箱和手機至少要留一個", "phone": "信箱和手機至少要留一個" }`；email、手機同時改（`fields` 兩欄都帶「信箱和手機一次只能修改一個」）
   - `CONTACT_IN_USE`：新的 email／手機已被**其他 SSO 帳號**使用（#49）。**要在發驗證碼前擋下**，否則驗證通過後寫回 SSO 會失敗。要查的是 SSO 的所有使用者（含還沒填會員資料的 SSO 帳號），不只會員中心的會員。`fields` 指出哪一欄，例：`{ "phone": "此手機已被其他帳號使用" }`（前端顯示在該欄位下方）。和自己目前的值相同不算。
@@ -466,23 +476,79 @@ email、手機、密碼存在 SSO（架構整理 D2～D4），會員中心改這
 
 ## 奉獻收據
 
-收據不在網頁直接下載，而是驗證後寄到信箱（附件以身分證字號為密碼，設計推測）。需登入。
+收據不在網頁直接下載，而是用會員**已有的** email 或手機做二次驗證後寄出。需登入。
+
+#50（2026-10-15 決定，依業界常見做法）：
+
+- **不再輸入 email、手機**：前端直接顯示會員已有的聯絡方式（`GET /me`，以 SSO 為準，可能只有其中一個）。兩個都有 → 會員選寄到哪一個（預設 email）；只有一個 → 直接用那一個。驗證碼寄到選定的那一個。
+- **寄送方式**：
+  - `email`：照舊，寄加密 PDF 附件。
+  - `phone`：簡訊**不放檔案連結**，只放會員中心下載頁網址 `https://<會員中心>/receipt/download/{id}`。下載頁要登入、只有收據本人能下載；**寄出後 1 小時內有效**，期間可重複開啟；過期要重新申請。登入後按「下載」時，前端再向後端要一個即時產生、**5 分鐘內有效**的檔案網址（見下方「下載頁」）。簡訊被別人看到也拿不到收據。
+- **PDF 密碼**：身分證字號；沒有身分證字號的會員改用出生年月日 8 碼（`YYYYMMDD`）。寄送時（信件內文、簡訊、下載頁）告知密碼規則，**不寫出密碼本身**。前端依回應的 `passwordRule` 顯示說明。
+- **簡訊由後端直接呼叫簡訊商 API**（可以跟 SSO 用同一家、同一個帳號）。Logto 的簡訊 connector 只能給 SSO 自己的登入流程用，後端無法借用。
+- 發驗證碼要做頻率限制，超過回 `TOO_MANY_ATTEMPTS`（同「OTP 通用規則」）。
 
 ### POST /receipts/otp
 
-- Request：`{ "email": string, "phone": string, "year"?: number }`
-  - 信箱、手機需與登入會員資料一致（設計待確認：是否可寄到任意信箱）。
-  - `year` 設計未決定（文案寫「該年度」但沒有選擇），不帶由後端決定。
-- Response 200：`{ "expiresIn": 300, "length": 4 }`
-- 錯誤：`EMAIL_PHONE_MISMATCH`、`TOO_MANY_ATTEMPTS`、`VALIDATION_ERROR`
+發送驗證碼到選定的聯絡方式（email 寄信、手機發簡訊）。重新發送也是呼叫這支。
+
+- Request：`{ "channel": "email" | "phone", "year"?: number }`
+  - 不帶 email、手機，由後端用會員資料（SSO 帳號上已驗證的）決定寄送對象。
+  - `year` 設計未決定（文案寫「該年度」但沒有選擇），不帶由後端決定（前端目前不帶）。
+- Response 200：
+
+  ```json
+  { "expiresIn": 300, "length": 4, "sentTo": { "channel": "email | phone", "destination": "a***@gmail.com" } }
+  ```
+
+  `sentTo` 格式與遮罩規則見「OTP 通用規則」（同 #49 個人資訊修改），前端顯示「驗證碼已寄到…」。
+- 錯誤：
+  - `VALIDATION_ERROR`：`channel` 缺漏或不是 `email`／`phone`；會員沒有這個聯絡方式（`fields.channel`，例：`{ "channel": "會員資料沒有手機" }`）
+  - `TOO_MANY_ATTEMPTS`：發送頻率限制
 
 ### POST /receipts/send
 
 驗證 OTP 並寄出收據。
 
-- Request：`{ "email": string, "phone": string, "otp": string, "year"?: number }`
-- Response 204
-- 錯誤：`OTP_INVALID`、`OTP_EXPIRED`、`EMAIL_PHONE_MISMATCH`、`NO_RECORDS`
+- Request：`{ "channel": "email" | "phone", "otp": string, "year"?: number }`（`channel`、`year` 與發送驗證碼時相同）
+- 寄出：
+  - `email`：產生加密 PDF（密碼規則見上方）附在信裡寄出。
+  - `phone`：建立一筆下載連結（`id` 請用無法猜測的隨機值，例如 128 bit 以上），記錄擁有者、年度、到期時間（寄出後 1 小時），簡訊只寄下載頁網址 `https://<會員中心>/receipt/download/{id}`。
+- Response 200：
+
+  ```json
+  {
+    "sentTo": { "channel": "email | phone", "destination": "0912***678" },
+    "passwordRule": "ID_NUMBER | BIRTH_DATE",
+    "linkExpiresAt": "ISO 8601（只有 phone）"
+  }
+  ```
+
+  - `passwordRule`：`ID_NUMBER` = 身分證字號；`BIRTH_DATE` = 沒有身分證字號，改用出生年月日 8 碼。前端完成頁依此顯示「密碼為…」。
+- 錯誤：`OTP_INVALID`、`OTP_EXPIRED`（含沒有對應的發送紀錄、`channel` 與發送時不同）、`NO_RECORDS`、`VALIDATION_ERROR`
+
+### 下載頁（簡訊連結，#50）
+
+前端頁面 `/receipt/download/{id}` 在需登入的路由下：未登入會先到登入頁，登入後回到這頁。以下 API 都需登入，檢查順序：找不到 → 不是本人 → 過期。
+
+#### GET /receipts/downloads/{id}
+
+查詢下載連結狀態（開頁時呼叫，1 小時內可重複開啟）。
+
+- Response 200：`{ "year": number, "expiresAt": "ISO 8601（連結到期時間）", "passwordRule": "ID_NUMBER | BIRTH_DATE" }`
+- 錯誤：
+  - `RECEIPT_NOT_FOUND`（404）：沒有這個 id
+  - `FORBIDDEN`（403）：連結不屬於目前登入的會員
+  - `LINK_EXPIRED`（410）：超過寄出後 1 小時。前端顯示「連結已過期，請重新申請」與回收據頁的按鈕
+
+#### POST /receipts/downloads/{id}/file
+
+按「下載」時取得檔案網址。每次呼叫即時產生，**5 分鐘內有效**（例如雲端儲存的簽章網址；檔案本身仍是加密 PDF）。
+
+- Response 200：`{ "url": string, "expiresIn": 300, "fileName": "奉獻收據-2025.pdf" }`
+  - 前端用 `<a href={url} download={fileName}>` 觸發下載，不經過 API client（不帶 Bearer token）。跨網域的簽章網址請由儲存端回 `Content-Disposition: attachment; filename*=UTF-8''...` 決定檔名。
+  - 檔案網址只在這支回應裡出現，不寫進簡訊或網址列。
+- 錯誤：同 `GET /receipts/downloads/{id}`（例如開著頁面超過 1 小時才按下載 → `LINK_EXPIRED`）
 
 ## 會員審核（區長以上）
 
@@ -543,8 +609,7 @@ email、手機、密碼存在 SSO（架構整理 D2～D4），會員中心改這
 - OTP 長度、有效時間、發送頻率限制的門檻。
 - 密碼規則；Line 建立的帳號沒有密碼時能否走忘記密碼流程。
 - Line OAuth 的 callback 處理與「接回一般創建流程」的步驟。
-- 奉獻收據的年度、是否必須與會員資料一致、附件格式與無身分證字號會員的處理。
+- 奉獻收據的年度（目前前端不帶 `year`，由後端決定；稿中沒有年度選擇）。
 - 會員審核的資料範圍（區長只看自己牧區？「區長以上」的角色清單）。
 - 會員資料申請（#48）：被退回重新送出時身分證字號是否要重新輸入（目前前端要求重新輸入）。
 - 寫回 SSO 失敗（例如 SSO 暫時無法連線）時的處理（#48、#49；目前建議會員中心資料也不改、回錯誤讓使用者重試）。
-- 奉獻收據目前要求 email、手機兩個都填且與會員資料一致；#49 之後會員可能只有其中一個，規則待確認。

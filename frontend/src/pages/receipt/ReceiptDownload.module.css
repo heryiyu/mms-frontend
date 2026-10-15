@@ -12,6 +12,8 @@
   /* 卡片上下內距約 40px、左右 20px；說明與輸入框、輸入框之間約 12px（目測） */
   --receipt-card-padding-block: 40px;
   --receipt-field-gap: 12px;
+  /* 圖示與文字間距（#50 稿中沒有，比照其他頁 8px） */
+  --receipt-icon-gap: 8px;
 
   display: flex;
   flex: 1;
@@ -59,6 +61,84 @@
 
 .field.field:last-child {
   margin-bottom: 0;
+}
+
+/*
+ * #50 稿中沒有的部分（TODO(#12)）：選擇寄送方式、只有一個聯絡方式時的顯示、「驗證碼已寄到…」、下載頁。
+ * 沿用卡片內既有的字級與間距（說明 Body1 gray2、欄位間距 --receipt-field-gap）。
+ */
+
+/* 寄送方式單選：上下排列，每個選項兩行（方式＋遮罩目的地／說明） */
+.options {
+  display: flex;
+  flex-direction: column;
+  gap: var(--receipt-field-gap);
+  margin-bottom: var(--receipt-field-gap);
+}
+
+.option {
+  align-items: flex-start;
+  margin-inline-end: 0;
+}
+
+.optionText {
+  display: flex;
+  flex-direction: column;
+  font-size: var(--font-size-body-1);
+  line-height: var(--line-height-body-1);
+  letter-spacing: var(--letter-spacing-body-1);
+  color: var(--color-gray-1);
+}
+
+.optionHint {
+  font-size: var(--font-size-body-2);
+  line-height: var(--line-height-body-2);
+  letter-spacing: var(--letter-spacing-body-2);
+  color: var(--color-gray-2);
+}
+
+/* 遮罩後的 email／手機：長 email 可換行，不撐出水平捲動 */
+.destination {
+  margin-inline-start: 0.5em;
+  font-weight: 700;
+  overflow-wrap: anywhere;
+}
+
+/* 只有一個聯絡方式、下載頁的收據名稱：圖示＋文字，gray6 底 */
+.contact {
+  display: flex;
+  align-items: center;
+  gap: var(--receipt-icon-gap);
+  margin: 0 0 var(--receipt-field-gap);
+  padding: var(--receipt-field-gap);
+  border-radius: var(--radius-md);
+  background: var(--color-gray-6);
+  font-size: var(--font-size-body-1);
+  line-height: var(--line-height-body-1);
+  color: var(--color-gray-1);
+}
+
+.contact .destination {
+  margin-inline-start: 0;
+}
+
+.contactIcon {
+  flex: none;
+  font-size: var(--font-size-headline-5);
+  color: var(--color-primary);
+}
+
+.sentHint {
+  color: var(--color-gray-1);
+}
+
+.lastText {
+  margin-bottom: 0;
+}
+
+.errorIcon {
+  font-size: var(--font-size-headline-2);
+  color: var(--color-gray-3);
 }
 
 @media (min-width: 992px) {
