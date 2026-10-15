@@ -70,7 +70,8 @@ Experience API 用 Logto 網域的 cookie 記住「進行到哪一步」（inter
 - 社群：Line（`f51kym2gm36loxptokqok`）、Google（`uvxuux7ej7b5pc0jx8hcm`），自動連結同 email 帳號；Google One Tap 有開
 - 忘記密碼：email、手機都可以
 - 條款：只在一般註冊時要勾（`agreeToTermsPolicy: ManualRegistrationOnly`）；條款網址目前指向 `member.newlife.org.tw/terms`、`/privacy`
-- **還沒改**：Passkey 仍開著；密碼錯誤鎖定（`sentinelPolicy`）是預設值，還沒設成錯 3 次停 5 分鐘（#47 前置，要請 IT 設定）
+- 密碼錯誤鎖定（`sentinelPolicy`）：2026-10-15 已設成錯 3 次停 5 分鐘（`maxAttempts: 3`、`lockoutDuration: 5`）
+- Passkey：2026-10-15 決定保留（Logto 已開按鈕與自動填入），這包還沒做，見 #63
 - 版本：Logto 不對外公開版本號（API 規格寫 `Cloud`），錯誤碼以實測為準
 - 沒有進行中的登入就開登入頁時，Logto 會轉到 `unknownSessionRedirectUrl`（`https://member.newlife.org.tw/login`），這包的 `/`、`/unknown-session` 也照做（轉到 `VITE_SSO_MEMBER_CENTER_URL` 的登入頁）
 
@@ -102,7 +103,6 @@ Experience API 用 Logto 網域的 cookie 記住「進行到哪一步」（inter
 - **註冊時 identify 的檢查順序**：推測先檢查帳號重複、再回缺資料（`registerFlow.ts` 的 `verifyRegisterCode`）。
 - **驗證碼位數與時效**：用 Logto 預設 6 碼、10 分鐘（`verificationCode.ts`），收到實際驗證信／簡訊時確認；後台改設定時要一起改。
 - **密碼錯誤碼**：密碼不符規則可能是 `password.rejected`（含 `data.result` 細項）或規格寫的 `user.password_policy_violation`；`user.same_password` 也未實測。
-- **鎖定錯誤碼**：錯太多次是否回 `session.verification_blocked_too_many_attempts`（要等 IT 把 `sentinelPolicy` 設成錯 3 次停 5 分鐘後再測）。
 - **社群帳號缺 email／手機**：不做「補填並驗證」，因為 Google 帳號一定有 email、Line 帳號一定有手機（2026-10-14 決定）。萬一 Logto 仍回 `user.missing_profile`，`pages/SocialCallback.tsx` 只提示改用 email／手機註冊；第一次實際用 Line 註冊時確認 Logto 有拿到手機。
 - 其他沒標「實測」的錯誤碼見 `api/errors.ts`。
 
