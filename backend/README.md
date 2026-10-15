@@ -100,6 +100,8 @@ Logto 模式下後端要：
 
 - 驗證 JWT：簽章用 `https://sso.newlife.org.tw/oidc/jwks`，`iss` 為 `https://sso.newlife.org.tw/oidc`，`aud` 為前端設定的 API resource，並檢查 `exp`。
 - 以 `sub`（Logto 使用者 ID）對應會員資料。會員資料、審核狀態、角色由本後端管理，Logto 只負責身分驗證。
+- **不要從 token 讀角色或權限**（#68，2026-10-15 決定）：Logto 不設使用者角色，API resource 只當 audience、不設權限，JWT 的 `scope` 不做授權判斷。權限一律依本後端資料庫的 `role`。
+- 寫回 SSO（#48、#49）用的機器對機器（M2M）應用程式，需要 Logto 的「Management API 存取」M2M 角色——這是給後端程式用的，不是會員角色，要保留。
 - refresh token 由前端 SDK 處理，後端不需要也不會收到。`POST /auth/logout` 在 Logto 模式不會被呼叫（前端直接結束 Logto session）。
 
 ---
