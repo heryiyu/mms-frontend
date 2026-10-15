@@ -118,7 +118,7 @@ export default function ApplyBasic() {
   const showError = (error: unknown, contact?: Contact) => {
     const content =
       getOtpErrorMessage(error) ??
-      (contact && isApiError(error, 'ALREADY_REGISTERED')
+      (contact && isApiError(error, 'CONTACT_IN_USE')
         ? MESSAGES.contactUsed(contact)
         : getApiErrorMessage(error, MESSAGES.failed))
     return notify({ title: NOTICE_TITLE, content })
@@ -219,7 +219,7 @@ export default function ApplyBasic() {
       setVerifying(false)
       if (isApiError(error, 'OTP_INVALID')) otp.clearOtp()
       // 驗證碼逾時、已被其他帳號使用：回到尚未發送，讓使用者重新按「確認」
-      if (isApiError(error, 'OTP_EXPIRED') || isApiError(error, 'ALREADY_REGISTERED')) otp.reset()
+      if (isApiError(error, 'OTP_EXPIRED') || isApiError(error, 'CONTACT_IN_USE')) otp.reset()
       void showError(error, contact)
     }
   }

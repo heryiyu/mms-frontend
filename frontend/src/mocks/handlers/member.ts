@@ -1,7 +1,7 @@
 // 目前登入會員：/me 與個人資訊修改（需 OTP）
 // #49：email、手機、密碼以 SSO 為準。驗證通過後寫回 SSO（Logto 模式寫回 utils.ts 的 mockSsoAccount）。
 import { http, HttpResponse } from 'msw'
-import type { Me, ProfileChangeRequest, ProfileChangeVerifyRequest } from '../../api/types'
+import type { Me, OtpSentTo, ProfileChangeOtpResponse, ProfileChangeRequest, ProfileChangeVerifyRequest } from '../../api/types'
 import { PHONE_PATTERN } from '../../constants/validation'
 import { db, maskIdNumber, normalizeEmail, orgNames, SSO_TAKEN_CONTACTS } from '../db'
 import type { MockUser } from '../db'
@@ -14,7 +14,8 @@ import {
   isLogtoToken,
   mockDelay,
   mockSsoAccount,
-  otpResponse,
+  OTP_EXPIRES_IN,
+  OTP_LENGTH,
   readBearer,
   readBody,
   requireUser,
@@ -47,6 +48,27 @@ function isPhoneTaken(phone: string, self: MockUser) {
   return phone === SSO_TAKEN_CONTACTS.phone || db.users.some((u) => u !== self && u.phone === phone)
 }
 
+/** a.b@gmail.com → a***@gmail.com；0912345678 → 0912***678（真實後端遮罩規則可自訂） */
+function maskContact(channel: OtpSentTo['channel'], value: string) {
+  if (channel === 'phone') return `${value.slice(0, 4)}***${value.slice(-3)}`
+  const [local, domain] = value.split('@')
+  return `${local.slice(0, 1)}***@${domain}`
+}
+
+/**
+ * 驗證碼寄送對象（#49，2026-10-15 決定）：新增／更換 → 新的；移除 → 留下的那個（重新驗證身分）；
+ * 都沒改 → 現有的（email 優先）。呼叫前已確認 email、手機最多只改一個
+ */
+function otpTarget(user: MockUser, body: ProfileChangeRequest): OtpSentTo {
+  const pick = (channel: OtpSentTo['channel'], value: string): OtpSentTo => ({
+    channel,
+    destination: maskContact(channel, value),
+  })
+  if (body.email !== user.email) return body.email ? pick('email', body.email) : pick('phone', body.phone)
+  if (body.phone !== user.phone) return body.phone ? pick('phone', body.phone) : pick('email', body.email)
+  return body.email ? pick('email', body.email) : pick('phone', body.phone)
+}
+
 export const memberHandlers = [
   http.get(api('/me'), async ({ request }) => {
     await mockDelay()
@@ -76,6 +98,13 @@ export const memberHandlers = [
     if (Object.keys(fields).length > 0) return errorResponse('VALIDATION_ERROR', undefined, fields)
     if (body.email) assertNotRateLimited(body.email)
 
+    // email、手機一次只能改一個（新增、更換或移除），驗證碼才有明確的寄送對象
+    const emailChanged = normalizeEmail(body.email) !== user.email.toLowerCase()
+    if (emailChanged && body.phone !== user.phone) {
+      const message = '信箱和手機一次只能修改一個'
+      return errorResponse('VALIDATION_ERROR', message, { email: message, phone: message })
+    }
+
     // 已被其他 SSO 帳號使用：發驗證碼前就擋下（#49），fields 指出是哪一欄
     const taken: Record<string, string> = {}
     if (body.email && normalizeEmail(body.email) !== user.email.toLowerCase() && isEmailTaken(body.email, user)) {
@@ -87,7 +116,12 @@ export const memberHandlers = [
     if (Object.keys(taken).length > 0) return errorResponse('CONTACT_IN_USE', undefined, taken)
 
     db.profileChanges.set(user.id, body)
-    return otpResponse()
+    const res: ProfileChangeOtpResponse = {
+      expiresIn: OTP_EXPIRES_IN,
+      length: OTP_LENGTH,
+      sentTo: otpTarget(user, { ...body, email: emailChanged ? body.email : user.email }),
+    }
+    return HttpResponse.json(res)
   }),
 
   http.post(api('/me/profile-change/verify'), async ({ request }) => {
@@ -100,6 +134,7 @@ export const memberHandlers = [
     if (!change) return errorResponse('OTP_EXPIRED') // 沒有待驗證的修改，視同 OTP 已失效
     Object.assign(user, { name: change.name, nickname: change.nickname, email: change.email, phone: change.phone })
     db.profileChanges.delete(user.id)
+    // 真實後端：更換／移除 email 或手機後，寄安全通知到原本的那個（mock 不寄）
     // Logto 模式：姓名、email、手機寫回 SSO 帳號（真實後端用 Logto Management API）
     if (isLogtoToken(readBearer(request))) {
       Object.assign(mockSsoAccount, { name: change.name, email: change.email || null, phone: change.phone || null })

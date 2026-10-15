@@ -56,7 +56,7 @@ export type ErrorCode =
   | 'EMAIL_PHONE_MISMATCH' // 信箱與手機不屬於同一帳號／與會員資料不符
   // 註冊／會員
   | 'ALREADY_REGISTERED' // 信箱、手機或身分證字號已被註冊
-  | 'CONTACT_IN_USE' // 個人資訊修改：新的 email／手機已被其他 SSO 帳號使用，fields 指出哪一欄（#49）
+  | 'CONTACT_IN_USE' // 新的 email／手機已被其他 SSO 帳號使用，fields 指出哪一欄（#48 補填、#49 個人資訊修改）
   // 密碼
   | 'WRONG_CURRENT_PASSWORD' // 目前密碼錯誤
   | 'PASSWORD_SAME_AS_OLD' // 新密碼不可與舊密碼相同
@@ -313,6 +313,20 @@ export interface ProfileChangeRequest {
   nickname: string
   email: string
   phone: string
+}
+
+/** 個人資訊修改的驗證碼寄到哪裡（#49）：destination 為後端遮罩後的值，例如 a***@gmail.com、0912***678 */
+export interface OtpSentTo {
+  channel: 'email' | 'phone'
+  destination: string
+}
+
+/**
+ * POST /me/profile-change/otp 的回應（#49）。驗證碼寄送對象由後端依修改內容決定：
+ * 新增／更換 email 或手機 → 寄到新的；移除其中一個 → 寄到留下的那個；都沒改 → 寄到現有的（email 優先）
+ */
+export interface ProfileChangeOtpResponse extends OtpSendResponse {
+  sentTo: OtpSentTo
 }
 
 export interface ProfileChangeVerifyRequest {

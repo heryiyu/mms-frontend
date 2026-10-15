@@ -52,13 +52,13 @@ export function getRegistration(): Promise<RegistrationInfo> {
 
 /**
  * 補填另一個聯絡方式：發送驗證碼（email、phone 擇一；重新發送也是呼叫這支）。
- * 可能的 ApiError.code：ALREADY_REGISTERED（已被其他 SSO 帳號使用）、TOO_MANY_ATTEMPTS、VALIDATION_ERROR
+ * 可能的 ApiError.code：CONTACT_IN_USE（已被其他 SSO 帳號使用）、TOO_MANY_ATTEMPTS、VALIDATION_ERROR
  */
 export function sendRegistrationContactOtp(body: ContactOtpRequest): Promise<OtpSendResponse> {
   return post<OtpSendResponse>('/me/registration/contact/otp', body)
 }
 
-/** 驗證補填的聯絡方式，通過後後端寫回 SSO，回傳更新後的帳號資料。錯誤碼：OTP_INVALID、OTP_EXPIRED、ALREADY_REGISTERED */
+/** 驗證補填的聯絡方式，通過後後端寫回 SSO，回傳更新後的帳號資料。錯誤碼：OTP_INVALID、OTP_EXPIRED、CONTACT_IN_USE */
 export function verifyRegistrationContact(body: ContactVerifyRequest): Promise<SsoAccount> {
   return post<SsoAccount>('/me/registration/contact/verify', body)
 }
