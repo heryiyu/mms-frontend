@@ -20,7 +20,9 @@ import {
   errorResponse,
   findSsoMember,
   linkSsoMember,
+  MOCK_SSO_PASSWORD,
   mockDelay,
+  mockSsoHasPassword,
   otpResponse,
   readBody,
   readContact,
@@ -158,7 +160,9 @@ export const registrationHandlers = [
       // 被退回後重新送出：同一筆資料改回待審核
       Object.assign(existing, fields)
     } else {
-      const user: MockUser = { id: newUserId(), password: '', role: 'member', ...fields }
+      // 密碼在 SSO；mock 只用它表示有沒有密碼（Line、Google 註冊的沒有，#49）
+      const password = mockSsoHasPassword ? MOCK_SSO_PASSWORD : ''
+      const user: MockUser = { id: newUserId(), password, role: 'member', ...fields }
       db.users.push(user)
       linkSsoMember(user)
     }

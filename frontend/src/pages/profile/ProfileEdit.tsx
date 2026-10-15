@@ -1,4 +1,4 @@
-import { Form, Grid, Result, Skeleton } from 'antd'
+import { Form, Grid, Result, Skeleton, type FormInstance } from 'antd'
 import type { Rule } from 'antd/es/form'
 import { useState } from 'react'
 import { useLocation, useNavigate } from 'react-router'
@@ -11,11 +11,9 @@ import { Button } from '../../components/Button'
 import {
   AppForm,
   applyServerFieldErrors,
-  emailRules,
   FormCard,
   FormCardItem,
   formCardLayout,
-  phoneRules,
   requiredRule,
   TextInput,
 } from '../../components/form'
@@ -23,6 +21,7 @@ import Icon from '../../components/Icon'
 import { type NotifyOptions, useNotifyModal } from '../../components/NoticeModal'
 import { getOtpErrorMessage, type OtpSender, useOtpSender } from '../../components/OtpInput'
 import ResultPage from '../../components/ResultPage'
+import { PHONE_PATTERN } from '../../constants/validation'
 import { PATHS } from '../../routes/paths'
 import ProfileHeader, { type ProfileEditLocationState } from './ProfileHeader'
 import ProfileOtpStep from './ProfileOtpStep'
@@ -40,6 +39,11 @@ import styles from './Profile.module.css'
 // - 「取消／返回」直接回檢視頁並捨棄修改，不跳「確定放棄修改？」
 // - 欄位驗證規則與錯誤文案未定義：姓名必填、暱稱選填（註冊時可不填）、信箱格式、手機 09 開頭 10 碼
 // - 驗證頁按「取消／返回」回資料修改並保留已修改內容；重新確認會再發送一次 OTP
+//
+// #49（架構整理 D2～D5）：email、手機、姓名驗證通過後由後端寫回 SSO，之後新的 email／手機可以用來登入。
+// - email、手機都不是必填，但至少要留一個（D5）；原本沒有的那個（例如只有 email 的人）可以在這裡新增
+// - 新的 email／手機已被其他 SSO 帳號使用：發驗證碼前後端回 CONTACT_IN_USE，錯誤顯示在該欄位下方
+// TODO(#12)：設計稿只畫了 email、手機都有的情況。沒有的那欄的提示文字、欄位下方的說明文案為推測
 
 type Step = 'edit' | 'otp' | 'done'
 type FieldName = keyof ProfileChangeRequest
@@ -49,11 +53,16 @@ const FIELD_NAMES: FieldName[] = ['name', 'nickname', 'email', 'phone']
 // TODO(#12)：錯誤文案設計未定
 const MESSAGES = {
   nameRequired: '請輸入姓名',
-  emailRequired: '請輸入信箱',
   emailFormat: '信箱格式錯誤',
-  phoneRequired: '請輸入手機',
   phoneFormat: '手機格式錯誤，請輸入 09 開頭共 10 碼',
+  contactRequired: '信箱和手機至少要留一個',
+  emailInUse: '此信箱已被其他帳號使用',
+  phoneInUse: '此手機已被其他帳號使用',
   alreadyRegistered: '此信箱或手機已被其他帳號使用',
+  // TODO(#12)：以下文案設計未定
+  addEmail: '新增信箱',
+  addPhone: '新增手機',
+  contactHint: '信箱和手機至少要留一個。新增或修改後需要收驗證碼，完成後也可以用來登入。',
   failedTitle: '變更失敗',
   failedContent: '發生錯誤，請稍後再試',
   loadFailedTitle: '資料載入失敗',
@@ -61,29 +70,59 @@ const MESSAGES = {
   reload: '重新載入',
 } as const
 
+const trim = (value?: string) => value?.trim()
+
+/** email、手機至少留一個（D5）：兩欄都空時兩欄都顯示錯誤 */
+const contactRequiredRule =
+  (other: 'email' | 'phone'): Rule =>
+  ({ getFieldValue }) => ({
+    validator: (_, value?: string) =>
+      trim(value) || trim(getFieldValue(other) as string | undefined)
+        ? Promise.resolve()
+        : Promise.reject(new Error(MESSAGES.contactRequired)),
+  })
+
 const RULES: Record<FieldName, Rule[]> = {
   name: [requiredRule(MESSAGES.nameRequired)],
   nickname: [],
-  email: emailRules({ required: MESSAGES.emailRequired, format: MESSAGES.emailFormat }),
-  phone: phoneRules({ required: MESSAGES.phoneRequired, format: MESSAGES.phoneFormat }),
+  email: [contactRequiredRule('phone'), { type: 'email', message: MESSAGES.emailFormat, transform: trim }],
+  phone: [contactRequiredRule('email'), { pattern: PHONE_PATTERN, message: MESSAGES.phoneFormat, transform: trim }],
 }
+
+/** 已被其他 SSO 帳號使用時，後端 fields 沒帶文案就用這裡的 */
+const IN_USE_MESSAGES: Record<'email' | 'phone', string> = { email: MESSAGES.emailInUse, phone: MESSAGES.phoneInUse }
 
 const toDraft = (me: Me): ProfileChangeRequest => ({
   name: me.name,
   nickname: me.nickname,
-  email: me.email,
-  phone: me.phone,
+  email: me.email ?? '',
+  phone: me.phone ?? '',
 })
 
 const trimValues = (values: ProfileChangeRequest): ProfileChangeRequest => ({
   name: values.name.trim(),
   nickname: (values.nickname ?? '').trim(),
-  email: values.email.trim(),
-  phone: values.phone.trim(),
+  email: (values.email ?? '').trim(),
+  phone: (values.phone ?? '').trim(),
 })
+
+/**
+ * CONTACT_IN_USE（#49）：把「已被其他帳號使用」顯示在對應欄位下方，回傳是否已處理。
+ * 沒有 fields 時回 false，由呼叫端跳通知彈窗（舊的 ALREADY_REGISTERED 也走彈窗）
+ */
+function applyContactInUse(form: FormInstance<ProfileChangeRequest>, error: unknown): boolean {
+  if (!isApiError(error, 'CONTACT_IN_USE')) return false
+  const fields = (error.data as { fields?: Partial<Record<string, string>> } | undefined)?.fields ?? {}
+  const names = (['email', 'phone'] as const).filter((name) => name in fields)
+  if (names.length === 0) return false
+  form.setFields(names.map((name) => ({ name, errors: [fields[name] || IN_USE_MESSAGES[name]] })))
+  return true
+}
 
 interface EditStepProps {
   initialValues: ProfileChangeRequest
+  /** 原本沒有的聯絡方式（顯示「新增」提示文字） */
+  missing: { email: boolean; phone: boolean }
   otp: OtpSender<ProfileChangeRequest>
   notify: (options: NotifyOptions) => Promise<boolean>
   onCancel: () => void
@@ -92,7 +131,7 @@ interface EditStepProps {
 }
 
 /** 資料修改（menberedit／menberedited）：卡片式表單，label gray1、右側輸入框帶入現值 */
-function EditStep({ initialValues, otp, notify, onCancel, onSent }: EditStepProps) {
+function EditStep({ initialValues, missing, otp, notify, onCancel, onSent }: EditStepProps) {
   const [form] = Form.useForm<ProfileChangeRequest>()
   const isDesktop = !!Grid.useBreakpoint().lg
 
@@ -104,11 +143,13 @@ function EditStep({ initialValues, otp, notify, onCancel, onSent }: EditStepProp
     } catch (error) {
       if (isApiError(error, 'UNAUTHORIZED')) return // client 已統一導回登入頁
       if (applyServerFieldErrors(form, error, FIELD_NAMES).length > 0) return
+      if (applyContactInUse(form, error)) return
       void notify({
         title: MESSAGES.failedTitle,
-        content: isApiError(error, 'ALREADY_REGISTERED')
-          ? MESSAGES.alreadyRegistered
-          : (getOtpErrorMessage(error) ?? getApiErrorMessage(error, MESSAGES.failedContent)),
+        content:
+          isApiError(error, 'ALREADY_REGISTERED') || isApiError(error, 'CONTACT_IN_USE')
+            ? MESSAGES.alreadyRegistered
+            : (getOtpErrorMessage(error) ?? getApiErrorMessage(error, MESSAGES.failedContent)),
       })
     }
   }
@@ -132,13 +173,25 @@ function EditStep({ initialValues, otp, notify, onCancel, onSent }: EditStepProp
         <FormCardItem name="nickname" label="暱稱" rules={RULES.nickname}>
           <TextInput autoComplete="nickname" />
         </FormCardItem>
-        <FormCardItem name="email" label="信箱" rules={RULES.email}>
-          <TextInput type="email" inputMode="email" autoComplete="email" />
+        <FormCardItem name="email" label="信箱" rules={RULES.email} dependencies={['phone']}>
+          <TextInput
+            type="email"
+            inputMode="email"
+            autoComplete="email"
+            placeholder={missing.email ? MESSAGES.addEmail : undefined}
+          />
         </FormCardItem>
-        <FormCardItem name="phone" label="手機" rules={RULES.phone}>
-          <TextInput type="tel" inputMode="numeric" autoComplete="tel-national" maxLength={10} />
+        <FormCardItem name="phone" label="手機" rules={RULES.phone} dependencies={['email']}>
+          <TextInput
+            type="tel"
+            inputMode="numeric"
+            autoComplete="tel-national"
+            maxLength={10}
+            placeholder={missing.phone ? MESSAGES.addPhone : undefined}
+          />
         </FormCardItem>
       </FormCard>
+      <p className={styles.contactHint}>{MESSAGES.contactHint}</p>
       <ActionBar bleed onCancel={onCancel} confirmHtmlType="submit" confirmLoading={otp.sending} />
     </AppForm>
   )
@@ -185,6 +238,7 @@ export default function ProfileEdit() {
     content = (
       <EditStep
         initialValues={draft ?? toDraft(me)}
+        missing={{ email: !me.email, phone: !me.phone }}
         otp={otp}
         notify={notify}
         onCancel={backToProfile}

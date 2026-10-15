@@ -1,9 +1,10 @@
-import { Form } from 'antd'
+import { Form, Skeleton } from 'antd'
 import { useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router'
 import { logout } from '../api/auth'
 import { getApiErrorMessage, isApiError } from '../api/client'
 import { changePassword } from '../api/password'
+import { useMe } from '../auth/useMe'
 import ActionBar from '../components/ActionBar'
 import {
   AppForm,
@@ -31,6 +32,11 @@ import styles from './ChangePassword.module.css'
 // - P2 變更完成後強制重新登入：結果頁按鈕為「重新登入」，離開結果頁（含點選單）一律登出
 // - P3 已輸入內容時按「取消／返回」，先確認是否放棄
 // - P4 欄位錯誤顯示在輸入框下方；其餘錯誤用通知彈窗
+//
+// #49：密碼存在 SSO，後端到 SSO 檢查目前密碼、設定新密碼（畫面不變）。
+// 只用 Line／Google 登入、沒有密碼的人（GET /me 的 hasPassword = false）選單看不到這頁；
+// 直接開網址時改顯示說明（可到 SSO 登入頁用「忘記密碼」設定密碼），送出時後端回 PASSWORD_NOT_SET 也一樣。
+// 進頁先等 /me 載入（骨架），載入失敗時照常顯示表單，由後端擋。
 
 interface ChangePasswordValues {
   currentPassword: string
@@ -49,6 +55,10 @@ const MESSAGES = {
   failedTitle: '變更失敗',
   failedContent: '發生錯誤，請稍後再試',
   doneDescription: '請使用新密碼重新登入',
+  // TODO(#12)：設計稿沒畫「沒有密碼」的畫面與文案，先用結果頁（警告樣式）推測
+  noPasswordTitle: '您的帳號沒有設定密碼',
+  noPasswordDescription:
+    '您目前使用 Line 或 Google 登入，不需要密碼。如果想設定密碼，請登出後到登入頁點「忘記密碼」，依指示設定。',
   discardTitle: '注意',
   discardContent: '確定要放棄已輸入的內容嗎？',
   discardCancel: '取消',
@@ -61,8 +71,48 @@ const newPasswordFieldRules = newPasswordRules((value, getFieldValue) =>
 
 const confirmPasswordFieldRules = confirmPasswordRules('newPassword')
 
-export default function ChangePassword() {
+/** 有站內上一頁就回上一頁，直接開啟此頁時回首頁 */
+function useGoBack() {
   const navigate = useNavigate()
+  return () => {
+    if (hasInAppHistory()) navigate(-1)
+    else navigate(PATHS.home, { replace: true })
+  }
+}
+
+export default function ChangePassword() {
+  const { me, loadState } = useMe()
+  const [passwordNotSet, setPasswordNotSet] = useState(false)
+  const goBack = useGoBack()
+
+  if (passwordNotSet || me?.hasPassword === false) {
+    return (
+      <ResultPage
+        status="warning"
+        title={MESSAGES.noPasswordTitle}
+        description={MESSAGES.noPasswordDescription}
+        onBack={goBack}
+      />
+    )
+  }
+
+  if (loadState === 'loading') {
+    return (
+      <div className={styles.page}>
+        <h1 className={cx(typography.pageTitle, styles.title)}>修改密碼</h1>
+        <FormCard className={styles.card} aria-busy="true" aria-label="載入中">
+          <Skeleton active title={false} paragraph={{ rows: 3 }} className={styles.skeleton} />
+        </FormCard>
+      </div>
+    )
+  }
+
+  return <ChangePasswordForm onPasswordNotSet={() => setPasswordNotSet(true)} />
+}
+
+function ChangePasswordForm({ onPasswordNotSet }: { onPasswordNotSet: () => void }) {
+  const navigate = useNavigate()
+  const goBack = useGoBack()
   const [form] = Form.useForm<ChangePasswordValues>()
   const values = Form.useWatch([], form) as Partial<ChangePasswordValues> | undefined
   const [submitting, setSubmitting] = useState(false)
@@ -105,8 +155,7 @@ export default function ChangePassword() {
       })
       if (!confirmed) return
     }
-    if (hasInAppHistory()) navigate(-1)
-    else navigate(PATHS.home, { replace: true })
+    goBack()
   }
 
   const setFieldError = (name: FieldName, message: string) => form.setFields([{ name, errors: [message] }])
@@ -120,6 +169,7 @@ export default function ChangePassword() {
       if (isApiError(error, 'UNAUTHORIZED')) return // client 已統一導回登入頁
       if (isApiError(error, 'WRONG_CURRENT_PASSWORD')) return setFieldError('currentPassword', MESSAGES.wrongCurrent)
       if (isApiError(error, 'PASSWORD_SAME_AS_OLD')) return setFieldError('newPassword', MESSAGES.sameAsOld)
+      if (isApiError(error, 'PASSWORD_NOT_SET')) return onPasswordNotSet()
       if (applyServerFieldErrors(form, error, FIELD_NAMES).length > 0) return
       void notify({ title: MESSAGES.failedTitle, content: getApiErrorMessage(error, MESSAGES.failedContent) })
     } finally {

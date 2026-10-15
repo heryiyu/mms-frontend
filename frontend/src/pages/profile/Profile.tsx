@@ -19,6 +19,7 @@ import styles from './Profile.module.css'
 // - web 底部依稿為「取消＋確認（停用）」，唯讀頁出現確認鈕不合理；mob 為單一「返回」。先照稿，取消／返回皆回上一頁
 // - EKK、靈程的意義與顯示格式待確認，先直接顯示名稱／代碼（範例 Hooo、XN）
 // - 身分證字號遮罩規則待確認（見 maskIdNumber）；手機是否遮罩待確認（修改頁需帶入原值，先顯示完整號碼）
+// - email、手機可能只有其中一個（#49，以 SSO 為準）：沒有的顯示「－」，可在修改頁新增
 
 const GENDER_LABEL: Record<Gender, string> = { male: '男', female: '女' }
 
@@ -45,8 +46,8 @@ function toItems(me: Me): DescriptionsProps['items'] {
     { key: 'nickname', label: '暱稱', children: me.nickname || EMPTY },
     { key: 'gender', label: '性別', children: GENDER_LABEL[me.gender] ?? EMPTY },
     { key: 'idNumber', label: '身分證字號', children: maskIdNumber(me.idNumber) },
-    { key: 'email', label: '信箱', children: me.email },
-    { key: 'phone', label: '手機', children: me.phone },
+    { key: 'email', label: '信箱', children: me.email || EMPTY },
+    { key: 'phone', label: '手機', children: me.phone || EMPTY },
     { key: 'church', label: '教會', children: me.church || EMPTY },
     { key: 'district', label: '牧區', children: me.district || EMPTY },
     { key: 'group', label: '小組', children: me.group || EMPTY },

@@ -61,6 +61,8 @@ export const passwordHandlers = [
     await mockDelay()
     const user = requireUser(request)
     const body = await readBody<ChangePasswordRequest>(request, ['currentPassword', 'newPassword'])
+    // 只用 Line／Google 登入、沒有密碼的人不能修改密碼（#49；要設密碼請到 SSO 登入頁用「忘記密碼」）
+    if (!user.password) return errorResponse('PASSWORD_NOT_SET')
     if (user.password !== body.currentPassword) return errorResponse('WRONG_CURRENT_PASSWORD')
     if (body.newPassword === body.currentPassword) return errorResponse('PASSWORD_SAME_AS_OLD')
     assertPassword(body.newPassword, 'newPassword')

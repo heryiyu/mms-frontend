@@ -99,6 +99,14 @@
   overflow-wrap: anywhere;
 }
 
+/* 修改頁卡片下方說明（#49，設計稿未畫）：email、手機至少留一個、新增後需驗證 */
+.contactHint {
+  margin: calc(var(--app-gutter) * -0.5) 0 var(--app-gutter);
+  font-size: var(--font-size-body-2);
+  line-height: var(--line-height-body-2);
+  color: var(--color-gray-2);
+}
+
 /* 資料變更驗證：手機標題置中、標題＋卡片在內容區垂直置中 */
 .otpBody {
   display: flex;

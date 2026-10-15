@@ -11,19 +11,26 @@ export interface MemberMenuItem {
   label: string
   /** 需要此角色以上才看得到；未設定 = 所有登入者皆可見 */
   minRole?: Role
+  /** 只有 SSO 帳號有密碼的人看得到（GET /me 的 hasPassword，#49）：只用 Line／Google 登入的人不顯示 */
+  requiresPassword?: boolean
 }
 
 export const memberMenuItems: MemberMenuItem[] = [
   { path: PATHS.profile, label: '個人資訊' },
-  { path: PATHS.changePassword, label: '修改密碼' },
+  { path: PATHS.changePassword, label: '修改密碼', requiresPassword: true },
   // TODO(#12)：「系統設定」只出現在 web 自動登出那張圖，功能與可見角色待確認（docs/design/questions.md）
   // 暫定只給區長以上看；路徑亦為暫定
   { path: PATHS.settings, label: '系統設定', minRole: 'leader' },
 ]
 
-/** 依角色過濾選單 */
-export function getMemberMenuItems(role: Role | null): MemberMenuItem[] {
-  return memberMenuItems.filter((item) => hasMinRole(role, item.minRole))
+/**
+ * 依角色與有沒有密碼過濾選單。hasPassword 為 undefined（/me 還沒載入）時先不顯示需要密碼的項目，
+ * 避免沒有密碼的人看到「修改密碼」閃一下。
+ */
+export function getMemberMenuItems(role: Role | null, hasPassword?: boolean): MemberMenuItem[] {
+  return memberMenuItems.filter(
+    (item) => hasMinRole(role, item.minRole) && (!item.requiresPassword || hasPassword === true),
+  )
 }
 
 export interface MemberQuickAction extends MemberMenuItem {

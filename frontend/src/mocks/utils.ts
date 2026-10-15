@@ -28,8 +28,10 @@ const ERRORS: Record<ServerErrorCode, { status: number; message: string }> = {
   TOKEN_INVALID: { status: 400, message: '驗證已失效，請重新操作' },
   EMAIL_PHONE_MISMATCH: { status: 400, message: '信箱與手機不符' },
   ALREADY_REGISTERED: { status: 409, message: '此信箱、手機或身分證字號已被使用' },
+  CONTACT_IN_USE: { status: 409, message: '此信箱或手機已被其他帳號使用' },
   WRONG_CURRENT_PASSWORD: { status: 400, message: '目前密碼錯誤' },
   PASSWORD_SAME_AS_OLD: { status: 400, message: '新密碼不可與舊密碼相同' },
+  PASSWORD_NOT_SET: { status: 400, message: '此帳號沒有設定密碼' },
   NO_RECORDS: { status: 404, message: '該年度無奉獻紀錄' },
   MEMBER_NOT_FOUND: { status: 404, message: '查無此申請' },
   ALREADY_PROCESSED: { status: 409, message: '此申請已處理' },
@@ -96,13 +98,24 @@ function createMockSsoAccount(email: string): SsoAccount {
   const preset = NEW_SSO_ACCOUNTS[normalizeEmail(email)]
   if (preset) return { ...preset }
   const user = findUserByEmail(email)
-  if (user) return { name: user.name, email: user.email, phone: user.phone }
+  if (user) return { name: user.name, email: user.email || null, phone: user.phone || null }
   // 其他未註冊信箱（例如 notfound@test.com）：SSO 用 email 註冊，可補填手機
   return { name: '新朋友', email: email.trim(), phone: null }
 }
 
+const mockLogtoEmail = readMockLogtoEmail()
+
+/** 用 Line、Google 註冊、沒有密碼的 SSO 帳號（#49 不顯示修改密碼）；種子會員則看 db 的 password 是否為空 */
+const NO_PASSWORD_SSO_ACCOUNTS = new Set(['nocontact@test.com'])
+
+/** 目前登入的 SSO 帳號有沒有密碼（#48 送出會員資料時用來決定新會員的 hasPassword） */
+export const mockSsoHasPassword = !NO_PASSWORD_SSO_ACCOUNTS.has(normalizeEmail(mockLogtoEmail))
+
+/** Logto 模式新會員（#48 送出會員資料時建立）在 SSO 的密碼：mock 修改密碼時用來檢查目前密碼 */
+export const MOCK_SSO_PASSWORD = 'Sso@12345'
+
 /** 目前登入的 SSO 帳號；補填聯絡方式、送出會員資料（姓名寫回 SSO）時會更新，重新整理即還原 */
-export const mockSsoAccount: SsoAccount = createMockSsoAccount(readMockLogtoEmail())
+export const mockSsoAccount: SsoAccount = createMockSsoAccount(mockLogtoEmail)
 
 // 找到（或新建）的會員資料記住 id，之後在個人資訊頁改了 email、手機也還對得到（真實後端用 SSO 使用者 ID 對應）
 let ssoMemberId: string | undefined
@@ -112,7 +125,7 @@ export function findSsoMember(): MockUser | undefined {
   if (ssoMemberId) return db.users.find((u) => u.id === ssoMemberId)
   const { email, phone } = mockSsoAccount
   const user = db.users.find(
-    (u) => (!!email && u.email.toLowerCase() === normalizeEmail(email)) || (!!phone && u.phone === phone),
+    (u) => (!!email && !!u.email && u.email.toLowerCase() === normalizeEmail(email)) || (!!phone && u.phone === phone),
   )
   ssoMemberId = user?.id
   return user
