@@ -69,9 +69,17 @@
 { "expiresIn": 300, "length": 4 }
 ```
 
-`expiresIn` 為有效秒數（前端倒數用，暫定 5 分鐘）、`length` 為驗證碼位數（暫定 4）。**重新發送 = 再呼叫一次同一支發送 API**，沒有另外的 resend 端點。OTP 送達方式：email 寄信、手機發簡訊；個人資訊修改（新增／更換／移除 email 或手機）寄到哪裡見 `POST /me/profile-change/otp`（#49，2026-10-15 已決定）。
+`expiresIn` 為有效秒數（前端倒數用，暫定 5 分鐘）、`length` 為驗證碼位數（暫定 4）。**重新發送 = 再呼叫一次同一支發送 API**，沒有另外的 resend 端點。OTP 送達方式：email 寄信、手機發簡訊；個人資訊修改（新增／更換／移除 email 或手機）寄到哪裡見 `POST /me/profile-change/otp`（#49，2026-10-15 已決定）；奉獻收據寄到會員選定的那一個，見 `POST /receipts/otp`（#50）。
 
-所有發送 OTP 的 API 都要做頻率限制，超過回 `TOO_MANY_ATTEMPTS`（門檻待確認），包含個人資訊修改、補填聯絡方式。
+**寄送對象 `sentTo`**（#49 個人資訊修改、#50 奉獻收據共用）：寄送對象由後端決定的發送 API，回應另外帶
+
+```json
+{ "sentTo": { "channel": "email | phone", "destination": "a***@gmail.com" } }
+```
+
+`destination` 為後端遮罩後的值，規則：email 留第一個字元＋`***@`＋網域（`a.b@gmail.com` → `a***@gmail.com`）；手機留前 4 碼＋`***`＋後 3 碼（`0912345678` → `0912***678`）。前端顯示「驗證碼已寄到信箱 …」／「驗證碼已用簡訊傳送到 …」；奉獻收據頁顯示會員已有的聯絡方式時也由前端用同一規則遮罩（`frontend/src/utils/maskContact.ts`）。
+
+所有發送 OTP 的 API 都要做頻率限制，超過回 `TOO_MANY_ATTEMPTS`（門檻待確認），包含個人資訊修改、補填聯絡方式、奉獻收據。
 
 ### 密碼規則（暫定）
 
@@ -430,7 +438,7 @@ Line 授權完成後，前端以 `code` 換登入結果（目前為 stub）。
   { "expiresIn": 300, "length": 4, "sentTo": { "channel": "email | phone", "destination": "a***@gmail.com" } }
   ```
 
-  `sentTo.destination` 為後端遮罩後的寄送對象（例 `a***@gmail.com`、`0912***678`），前端在驗證頁顯示「驗證碼已寄到…」。
+  `sentTo` 格式與遮罩規則見「OTP 通用規則」，前端在驗證頁顯示「驗證碼已寄到…」。
 - 錯誤：
   - `VALIDATION_ERROR`：格式錯誤；`email`、`phone` 都是空字串（至少要留一個，D5），`fields` 兩欄都帶，例：`{ "email": "信箱和手機至少要留一個", "phone": "信箱和手機至少要留一個" }`；email、手機同時改（`fields` 兩欄都帶「信箱和手機一次只能修改一個」）
   - `CONTACT_IN_USE`：新的 email／手機已被**其他 SSO 帳號**使用（#49）。**要在發驗證碼前擋下**，否則驗證通過後寫回 SSO 會失敗。要查的是 SSO 的所有使用者（含還沒填會員資料的 SSO 帳號），不只會員中心的會員。`fields` 指出哪一欄，例：`{ "phone": "此手機已被其他帳號使用" }`（前端顯示在該欄位下方）。和自己目前的值相同不算。
@@ -493,7 +501,7 @@ email、手機、密碼存在 SSO（架構整理 D2～D4），會員中心改這
   { "expiresIn": 300, "length": 4, "sentTo": { "channel": "email | phone", "destination": "a***@gmail.com" } }
   ```
 
-  `sentTo.destination` 為後端遮罩後的寄送對象（例 `a***@gmail.com`、`0912***678`，格式同 #49 個人資訊修改），前端顯示「驗證碼已寄到…」。
+  `sentTo` 格式與遮罩規則見「OTP 通用規則」（同 #49 個人資訊修改），前端顯示「驗證碼已寄到…」。
 - 錯誤：
   - `VALIDATION_ERROR`：`channel` 缺漏或不是 `email`／`phone`；會員沒有這個聯絡方式（`fields.channel`，例：`{ "channel": "會員資料沒有手機" }`）
   - `TOO_MANY_ATTEMPTS`：發送頻率限制

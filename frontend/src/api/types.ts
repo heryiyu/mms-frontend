@@ -317,7 +317,10 @@ export interface ProfileChangeRequest {
   phone: string
 }
 
-/** 個人資訊修改的驗證碼寄到哪裡（#49）：destination 為後端遮罩後的值，例如 a***@gmail.com、0912***678 */
+/**
+ * 驗證碼／收據寄到哪裡（#49 個人資訊修改、#50 奉獻收據共用）：destination 為後端遮罩後的值，例如 a***@gmail.com、0912***678。
+ * 前端顯示「驗證碼已寄到…」用 components/OtpInput 的 OTP_MESSAGES.sentTo
+ */
 export interface OtpSentTo {
   channel: 'email' | 'phone'
   destination: string
@@ -341,13 +344,7 @@ export interface ProfileChangeVerifyRequest {
  * 收據寄到哪裡（#50，2026-10-15 決定）：用會員已有的聯絡方式，不再輸入。
  * email → 寄加密 PDF 附件；phone → 簡訊寄會員中心下載頁網址（1 小時內有效）
  */
-export type ReceiptChannel = 'email' | 'phone'
-
-/** 寄送目的地：destination 為後端遮罩後的值，例如 a***@gmail.com、0912***678（格式同 #49 個人資訊修改） */
-export interface ReceiptSentTo {
-  channel: ReceiptChannel
-  destination: string
-}
+export type ReceiptChannel = OtpSentTo['channel']
 
 /** PDF 密碼規則：身分證字號；沒有身分證字號的會員改用出生年月日 8 碼（YYYYMMDD）。前端只說明規則，不顯示密碼 */
 export type ReceiptPasswordRule = 'ID_NUMBER' | 'BIRTH_DATE'
@@ -360,7 +357,7 @@ export interface ReceiptOtpRequest {
 
 /** POST /receipts/otp：驗證碼寄到選定的那一個 */
 export interface ReceiptOtpResponse extends OtpSendResponse {
-  sentTo: ReceiptSentTo
+  sentTo: OtpSentTo
 }
 
 export interface ReceiptSendRequest extends ReceiptOtpRequest {
@@ -369,7 +366,7 @@ export interface ReceiptSendRequest extends ReceiptOtpRequest {
 
 /** POST /receipts/send：寄出結果，完成頁依 channel 與 passwordRule 顯示文案 */
 export interface ReceiptSendResponse {
-  sentTo: ReceiptSentTo
+  sentTo: OtpSentTo
   passwordRule: ReceiptPasswordRule
   /** 只有 phone：簡訊裡下載頁網址的到期時間（ISO 8601，寄出後 1 小時） */
   linkExpiresAt?: string

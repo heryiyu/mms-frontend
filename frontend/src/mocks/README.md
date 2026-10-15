@@ -90,7 +90,7 @@
 | OTP 填 `0000`（或不是 4 碼數字） | 400 `OTP_INVALID` |
 | OTP 填 `9999` | 410 `OTP_EXPIRED` |
 | 其他 4 碼數字（例如 `1234`、`7414`） | 通過 |
-| 發送 OTP 時信箱填 `frequent@test.com` | 429 `TOO_MANY_ATTEMPTS`（註冊、忘記密碼、個資修改都適用；奉獻收據 #50 起不輸入信箱，mock 觸發不了） |
+| 發送 OTP 時信箱填 `frequent@test.com` | 429 `TOO_MANY_ATTEMPTS`（註冊、忘記密碼、個資修改都適用；奉獻收據不輸入信箱，改成同一會員 10 分鐘內第 4 次發送起回 429，見下方「奉獻收據」） |
 
 OTP 元件示範：dev 模式開 `/dev/otp`（`PATHS.devOtp`，`OtpDemo.tsx`；正式 build 不會註冊這個路由）。
 - 「單獨使用」不打 API：可切換位數（4／5／6）、倒數（10 秒／1 分／5 分）、錯誤與停用狀態，測輸入、貼上整串簡訊（含全形數字）、倒數歸零後「重新發送」。
@@ -205,6 +205,7 @@ OTP 元件示範：dev 模式開 `/dev/otp`（`PATHS.devOtp`，`OtpDemo.tsx`；�
 - 驗證碼依上方「OTP」規則（`1234` 通過、`0000` 錯誤、`9999` 逾時）；發送後改選另一個寄送方式，驗證碼列收起，要重新按「確認」。
 - 要求寄到會員沒有的聯絡方式（直接打 API，例如 `google@test.com` 帶 `channel: 'phone'`）→ 422 `VALIDATION_ERROR`（`fields.channel`）。
 - `year` 填 2020 以前（例如 `2019`）→ 404 `NO_RECORDS`；不帶 `year` 視為去年（頁面目前不帶）。
+- 發送太頻繁：同一會員 10 分鐘內發送驗證碼（含「重新發送」）第 4 次起 → 429 `TOO_MANY_ATTEMPTS`，通知彈窗「發送過於頻繁，請稍後再試」。紀錄在記憶體，重新整理頁面即重置；要快速測可在 DevTools Console 先打 3 次 `POST /api/receipts/otp` 再按「確認」。
 - 選手機寄出後，簡訊裡的下載頁網址印在 DevTools Console（`[MSW] 奉獻收據簡訊下載頁：/receipt/download/r-…`），存在 `sessionStorage`（`nlc_mms_mock_receipt_links`），同一個分頁重新整理、貼網址都有效，1 小時後過期。
 
 下載頁（`/receipt/download/:id`，需登入；未登入會先到登入頁，登入後回到這頁）。固定 id 測各種狀態（`handlers/receipt.ts`）：

@@ -3,21 +3,21 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router'
 import { getApiErrorMessage, isApiError } from '../../api/client'
 import { sendReceipt, sendReceiptOtp } from '../../api/receipt'
-import type { Me, ReceiptChannel, ReceiptOtpRequest, ReceiptSendResponse, ReceiptSentTo } from '../../api/types'
+import type { Me, OtpSentTo, ReceiptChannel, ReceiptOtpRequest, ReceiptSendResponse } from '../../api/types'
 import { useMe } from '../../auth/useMe'
 import ActionBar from '../../components/ActionBar'
 import { Button } from '../../components/Button'
 import { AppForm, FormCard, Radio } from '../../components/form'
 import Icon from '../../components/Icon'
 import { useNotifyModal } from '../../components/NoticeModal'
-import { getOtpErrorMessage, OtpField, otpRules, useOtpForm } from '../../components/OtpInput'
+import { getOtpErrorMessage, OTP_MESSAGES, OtpField, otpRules, useOtpForm } from '../../components/OtpInput'
 import ResultPage from '../../components/ResultPage'
 import { PATHS } from '../../routes/paths'
 import typography from '../../styles/typography.module.css'
 import { cx } from '../../utils/cx'
 import { hasInAppHistory } from '../../utils/history'
 import { maskContact } from '../../utils/maskContact'
-import { otpSentHint, passwordHint } from './receiptMessages'
+import { passwordHint } from './receiptMessages'
 import styles from './ReceiptDownload.module.css'
 
 // 奉獻收據下載（issue #26，docs/design/receipt/README.md；#50 改用會員已有的聯絡方式）
@@ -44,10 +44,8 @@ interface OtpValues {
   otp: string
 }
 
-interface ContactOption {
-  channel: ReceiptChannel
-  destination: string
-}
+/** 會員已有的聯絡方式（前端遮罩，格式同後端回的 sentTo） */
+type ContactOption = OtpSentTo
 
 // TODO(#12)：文案設計未定（原稿只有「請輸入電子信箱，我們將寄送該年度的奉獻收據至此信箱。」）
 const MESSAGES = {
@@ -147,7 +145,7 @@ interface ReceiptFormProps {
 function ReceiptForm({ options, onCancel, onSent }: ReceiptFormProps) {
   const [form] = Form.useForm<OtpValues>()
   const [channel, setChannel] = useState<ReceiptChannel>(options[0].channel)
-  const [sentTo, setSentTo] = useState<ReceiptSentTo | null>(null)
+  const [sentTo, setSentTo] = useState<OtpSentTo | null>(null)
   const [verifying, setVerifying] = useState(false)
   const { notify, contextHolder } = useNotifyModal()
 
@@ -256,7 +254,7 @@ function ReceiptForm({ options, onCancel, onSent }: ReceiptFormProps) {
             {otp.sent && (
               <>
                 <p className={cx(styles.description, styles.sentHint)} role="status">
-                  {otpSentHint(sentTo ?? selected)}
+                  {OTP_MESSAGES.sentTo(sentTo ?? selected)}
                 </p>
                 <Form.Item<OtpValues>
                   name="otp"

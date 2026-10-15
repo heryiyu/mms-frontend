@@ -7,10 +7,12 @@
 // - demo-expired 已過期 → 410 LINK_EXPIRED（擁有者 = 目前登入的人）
 // - demo-other   不是本人 → 403 FORBIDDEN（擁有者是 locked@test.com）
 // - 其他 id      → 404 RECEIPT_NOT_FOUND
+// 發送太頻繁：同一會員 10 分鐘內第 4 次發送驗證碼起 → 429 TOO_MANY_ATTEMPTS（見 assertReceiptOtpNotTooFrequent）
 // 收據頁選手機寄出後，簡訊裡的下載頁網址會印在 DevTools Console（「[MSW] 奉獻收據簡訊下載頁：…」），
 // 連結存在 sessionStorage（nlc_mms_mock_receipt_links），同一個分頁重新整理、貼上網址都還有效，關閉分頁即清除。
 import { http, HttpResponse } from 'msw'
 import type {
+  OtpSentTo,
   ReceiptChannel,
   ReceiptDownloadInfo,
   ReceiptFileResponse,
@@ -19,7 +21,6 @@ import type {
   ReceiptPasswordRule,
   ReceiptSendRequest,
   ReceiptSendResponse,
-  ReceiptSentTo,
 } from '../../api/types'
 import { receiptDownloadPath } from '../../routes/paths'
 import { maskContact } from '../../utils/maskContact'
@@ -41,6 +42,20 @@ import {
 const LINK_TTL_MS = 60 * 60 * 1000
 /** 檔案網址有效秒數（5 分鐘） */
 const FILE_URL_EXPIRES_IN = 300
+
+/**
+ * 發送驗證碼頻率限制（mock 暫定，真實門檻待確認）：同一會員 10 分鐘內最多 3 次，第 4 次起回 429 TOO_MANY_ATTEMPTS。
+ * 收據頁不輸入信箱，無法用 frequent@test.com 觸發；紀錄存在記憶體，重新整理頁面即重置。
+ */
+const OTP_RATE_LIMIT = { max: 3, windowMs: 10 * 60 * 1000 }
+const receiptOtpSentAt = new Map<string, number[]>()
+
+function assertReceiptOtpNotTooFrequent(user: MockUser) {
+  const now = Date.now()
+  const recent = (receiptOtpSentAt.get(user.id) ?? []).filter((at) => now - at < OTP_RATE_LIMIT.windowMs)
+  if (recent.length >= OTP_RATE_LIMIT.max) throw errorResponse('TOO_MANY_ATTEMPTS')
+  receiptOtpSentAt.set(user.id, [...recent, now])
+}
 
 const DEMO_LOADED_AT = Date.now()
 const DEMO_IDS = { valid: 'demo-valid', expired: 'demo-expired', other: 'demo-other' } as const
@@ -78,7 +93,7 @@ const passwordRuleOf = (user: MockUser): ReceiptPasswordRule => (user.idNumber ?
 const defaultYear = () => new Date().getFullYear() - 1
 
 /** 選定的寄送方式：要是 email／phone，且會員有這個聯絡方式 */
-function readChannel(user: MockUser, channel: unknown): ReceiptSentTo {
+function readChannel(user: MockUser, channel: unknown): OtpSentTo {
   if (!CHANNELS.includes(channel as ReceiptChannel)) {
     throw errorResponse('VALIDATION_ERROR', undefined, { channel: '請選擇寄送方式' })
   }
@@ -126,6 +141,7 @@ export const receiptHandlers = [
     const body = await readBody<ReceiptOtpRequest>(request, ['channel'])
     const sentTo = readChannel(user, body.channel)
     if (user.email) assertNotRateLimited(user.email)
+    assertReceiptOtpNotTooFrequent(user)
     db.receiptOtps.set(user.id, sentTo.channel)
     const res: ReceiptOtpResponse = { expiresIn: OTP_EXPIRES_IN, length: OTP_LENGTH, sentTo }
     return HttpResponse.json(res)

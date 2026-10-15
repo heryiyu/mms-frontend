@@ -6,7 +6,7 @@ import type { Me, OtpSentTo, ProfileChangeOtpResponse, ProfileChangeRequest } fr
 import ActionBar from '../../components/ActionBar'
 import { AppForm, FormCard } from '../../components/form'
 import type { NotifyOptions } from '../../components/NoticeModal'
-import { getOtpErrorMessage, OtpField, otpRules, type OtpSender } from '../../components/OtpInput'
+import { getOtpErrorMessage, OTP_MESSAGES, OtpField, otpRules, type OtpSender } from '../../components/OtpInput'
 import typography from '../../styles/typography.module.css'
 import { cx } from '../../utils/cx'
 import styles from './Profile.module.css'
@@ -26,8 +26,6 @@ const MESSAGES = {
   hint: '為保障您的帳號安全，送出會員資料修改前，請先完成 OTP 驗證。',
   failedTitle: '驗證失敗',
   failedContent: '發生錯誤，請稍後再試',
-  sentTo: ({ channel, destination }: OtpSentTo) =>
-    channel === 'email' ? `驗證碼已寄到信箱 ${destination}。` : `驗證碼已用簡訊傳送到 ${destination}。`,
 } as const
 
 export interface ProfileOtpStepProps {
@@ -70,7 +68,7 @@ export default function ProfileOtpStep({ otp, sentTo, notify, onCancel, onVerifi
             {sentTo && (
               <>
                 <br />
-                {MESSAGES.sentTo(sentTo)}
+                {OTP_MESSAGES.sentTo(sentTo)}
               </>
             )}
           </p>

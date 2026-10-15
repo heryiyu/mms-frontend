@@ -3,6 +3,7 @@
 import { http, HttpResponse } from 'msw'
 import type { Me, OtpSentTo, ProfileChangeOtpResponse, ProfileChangeRequest, ProfileChangeVerifyRequest } from '../../api/types'
 import { PHONE_PATTERN } from '../../constants/validation'
+import { maskContact } from '../../utils/maskContact'
 import { db, maskIdNumber, normalizeEmail, orgNames, SSO_TAKEN_CONTACTS } from '../db'
 import type { MockUser } from '../db'
 import {
@@ -46,13 +47,6 @@ function isEmailTaken(email: string, self: MockUser) {
 
 function isPhoneTaken(phone: string, self: MockUser) {
   return phone === SSO_TAKEN_CONTACTS.phone || db.users.some((u) => u !== self && u.phone === phone)
-}
-
-/** a.b@gmail.com → a***@gmail.com；0912345678 → 0912***678（真實後端遮罩規則可自訂） */
-function maskContact(channel: OtpSentTo['channel'], value: string) {
-  if (channel === 'phone') return `${value.slice(0, 4)}***${value.slice(-3)}`
-  const [local, domain] = value.split('@')
-  return `${local.slice(0, 1)}***@${domain}`
 }
 
 /**
