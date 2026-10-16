@@ -51,10 +51,9 @@ Railway 可以把上面的設定寫成 repo 裡的 `railway.json`（config as co
 
 ## 新頁沒有的 Logto 頁面
 
-新頁只做了登入、註冊、忘記密碼、社群登入導回（路徑見 `frontend/src/sso/paths.ts`）。Logto 原本還有下列頁面，現在開會顯示「找不到這個頁面」，所以**下列功能在 Logto 後台不要開**，要開之前得先在新頁補上：
+新頁只做了登入、註冊、忘記密碼、社群登入導回、第三方 App 的授權同意頁（路徑見 `frontend/src/sso/paths.ts`）。Logto 原本還有下列頁面，現在開會顯示「找不到這個頁面」，所以**下列功能在 Logto 後台不要開**，要開之前得先在新頁補上：
 
 - 兩步驟驗證（MFA）的驗證、綁定頁
-- 第三方應用程式的授權同意頁（`/consent`）
 - 企業 SSO（`/single-sign-on`）
 - 其他 Logto 內建流程頁（例如補填資料、帳號連結）
 

@@ -22,6 +22,7 @@ const MESSAGES: Record<string, string> = {
   'session.verification_blocked_too_many_attempts': '嘗試過於頻繁，請稍後再試', // 實測：錯 3 次暫停 5 分鐘，第 3 次就回這個碼（400）（#47、#46）
   'user.suspended': '帳號已停用，請聯繫管理員',
   'password.expired': '密碼已過期，請使用忘記密碼重新設定',
+  'oidc.access_denied': '您的帳號沒有使用這個 App 的權限', // 授權同意頁（#74）；頁面另外顯示「無法使用這個 App」
 
   // ---- 帳號（註冊、忘記密碼） ----
   'user.email_already_in_use': '此電子信箱已註冊',

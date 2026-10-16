@@ -11,6 +11,7 @@
 | `src/sso/routes.tsx`、`paths.ts` | 路由；路徑要和 Logto 原本登入頁一致（Logto 會導到這些路徑） |
 | `src/sso/api/client.ts` | 呼叫 Experience API 的共用入口（取代會員中心的 `src/api/client.ts`） |
 | `src/sso/api/experience.ts` | Experience API 各端點 |
+| `src/sso/api/consent.ts` | 授權同意頁的 API（Logto 1.42 這頁還在舊的 `/api/interaction/consent`，不在 Experience API 裡） |
 | `src/sso/api/errors.ts` | 錯誤碼 → 中文提示（依主題分組，註明哪些實測過） |
 | `src/sso/identifier.ts` | 「電子信箱或手機」欄位 → identifier（手機轉 Logto 的 886 格式）、驗證規則 |
 | `src/sso/verificationCode.ts` | 驗證碼位數與時效（給 `useOtpForm`）、驗證碼錯誤分類（要清空重填／要重新發送）；註冊、忘記密碼共用 |
@@ -21,7 +22,7 @@
 | `src/sso/components/PasskeyButton.tsx`、`PasskeySetup.tsx` | 「通過通行密鑰繼續」按鈕；「要建立通行密鑰嗎？」詢問畫面（submit 回 `user.passkey_preferred` 時，登入、註冊、社群導回都會用到） |
 | `src/sso/components/SocialButtons.tsx` | Line、Google 按鈕（登入頁「快速登入」、註冊頁「創建帳號」） |
 | `src/sso/register/` | 註冊兩個步驟（`AccountStep` 帳號＋驗證碼、`ProfileStep` 姓名＋密碼＋條款）與呼叫順序（`registerFlow.ts`） |
-| `src/sso/pages/` | `SignIn` 登入、`Register` 註冊、`ResetPassword` 忘記密碼、`SocialCallback` 社群導回、`ToMemberCenter`（沒有進行中的登入）、`SsoNotFound`；頁內步驟在同一路徑切換 |
+| `src/sso/pages/` | `SignIn` 登入、`Register` 註冊、`ResetPassword` 忘記密碼、`SocialCallback` 社群導回、`Consent` 第三方 App 授權同意頁（#74）、`ToMemberCenter`（沒有進行中的登入）、`SsoNotFound`；頁內步驟在同一路徑切換 |
 
 和會員中心共用的畫面元件（#47 D12，改設計時兩邊一起變）：
 
@@ -142,7 +143,18 @@ Experience API 用 Logto 網域的 cookie 記住「進行到哪一步」（inter
 `logto/Dockerfile` 先 `npm run build:sso`，再把 `dist-sso/` 換進 Logto 官方映像、取代內建登入頁的檔案；Railway 的 Logto 服務改從本 repo 用這個 Dockerfile 部署。Railway 設定、退回方式、升級 Logto 見 `logto/README.md`。
 
 - `/api/*`、`/oidc/*` 等照舊由 Logto 處理。其他路徑：dist 裡有的檔名（`/sso-assets/*`、`/favicon.ico`、`/logo.svg`）回那個檔案，其他一律回 `index.html`，由 `routes.tsx` 的路由決定畫面（不認得的走 `*` → `SsoNotFound`）。**新增路徑只要改 `paths.ts`、`routes.tsx`**，不用改映像或 Railway。
-- 沒有進行中的登入時開 `/`、`/sign-in`、`/register`、`/forgot-password`，Logto 在回網頁前就轉到 `unknownSessionRedirectUrl`，不會進到這包。
+- 沒有進行中的登入時開 `/`、`/sign-in`、`/register`、`/forgot-password`、`/consent`，Logto 在回網頁前就轉到 `unknownSessionRedirectUrl`，不會進到這包。
 - 這包的靜態檔放在 `/sso-assets/`，不和 Logto 原本登入頁的 `/assets/` 混在一起。
 - 會員中心網址（`VITE_SSO_MEMBER_CENTER_URL`）在 build 時決定：Railway 的服務變數有設就用，沒設用 `paths.ts` 的預設值。
-- 新頁沒做的 Logto 頁面（MFA、第三方授權同意頁、企業 SSO 等）會顯示「找不到這個頁面」，這些功能在 Logto 後台不要開。
+- 新頁沒做的 Logto 頁面（MFA、企業 SSO 等）會顯示「找不到這個頁面」，這些功能在 Logto 後台不要開。
+
+## 授權同意頁（#74）
+
+讀經 App（bible.newlife.org.tw）、LearnMe（learnme.tw）在 Logto 是「第三方應用程式」：登入完成後 Logto 先導到 `/consent`，使用者按「授權」才回到 App。行為照 Logto 1.42.0 原登入頁 `pages/Consent`：
+
+- 進頁 `GET /api/interaction/consent` 取 App 名稱、使用者、還沒授權過的權限、導回網址；按「授權」`POST /api/interaction/consent` → `goToRedirect(redirectTo)`
+- 「取消」直接回 App 的導回網址（不帶授權碼）；「使用其他帳號」回 `/sign-in`，登入完會再回到這頁
+- `oidc.access_denied`（帳號沒有這個 App 的權限）顯示「無法使用這個 App」，可以登出（`/oidc/session/end`）換帳號
+- 逾時顯示「授權失敗」，**不**照其他頁回會員中心：第三方 App 的使用者不一定是會員中心的會員
+- 組織選擇沒做：目前的 App 都沒要求組織權限，有的話照 Logto 預設送第一個組織
+- 本機測法：`logto/README.md`「本機測試」起容器後，用 psql 建一個 `is_third_party` 的 App（並在 `application_user_consent_user_scopes` 加 `profile`、`email`）和一個 email＋密碼的帳號，從那個 App 的 `/oidc/auth` 進來
