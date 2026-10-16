@@ -16,6 +16,8 @@ export const SSO_PATHS = {
   forgotPassword: '/forgot-password',
   /** 社群平台授權完成導回（要在 Line、Google 後台登記 https://<SSO 網域>/callback/<connectorId>） */
   socialCallback: '/callback/:connectorId',
+  /** 第三方 App 的授權同意頁（#74；Logto 在第三方 App 登入完成後導到這裡） */
+  consent: '/consent',
   /** Logto 找不到進行中的登入時導到這裡（目前 Logto 設定 unknownSessionRedirectUrl 會直接轉回會員中心） */
   unknownSession: '/unknown-session',
   error: '/error',

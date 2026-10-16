@@ -1,0 +1,125 @@
+/*
+ * 第三方 App 授權同意頁（#74）。卡片版面沿用 components/RegisterCard。
+ * TODO(#12)：設計稿沒有這頁，間距沿用 RegisterCard 的欄位間距（12px）與按鈕間距（20px），
+ * 使用者區塊用區塊底色 gray6＋卡片圓角，說明文字同 PasskeySetup（Body1 gray2）。
+ */
+.logo {
+  --sso-consent-logo-size: 48px;
+
+  display: block;
+  width: var(--sso-consent-logo-size);
+  height: var(--sso-consent-logo-size);
+  margin: 0 auto 12px;
+  object-fit: contain;
+}
+
+.user {
+  --sso-consent-avatar-size: 40px;
+
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  border-radius: var(--radius-lg);
+  background: var(--color-gray-6);
+}
+
+.avatar,
+.avatarIcon {
+  flex: none;
+  width: var(--sso-consent-avatar-size);
+  height: var(--sso-consent-avatar-size);
+  border-radius: 50%;
+}
+
+.avatar {
+  object-fit: cover;
+}
+
+.avatarIcon {
+  font-size: var(--sso-consent-avatar-size);
+  color: var(--color-gray-3);
+}
+
+.userText {
+  min-width: 0;
+}
+
+.userName,
+.userId {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.userName {
+  font-size: var(--font-size-body-1);
+  line-height: var(--line-height-body-1);
+  letter-spacing: var(--letter-spacing-body-1);
+  font-weight: 700;
+  color: var(--color-gray-1);
+}
+
+.userId {
+  font-size: var(--font-size-body-2);
+  line-height: var(--line-height-body-2);
+  letter-spacing: var(--letter-spacing-body-2);
+  color: var(--color-gray-2);
+}
+
+.scopes {
+  margin-top: 20px;
+}
+
+.scopesTitle {
+  margin: 0 0 8px;
+  font-size: var(--font-size-body-1);
+  line-height: var(--line-height-body-1);
+  letter-spacing: var(--letter-spacing-body-1);
+  color: var(--color-gray-1);
+}
+
+.scopeList {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: var(--font-size-body-2);
+  line-height: var(--line-height-body-2);
+  letter-spacing: var(--letter-spacing-body-2);
+  color: var(--color-gray-2);
+}
+
+.scopeList li {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.scopeIcon {
+  flex: none;
+  margin-top: 2px;
+  color: var(--color-primary);
+}
+
+.actions {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 20px;
+}
+
+.note {
+  margin: 12px 0 0;
+  text-align: center;
+  font-size: var(--font-size-caption);
+  line-height: var(--line-height-caption);
+  letter-spacing: var(--letter-spacing-caption);
+  color: var(--color-gray-2);
+}
+
+.note a {
+  color: var(--color-primary);
+}

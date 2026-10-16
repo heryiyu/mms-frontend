@@ -11,7 +11,7 @@ function page(load: () => Promise<{ default: ComponentType }>): RouteObject['laz
   return async () => ({ Component: (await load()).default })
 }
 
-// 各頁由 #47 的子 issue 實作：登入 #55、註冊 #56、忘記密碼 #57、社群登入 #58。
+// 各頁由 #47 的子 issue 實作：登入 #55、註冊 #56、忘記密碼 #57、社群登入 #58；授權同意頁 #74。
 // 頁面內的步驟（例如註冊的驗證碼、填資料）在同一個路徑內切換，不要新增路徑：Logto 只認得這幾個。
 const routes: RouteObject[] = [
   {
@@ -25,6 +25,7 @@ const routes: RouteObject[] = [
       { path: SSO_PATHS.resetPassword, lazy: page(() => import('./pages/ResetPassword')) },
       { path: SSO_PATHS.forgotPassword, element: <Navigate to={SSO_PATHS.resetPassword} replace /> },
       { path: SSO_PATHS.socialCallback, lazy: page(() => import('./pages/SocialCallback')) },
+      { path: SSO_PATHS.consent, lazy: page(() => import('./pages/Consent')) },
     ],
   },
   { path: '/', element: <ToMemberCenter /> },
