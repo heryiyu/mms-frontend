@@ -18,7 +18,7 @@ Logto 本身（API、OIDC、資料庫、後台 Console）完全沒改，啟動�
 
 在 Railway 的 Logto 服務（目前 Source 是 Image `ghcr.io/logto-io/logto:1.42.0`）：
 
-1. **Settings → Source**：把 Source Image 斷開（Disconnect），改接 GitHub repo **`NLC-Ministry/NLC_mms`**，Branch 選 **`main`**。Root Directory 留空（build 要用整個 repo）。
+1. **Settings → Source**：把 Source Image 斷開（Disconnect），改接 GitHub repo **`NLC-Ministry/mms-frontend`**，Branch 選 **`main`**。Root Directory 留空（build 要用整個 repo）。
 2. **Variables**：新增 **`RAILWAY_DOCKERFILE_PATH`** = **`logto/Dockerfile`**。其他變數（`DB_URL`、`ENDPOINT`、`ADMIN_ENDPOINT`、`TRUST_PROXY_HEADER` 等）不要動。
    - 選用：`VITE_SSO_MEMBER_CENTER_URL` = 會員中心網址（例如 `https://member.newlife.org.tw`），決定登入頁的條款連結、逾時回去的地方；沒設就用預設的 `https://member.newlife.org.tw`。這是 build 時寫進網頁的，改了要重新部署才生效。
 3. **Settings → Build → Watch Paths**：填 `/logto/**`、`/frontend/**`、`/.dockerignore`。只有這些檔案變動才重新部署 Logto；改 `docs/`、`backend/` 不會。（會員中心和新登入頁共用 `frontend/src/`，所以會員中心的改動也會讓 Logto 重新部署一次，不影響使用。）
