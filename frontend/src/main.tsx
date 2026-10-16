@@ -10,9 +10,12 @@ import { router } from './routes'
 import './styles/global.css'
 import { componentConfig, theme } from './theme'
 
-// 開發模式預設啟用 MSW 假資料；在 .env.local 設 VITE_USE_MOCK=false 可關閉（見 .env.example）
+// MSW 假資料：開發模式預設啟用，在 .env.local 設 VITE_USE_MOCK=false 可關閉；
+// 正式 build 預設不啟用，VITE_USE_MOCK=true 時才啟用（後端匯入前的線上展示，見 .env.example）
+const useMock = import.meta.env.DEV ? import.meta.env.VITE_USE_MOCK !== 'false' : import.meta.env.VITE_USE_MOCK === 'true'
+
 async function enableMocking(): Promise<boolean> {
-  if (!import.meta.env.DEV || import.meta.env.VITE_USE_MOCK === 'false') return false
+  if (!useMock) return false
   try {
     const { worker } = await import('./mocks/browser')
     await worker.start({ onUnhandledFrame: 'bypass' })
@@ -38,7 +41,8 @@ createRoot(document.getElementById('root')!).render(
     <ConfigProvider locale={zhTW} theme={theme} {...componentConfig}>
       <AntdApp>
         <RouterProvider router={router} />
-        <PwaUpdatePrompt />
+        {/* MSW 與 PWA 的 Service Worker 都註冊在 scope /，同一個 scope 只能有一個：用假資料時不註冊 PWA */}
+        {!mockEnabled && <PwaUpdatePrompt />}
         {mockEnabled && DevRoleSwitcher && (
           <Suspense>
             <DevRoleSwitcher />
