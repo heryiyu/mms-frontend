@@ -1,7 +1,7 @@
 import { PATHS } from '../routes/paths'
 
 // SSO 登入頁的路徑。Logto 會依 /oidc/auth 的參數把使用者導到這些路徑（例如 first_screen=register → /register），
-// 所以要和 Logto 原本登入頁的路徑一致，不能自己改名。
+// 所以要和 Logto 原本登入頁的路徑一致，不能自己改名。新增路徑時要一起改 cloudflare/sso-login/wrangler.jsonc 的 routes（#43）。
 export const SSO_PATHS = {
   signIn: '/sign-in',
   /** first_screen=identifier:sign_in */

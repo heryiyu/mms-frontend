@@ -1,0 +1,47 @@
+// 新 SSO 登入頁（#47）在 sso.newlife.org.tw 上的分流 Worker（#43）。說明見 README.md。
+// 部署：.github/workflows/deploy-sso.yml（main 推送時自動），不要在本機 wrangler deploy。
+{
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  "name": "nlc-sso-login",
+  "main": "src/worker.js",
+  "compatibility_date": "2026-09-28",
+
+  // 只走下面的 routes，不開 *.workers.dev 與預覽網址（避免登入頁出現在別的網域）
+  "workers_dev": false,
+  "preview_urls": false,
+
+  // 新登入頁的檔案：frontend/ 下 npm run build:sso 的產出
+  "assets": {
+    "directory": "../../frontend/dist-sso",
+    "binding": "ASSETS",
+    // 找不到的路徑回 index.html（交給前端路由）
+    "not_found_handling": "single-page-application",
+    // 頁面路徑先經過 Worker 判斷要給新頁還是 Logto；靜態檔（Logto 沒有這些路徑）直接給，
+    // 不算 Worker 請求次數（免費方案每天 10 萬次），超過額度時新頁的 JS/CSS 也照常載入
+    "run_worker_first": ["/*", "!/sso-assets/*", "!/favicon.ico", "!/logo.svg"]
+  },
+
+  // 只攔新登入頁的頁面路徑（同 frontend/src/sso/paths.ts 的 SSO_PATHS）與它的靜態檔。
+  // 不要改成 sso.newlife.org.tw/*：/api、/oidc、/.well-known、Logto 原本的 /assets 都不經過 Worker。
+  "routes": [
+    { "pattern": "sso.newlife.org.tw/sign-in*", "zone_name": "newlife.org.tw" },
+    { "pattern": "sso.newlife.org.tw/identifier-sign-in*", "zone_name": "newlife.org.tw" },
+    { "pattern": "sso.newlife.org.tw/register*", "zone_name": "newlife.org.tw" },
+    { "pattern": "sso.newlife.org.tw/identifier-register*", "zone_name": "newlife.org.tw" },
+    { "pattern": "sso.newlife.org.tw/reset-password*", "zone_name": "newlife.org.tw" },
+    { "pattern": "sso.newlife.org.tw/forgot-password*", "zone_name": "newlife.org.tw" },
+    { "pattern": "sso.newlife.org.tw/callback/*", "zone_name": "newlife.org.tw" },
+    { "pattern": "sso.newlife.org.tw/unknown-session*", "zone_name": "newlife.org.tw" },
+    { "pattern": "sso.newlife.org.tw/error*", "zone_name": "newlife.org.tw" },
+    { "pattern": "sso.newlife.org.tw/sso-assets/*", "zone_name": "newlife.org.tw" },
+    { "pattern": "sso.newlife.org.tw/favicon.ico", "zone_name": "newlife.org.tw" },
+    { "pattern": "sso.newlife.org.tw/logo.svg", "zone_name": "newlife.org.tw" }
+  ],
+
+  "vars": {
+    // preview：只有開了預覽的人（?nlc_preview=1）看到新頁，其他人照舊是 Logto 原頁（目前）
+    // all：所有人都看新頁（正式上線）
+    // off：全部回 Logto 原頁（緊急切回）
+    "MODE": "preview"
+  }
+}

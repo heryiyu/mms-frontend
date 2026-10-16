@@ -1,0 +1,12 @@
+{
+  "name": "nlc-sso-login",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "wrangler dev --local"
+  },
+  "devDependencies": {
+    "wrangler": "4.144.0"
+  }
+}

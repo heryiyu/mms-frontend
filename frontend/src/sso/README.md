@@ -137,6 +137,6 @@ Experience API 用 Logto 網域的 cookie 記住「進行到哪一步」（inter
   - Safari：按鈕先取好 options 再叫系統視窗，確認不會因「不是使用者點擊」被擋
 - 其他沒標「實測」的錯誤碼見 `api/errors.ts`。
 
-## Cloudflare 分流（上線時，細節待和 IT 確認，#43）
+## Cloudflare 分流（#43）
 
-`/api/*`、`/oidc/*`、`/.well-known/*` 照舊給 Logto，其他路徑（含 `/sso-assets/*`、`/favicon.ico`、`/logo.svg`）給這包，未知路徑回 `index.html`（SPA）。這包的靜態檔放在 `/sso-assets/`，不和 Logto 原本登入頁的 `/assets/` 撞在一起。
+上線方式、預覽開關（`?nlc_preview=1`）、正式上線與緊急切回見 [`cloudflare/sso-login/README.md`](../../../cloudflare/sso-login/README.md)。重點：Worker 只攔 `SSO_PATHS` 的頁面路徑與 `/sso-assets/*`、`/favicon.ico`、`/logo.svg`（`/api`、`/oidc`、`/.well-known` 不經過），所以**改 `paths.ts` 的 `SSO_PATHS` 或在 `sso/public/` 加根目錄檔時，要一起改 `cloudflare/sso-login/wrangler.jsonc` 的 `routes`**。這包的靜態檔放在 `/sso-assets/`，不和 Logto 原本登入頁的 `/assets/` 撞在一起。
