@@ -1,5 +1,5 @@
 // SSO 登入頁（#47）呼叫 Logto Experience API 的共用入口。
-// 這包網頁和 Logto 同網域（上線靠 Cloudflare 分流，開發靠 vite.sso.config.ts 的 proxy），
+// 這包網頁和 Logto 同網域（上線時這包放在 Logto 映像裡取代內建登入頁，見 logto/README.md；開發靠 vite.sso.config.ts 的 proxy），
 // 進行中的登入（interaction）記在 Logto 的 cookie 裡，所以不帶 token、一律同網域相對路徑。
 // 不要 import 會員中心的 src/api/client.ts（它會連帶打包 Logto SDK 與會員中心的登入狀態）。
 
