@@ -119,7 +119,7 @@ Experience API 用 Logto 網域的 cookie 記住「進行到哪一步」（inter
 - 瀏覽器不支援 WebAuthn：不顯示詢問，直接略過（注意：登入時這會讓 Logto 記住「略過」，之後換支援的瀏覽器也不再問）。
 - 想完全不問：只能把 Logto 後台的通行密鑰登入整個關掉（`passkeySignIn.enabled`），沒有單獨的開關。
 
-**網域（RP ID）**：preflight 與 registration 的 `rpId` 是 Logto 收到請求的網域，也就是 `sso.newlife.org.tw`；通行密鑰綁這個網域。上線後新登入頁經 Cloudflare 放在同網域，已在 Logto 原本登入頁建立的通行密鑰照常可用。本機 `localhost:5174` 經 proxy 拿到的 options 是 `sso.newlife.org.tw` 的，瀏覽器會拒絕（`SecurityError`）：本機無法用真的通行密鑰測，按鈕會跳「無法使用通行密鑰」、自動填入安靜不啟動。測試用假造 API 回應＋假造或 CDP 虛擬驗證器（e2e `sso-passkey.mjs`）。
+**網域（RP ID）**：preflight 與 registration 的 `rpId` 是 Logto 收到請求的網域，也就是 `sso.newlife.org.tw`；通行密鑰綁這個網域。上線後新登入頁直接放在 Logto 映像裡（同網域，見下方「上線方式」），已在 Logto 原本登入頁建立的通行密鑰照常可用。本機 `localhost:5174` 經 proxy 拿到的 options 是 `sso.newlife.org.tw` 的，瀏覽器會拒絕（`SecurityError`）：本機無法用真的通行密鑰測，按鈕會跳「無法使用通行密鑰」、自動填入安靜不啟動。測試用假造 API 回應＋假造或 CDP 虛擬驗證器（e2e `sso-passkey.mjs`）。
 
 ## 還沒實測的事（正式 SSO 不能寄驗證碼、建帳號、試密碼，本機也走不完 Line／Google 授權）
 
@@ -137,6 +137,12 @@ Experience API 用 Logto 網域的 cookie 記住「進行到哪一步」（inter
   - Safari：按鈕先取好 options 再叫系統視窗，確認不會因「不是使用者點擊」被擋
 - 其他沒標「實測」的錯誤碼見 `api/errors.ts`。
 
-## Cloudflare 分流（上線時，細節待和 IT 確認，#43）
+## 上線方式（#43）
 
-`/api/*`、`/oidc/*`、`/.well-known/*` 照舊給 Logto，其他路徑（含 `/sso-assets/*`、`/favicon.ico`、`/logo.svg`）給這包，未知路徑回 `index.html`（SPA）。這包的靜態檔放在 `/sso-assets/`，不和 Logto 原本登入頁的 `/assets/` 撞在一起。
+`logto/Dockerfile` 先 `npm run build:sso`，再把 `dist-sso/` 換進 Logto 官方映像、取代內建登入頁的檔案；Railway 的 Logto 服務改從本 repo 用這個 Dockerfile 部署。Railway 設定、退回方式、升級 Logto 見 `logto/README.md`。
+
+- `/api/*`、`/oidc/*` 等照舊由 Logto 處理。其他路徑：dist 裡有的檔名（`/sso-assets/*`、`/favicon.ico`、`/logo.svg`）回那個檔案，其他一律回 `index.html`，由 `routes.tsx` 的路由決定畫面（不認得的走 `*` → `SsoNotFound`）。**新增路徑只要改 `paths.ts`、`routes.tsx`**，不用改映像或 Railway。
+- 沒有進行中的登入時開 `/`、`/sign-in`、`/register`、`/forgot-password`，Logto 在回網頁前就轉到 `unknownSessionRedirectUrl`，不會進到這包。
+- 這包的靜態檔放在 `/sso-assets/`，不和 Logto 原本登入頁的 `/assets/` 混在一起。
+- 會員中心網址（`VITE_SSO_MEMBER_CENTER_URL`）在 build 時決定：Railway 的服務變數有設就用，沒設用 `paths.ts` 的預設值。
+- 新頁沒做的 Logto 頁面（MFA、第三方授權同意頁、企業 SSO 等）會顯示「找不到這個頁面」，這些功能在 Logto 後台不要開。

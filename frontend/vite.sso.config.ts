@@ -3,7 +3,7 @@ import { fileURLToPath } from 'node:url'
 import { defineConfig, loadEnv, type Plugin, type ProxyOptions } from 'vite'
 
 // 新的 SSO 登入頁（#47）：和會員中心共用 src/ 的 theme 與元件，但另外 build 成一包（dist-sso/），
-// 上線時由 Cloudflare 把 SSO 網域的登入頁路徑分流到這包（/api、/oidc、/.well-known 照舊給 Logto）。
+// 上線時由 logto/Dockerfile 把這包換進 Logto 映像、取代內建登入頁（同網域，/api、/oidc 照舊由 Logto 處理，#43）。
 // 不帶 PWA 與 MSW。說明見 src/sso/README.md。
 const frontendDir = fileURLToPath(new URL('.', import.meta.url))
 
@@ -55,7 +55,8 @@ export default defineConfig(({ mode }) => {
     plugins: [react(), forbidMemberCenterImports()],
     build: {
       outDir: '../dist-sso',
-      // 不用預設的 /assets，避免和 Logto 原本登入頁的靜態檔路徑撞在一起（分流規則較單純、切回舊頁也不互相影響）
+      // 不用預設的 /assets，和 Logto 原本登入頁的靜態檔分開（瀏覽器快取的舊頁檔案不會混進來，退回舊頁也不互相影響）。
+      // Logto 會直接回 dist 裡有的檔名（sso-assets/、favicon.ico、logo.svg），其他路徑一律回 index.html。
       assetsDir: 'sso-assets',
       emptyOutDir: true,
     },

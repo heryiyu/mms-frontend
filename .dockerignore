@@ -1,0 +1,16 @@
+# docker build 的 context 是 repo 根目錄（logto/Dockerfile 用）。
+# 預設全部排除，只放行 build 登入頁需要的 frontend/，避免把 .git、.claude、機密檔帶進映像。
+*
+!frontend/
+
+# frontend 裡也不要的：套件、build 結果、本機設定與機密
+**/node_modules
+**/dist
+**/dist-ssr
+**/dist-sso
+**/.env
+**/.env.*
+**/*.local
+**/.vscode
+**/.idea
+**/*.log

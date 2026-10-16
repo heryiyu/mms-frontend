@@ -3,6 +3,7 @@
 ```
 mms-frontend/
 ├── frontend/   # React + Vite + TypeScript，Ant Design，Bootstrap Icons，PWA + RWD
+├── logto/      # SSO（Logto）的 Docker 映像：內建登入頁換成 frontend 的新登入頁，見 logto/README.md
 └── backend/    # 待匯入
 ```
 
