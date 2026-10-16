@@ -4,7 +4,7 @@
 
 ## 開關
 
-- `npm run dev` 預設啟用；正式 build 不會載入 mock。
+- `npm run dev` 預設啟用；正式 build 預設不載入，`VITE_USE_MOCK=true` 時才載入（見下方「線上展示模式」）。
 - 關閉：在 `frontend/.env.local` 設定 `VITE_USE_MOCK=false`，重啟 dev server，API 會走 vite proxy 打真實後端。
 - 啟動邏輯在 `src/main.tsx` 的 `enableMocking()`；Service Worker 檔案是 `public/mockServiceWorker.js`（由 `npx msw init public/` 產生，請勿手改）。
 - 資料全部存在記憶體（`db.ts`）：審核、退回、個人資料修改、修改密碼會即時反映，**重新整理頁面後還原**。
@@ -32,6 +32,16 @@
 
 - 這個模式不顯示「切換登入身分」按鈕（token 由 Logto 發，切換不了）。
 - Logto 只接受登記過的 redirect URI，請用 `npm run dev`（`http://localhost:5173`）測試；預覽工具的隨機埠會被 Logto 拒絕。
+
+## 線上展示模式（Vercel）
+
+後端匯入前，讓 nlc-mms.vercel.app 能完整展示：Vercel 的環境變數設 `VITE_USE_MOCK=true`，加上和 `.env.local` 相同的 `VITE_LOGTO_*`。
+
+- 按「登入」轉到真正的 SSO 新登入頁（和讀經 App 等其他 App 相同），登入後的會員資料由 MSW 回應，規則同上方「Logto 模式」：不管用哪個 SSO 帳號登入，都對應到 `VITE_MOCK_LOGTO_EMAIL`（預設 `member@test.com`）；網址加 `?mockLogto=<信箱>` 可展示其他情境（等待審核、第一次填資料等）
+- 畫面上的姓名、資料都是假資料，不是登入那個人的真實資料
+- 用 MSW 時不註冊 PWA（兩個 Service Worker 都在 scope `/`，只能有一個），所以展示期間沒有「安裝 App」和更新提示
+- 只有正式網址能登入：Logto 只登記了 `https://nlc-mms.vercel.app/callback`，PR 預覽網址每次不同，登入會被 Logto 拒絕
+- **後端上線後**：從 Vercel 刪掉 `VITE_USE_MOCK`，重新部署
 
 ## 測試帳號
 
