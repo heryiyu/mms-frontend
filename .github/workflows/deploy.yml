@@ -2,6 +2,8 @@
 # repo 在 GitHub 組織底下且是私有，Vercel 免費版（Hobby）不會從這種 repo 自動部署，所以改由這裡用 Vercel CLI 建置後上傳。
 # 需要：secret VERCEL_TOKEN（Vercel 帳號的 token）、variables VERCEL_ORG_ID、VERCEL_PROJECT_ID（Vercel 設定頁的 Team ID、Project ID）。
 # 建置設定（Root Directory = frontend、Vite、環境變數）由 vercel pull 從 Vercel 專案設定取得。
+# frontend/vercel.json：沒有對應檔案的網址（/callback、/login 等）一律回 index.html，交給前端路由；沒有它直接開這些網址會 404。
+# token 到期：Vercel 建 token 時的 Expiration 會讓部署某天突然失敗（Could not retrieve Project Settings），重建後更新 VERCEL_TOKEN。
 name: Deploy
 
 on:
