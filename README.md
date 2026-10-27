@@ -36,7 +36,7 @@ npm run dev
 
 ### 本機測試（給共同測試者）
 
-後端尚未完成，測試一律在本機用 [MSW](https://mswjs.io) 假資料進行。Vercel 線上版（https://nlc-mms.vercel.app/ ）沒有假資料也沒有後端，只能看畫面，登入、註冊等功能無法使用。
+後端尚未完成，測試一律在本機用 [MSW](https://mswjs.io) 假資料進行。線上版（https://mms-frontend-206009837145.asia-east1.run.app ，部署在 GCP，見 [docs/gcp-deploy.md](docs/gcp-deploy.md)）是展示模式：登入走真正的 SSO，會員資料是假資料。
 
 1. 安裝 [Node.js](https://nodejs.org/) LTS 版（20 以上）與 [Git](https://git-scm.com/)。
 2. 下載專案並啟動：

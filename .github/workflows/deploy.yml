@@ -1,57 +1,77 @@
-# 部署到 Vercel（nlc-mms）：main 推送 → 正式版，PR → 預覽版。
-# repo 在 GitHub 組織底下且是私有，Vercel 免費版（Hobby）不會從這種 repo 自動部署，所以改由這裡用 Vercel CLI 建置後上傳。
-# 需要：secret VERCEL_TOKEN（Vercel 帳號的 token）、variables VERCEL_ORG_ID、VERCEL_PROJECT_ID（Vercel 設定頁的 Team ID、Project ID）。
-# 建置設定（Root Directory = frontend、Vite、環境變數）由 vercel pull 從 Vercel 專案設定取得。
-# frontend/vercel.json：沒有對應檔案的網址（/callback、/login 等）一律回 index.html，交給前端路由；沒有它直接開這些網址會 404。
-# token 到期：Vercel 建 token 時的 Expiration 會讓部署某天突然失敗（Could not retrieve Project Settings），重建後更新 VERCEL_TOKEN。
+# 部署到 GCP Cloud Run（專案 nlc-member-dev、服務 mms-frontend、asia-east1）：main 推送 → 部署新版本。
+# PR 不部署，build 檢查由 ci.yml 負責。
+# GCP 端的一次性設定（映像庫、帳號、權限）見 docs/gcp-deploy.md。
+# 用 Workload Identity Federation 登入 GCP（不存金鑰），需要的 variables：
+#   GCP_WIF_PROVIDER  projects/<專案編號>/locations/global/workloadIdentityPools/<pool>/providers/<provider>
+#   GCP_DEPLOY_SA     部署用的 service account 信箱
+# 映像 build 時寫進程式的 VITE_* 也放 variables（不是機密，意義見 frontend/.env.example）。
 name: Deploy
 
 on:
-  pull_request:
   push:
     branches: [main]
+  workflow_dispatch:
 
 permissions:
   contents: read
+  id-token: write
 
-# PR 有新推送時取消舊的那次；main 不取消，避免正式版停在舊 commit
+# 不取消進行中的部署，避免正式版停在舊 commit
 concurrency:
-  group: deploy-${{ github.ref }}
-  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+  group: deploy-gcp
+  cancel-in-progress: false
 
 env:
-  VERCEL_ORG_ID: ${{ vars.VERCEL_ORG_ID }}
-  VERCEL_PROJECT_ID: ${{ vars.VERCEL_PROJECT_ID }}
-  VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
-  VERCEL_ENV: ${{ github.event_name == 'push' && 'production' || 'preview' }}
-  VERCEL_PROD_FLAG: ${{ github.event_name == 'push' && '--prod' || '' }}
+  PROJECT_ID: nlc-member-dev
+  REGION: asia-east1
+  SERVICE: mms-frontend
+  IMAGE: asia-east1-docker.pkg.dev/nlc-member-dev/mms-frontend/web:${{ github.sha }}
 
 jobs:
-  vercel:
-    name: vercel (${{ github.event_name == 'push' && 'production' || 'preview' }})
+  cloud-run:
+    name: cloud run
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 20
     environment:
-      name: ${{ github.event_name == 'push' && 'Production' || 'Preview' }}
+      name: Production
       url: ${{ steps.deploy.outputs.url }}
     steps:
-      - name: 檢查 Vercel 設定
+      - name: 檢查 GCP 設定
+        env:
+          GCP_WIF_PROVIDER: ${{ vars.GCP_WIF_PROVIDER }}
+          GCP_DEPLOY_SA: ${{ vars.GCP_DEPLOY_SA }}
         run: |
-          if [ -z "$VERCEL_TOKEN" ] || [ -z "$VERCEL_ORG_ID" ] || [ -z "$VERCEL_PROJECT_ID" ]; then
-            echo "::error::缺少 VERCEL_TOKEN secret 或 VERCEL_ORG_ID／VERCEL_PROJECT_ID variables，見 .github/workflows/deploy.yml 開頭說明"
+          if [ -z "$GCP_WIF_PROVIDER" ] || [ -z "$GCP_DEPLOY_SA" ]; then
+            echo "::error::缺少 GCP_WIF_PROVIDER／GCP_DEPLOY_SA variables，見 .github/workflows/deploy.yml 開頭說明"
             exit 1
           fi
       - uses: actions/checkout@v5
-      - uses: actions/setup-node@v5
+      - uses: google-github-actions/auth@v3
         with:
-          node-version: 24
-          cache: npm
-          cache-dependency-path: frontend/package-lock.json
-      - run: npm install --global vercel@62.0.0
-      - run: vercel pull --yes --environment="$VERCEL_ENV" --token="$VERCEL_TOKEN"
-      - run: vercel build $VERCEL_PROD_FLAG --token="$VERCEL_TOKEN"
-      - id: deploy
+          workload_identity_provider: ${{ vars.GCP_WIF_PROVIDER }}
+          service_account: ${{ vars.GCP_DEPLOY_SA }}
+      - uses: google-github-actions/setup-gcloud@v3
+      - run: gcloud auth configure-docker asia-east1-docker.pkg.dev --quiet
+      - name: Build 映像
         run: |
-          url=$(vercel deploy --prebuilt $VERCEL_PROD_FLAG --token="$VERCEL_TOKEN")
+          docker build -f frontend/Dockerfile -t "$IMAGE" \
+            --build-arg VITE_API_BASE_URL="${{ vars.VITE_API_BASE_URL }}" \
+            --build-arg VITE_USE_MOCK="${{ vars.VITE_USE_MOCK }}" \
+            --build-arg VITE_IDLE_LOGOUT_MINUTES="${{ vars.VITE_IDLE_LOGOUT_MINUTES }}" \
+            --build-arg VITE_LOGTO_ENDPOINT="${{ vars.VITE_LOGTO_ENDPOINT }}" \
+            --build-arg VITE_LOGTO_APP_ID="${{ vars.VITE_LOGTO_APP_ID }}" \
+            --build-arg VITE_LOGTO_RESOURCE="${{ vars.VITE_LOGTO_RESOURCE }}" \
+            --build-arg VITE_LOGTO_SCOPES="${{ vars.VITE_LOGTO_SCOPES }}" \
+            .
+      - run: docker push "$IMAGE"
+      - id: deploy
+        name: 部署到 Cloud Run
+        run: |
+          # 公開存取（allUsers 有 run.invoker）是一次性設定，見 docs/gcp-deploy.md；部署帳號沒有改 IAM 的權限
+          gcloud run deploy "$SERVICE" --project="$PROJECT_ID" --region="$REGION" \
+            --image="$IMAGE" --port=8080 --quiet \
+            --service-account="mms-frontend-runtime@$PROJECT_ID.iam.gserviceaccount.com" \
+            --max-instances=2 --memory=256Mi
+          url=$(gcloud run services describe "$SERVICE" --project="$PROJECT_ID" --region="$REGION" --format='value(status.url)')
           echo "url=$url" >> "$GITHUB_OUTPUT"
           echo "部署完成：$url" >> "$GITHUB_STEP_SUMMARY"
