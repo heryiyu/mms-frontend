@@ -15,7 +15,7 @@
 | Artifact Registry | `asia-east1-docker.pkg.dev/nlc-member-dev/mms-frontend` | 存映像 |
 | Service account | `mms-frontend-runtime` | Cloud Run 執行身分，不給任何權限 |
 | Service account | `mms-frontend-deployer` | GitHub Actions 部署用 |
-| Workload Identity pool | `github-mms-frontend`（provider `github`） | 只接受 `NLC-Ministry/mms-frontend` 的 main 分支 |
+| Workload Identity pool | `github-mms-frontend`（provider `github`） | 只接受 `heryiyu/mms-frontend` 的 main 分支 |
 
 部署帳號的權限只限這個服務：`mms-frontend` 服務的 `run.developer`、映像庫的 `artifactregistry.writer`、`mms-frontend-runtime` 的 `iam.serviceAccountUser`。
 
@@ -24,7 +24,7 @@
 需要專案 Owner。映像庫、`mms-frontend-runtime` 與第一次部署已完成（2026-10-27），以下是公開存取與 GitHub 部署的設定（PowerShell）：
 
 ```powershell
-$P = "nlc-member-dev"; $N = "206009837145"; $REPO = "NLC-Ministry/mms-frontend"
+$P = "nlc-member-dev"; $N = "206009837145"; $REPO = "heryiyu/mms-frontend"
 $RUNTIME = "mms-frontend-runtime@$P.iam.gserviceaccount.com"
 $DEPLOYER = "mms-frontend-deployer@$P.iam.gserviceaccount.com"
 
